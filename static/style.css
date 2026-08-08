@@ -893,8 +893,19 @@ tbody tr:hover { background: var(--bg-soft); }
   display: block; padding: 12px 14px 13px;
   background: var(--surface); color: var(--text);
   transition: background .12s;
+  position: relative; cursor: pointer;
 }
 .race-item:hover { background: var(--accent-soft); text-decoration: none; }
+/* 손가락으로 눌렀을 때 반응이 보여야 '눌린다'고 인식된다 */
+.race-item:active { background: var(--bg-sunken); }
+
+/* 이 카드가 눌린다는 표시. 별도 링크가 아니라 카드 안의 안내다. */
+.ri-go {
+  display: block; margin-top: 8px; text-align: right;
+  font-size: 12.5px; font-weight: 600; color: var(--accent);
+}
+.ri-go b { font-weight: 700; display: inline-block; transition: transform .12s; }
+.race-item:hover .ri-go b { transform: translateX(3px); }
 
 .ri-head {
   display: flex; align-items: center; gap: 8px; flex-wrap: wrap;

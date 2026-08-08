@@ -101,6 +101,10 @@
     <span class="rr-empty">예상 준비 중</span>
     {% endfor %}
   </div>
+  {# 카드 전체가 링크지만 그렇게 보이지 않아 아무도 누르지 않는다. 안에 버튼을
+     넣으면 터치 영역이 쪼개지고 링크가 중첩되므로, 눌리는 것처럼 보이게만
+     한다 — 이 줄 자체는 별도 링크가 아니다. #}
+  <span class="ri-go">{% if race.has_result %}경주 결과{% else %}상세 예상{% endif %} <b>›</b></span>
 </a>
 {% endmacro %}
 
