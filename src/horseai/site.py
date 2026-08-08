@@ -30,6 +30,7 @@ import yaml
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 
 from .clock import now_kst, today_kst
+from .kra.normalize import MAX_ORD, ORD_STATUS
 from .kra.store import session
 from .style import STYLE_LABEL, STYLES, pace_map
 from .verify import build_report
@@ -328,13 +329,16 @@ def load_form(conn: sqlite3.Connection, hr_no: str, as_of: str,
         d = _row_to_dict(r)
         fs = d.get("field_size") or 0
         ordn = d.get("ord")
-        d["ord_text"] = f"{ordn}착" if ordn else "-"
+        # 91~99 는 착순이 아니라 상태(실격·출전취소·경주취소 등)다.
+        d["ord_status"] = ORD_STATUS.get(ordn or 0, "")
+        d["ord_text"] = (d["ord_status"] or f"{ordn}착") if ordn else "-"
         d["field_text"] = f"{fs}두" if fs else ""
         d["record_text"] = fmt_time(d.get("record_sec"))
         d["slug"] = race_slug(d["race_key"])
         d["url"] = f"/race/{d['slug']}/"
         d["is_win"] = ordn == 1
         d["is_top3"] = bool(ordn and ordn <= 3)
+        d["ran"] = bool(ordn and ordn <= MAX_ORD)
         # 초반 위치를 한눈에 — 각질 판정의 근거를 그대로 노출한다
         s1f = d.get("s1f_rank")
         d["s1f_text"] = f"{s1f}" if s1f else "-"
@@ -346,9 +350,15 @@ CIRCLED = "①②③④⑤⑥⑦⑧⑨⑩⑪⑫⑬⑭⑮⑯⑰⑱⑲⑳"
 
 
 def circled(n: Optional[int]) -> str:
-    """착순을 원문자로. 예상지에서 전적을 한 줄로 압축하는 관습적 표기다."""
+    """착순을 원문자로. 예상지에서 전적을 한 줄로 압축하는 관습적 표기다.
+
+    91~99 는 착순이 아니라 상태 코드이므로 숫자로 찍지 않는다 — '99' 가 줄에
+    섞이면 그 말이 99착을 한 것처럼 읽힌다. 착순이 없었다는 표시로 대신한다.
+    """
     if not n or n < 1:
         return "·"
+    if n > MAX_ORD:
+        return "×"
     return CIRCLED[n - 1] if n <= len(CIRCLED) else str(n)
 
 
@@ -417,8 +427,12 @@ def load_person_stats(conn: sqlite3.Connection, col: str, key: Optional[str],
 
 
 def form_summary(form: List[Dict]) -> Dict:
-    """전적표 아래 붙는 요약 — 최근 N전 성적 한 줄."""
-    done = [f for f in form if f.get("ord")]
+    """전적표 아래 붙는 요약 — 최근 N전 성적 한 줄.
+
+    실격·출전취소처럼 착순이 남지 않은 출주는 '몇 전'에서 뺀다. 넣으면 분모만
+    커져 승률이 실제보다 낮게 보인다.
+    """
+    done = [f for f in form if f.get("ran")]
     if not done:
         return {}
     return {

@@ -39,6 +39,11 @@ log = logging.getLogger(__name__)
 RACE_WEEKDAYS = (4, 5, 6)  # 금·토·일
 
 
+# 이 일수 안의 날짜는 수집 기록이 있어도 다시 받는다. 결과는 경주가 끝나는 대로
+# 순차 게시되고, 배당 확정이나 심판 판정으로 뒤늦게 바뀌기도 한다.
+RESETTLE_DAYS = 2
+
+
 def race_days(start: dt.date, end: dt.date) -> List[dt.date]:
     """구간 내 경마 시행 가능일(금·토·일)."""
     out, d = [], start
@@ -99,6 +104,7 @@ def _ingest(conn: sqlite3.Connection, records: List[Dict], *, kind: str) -> int:
 
     race_rows: Dict[str, Dict] = {}
     detail_rows: List[Dict] = []
+    settled_keys: set = set()
 
     for rec in records:
         norm = extract(rec, fields)
@@ -106,11 +112,22 @@ def _ingest(conn: sqlite3.Connection, records: List[Dict], *, kind: str) -> int:
             continue
         key = race_key(norm["meet"], norm["rc_date"], norm["rc_no"])
         prev = race_rows.get(key)
-        row = _race_row(rec, norm, key, has_result=(kind == "results"))
+        # 성적 API 는 **발주 전에도** 출주 정보를 돌려준다. 착순이 비어 있는데
+        # '시행 완료'로 찍으면, 아직 달리지도 않은 경주가 결과 페이지에 전부
+        # 불발로 올라간다. 게다가 착순 칸에는 91~99 상태 코드(출전취소 등)가
+        # 먼저 실리기도 해서 '값이 있으면 완료'로도 판단할 수 없다.
+        # 1착이 확인될 때만 그 경주는 끝난 것이다.
+        settled = kind == "results" and norm.get("ord") == 1
+        row = _race_row(rec, norm, key, has_result=settled)
+        if settled:
+            settled_keys.add(key)
         if prev:  # 같은 경주의 여러 말 레코드 → 비어 있는 값만 채운다
             for k, v in row.items():
                 if prev.get(k) in (None, "") and v not in (None, ""):
                     prev[k] = v
+            # 한 마리라도 착순이 있으면 그 경주는 시행된 것이다
+            if settled:
+                prev["has_result"] = 1
         else:
             race_rows[key] = row
 
@@ -128,10 +145,10 @@ def _ingest(conn: sqlite3.Connection, records: List[Dict], *, kind: str) -> int:
         n = upsert(conn, "entries", detail_rows, ["race_key", "chul_no"])
     else:
         n = upsert(conn, "results", detail_rows, ["race_key", "hr_no"])
-        if race_rows:
+        if settled_keys:
             conn.executemany(
                 "UPDATE races SET has_result=1 WHERE race_key=?",
-                [(k,) for k in race_rows],
+                [(k,) for k in settled_keys],
             )
     return n
 
@@ -148,8 +165,16 @@ def fetch_day(
     """특정 경마장·날짜 하루치를 수집한다."""
     ep_key = "entry_sheet" if kind == "entries" else "race_result"
     ymd = day.strftime("%Y%m%d")
-    if not force and already_fetched(conn, ep_key, str(meet), ymd):
-        return -1  # 이미 수집됨
+
+    # 최근 며칠은 수집 기록이 있어도 다시 받는다.
+    #
+    # fetch_log 는 '한 번 받았다'만 기록하고 그날이 **끝났는지**는 모른다. 경주가
+    # 진행 중일 때 받으면 1경주만 담긴 채 완료로 표시되고, 그 뒤 크론은 그날을
+    # 통째로 건너뛴다 — 나머지 경주의 결과와 적중률이 영영 비게 된다.
+    # 지난 날짜는 더 바뀔 것이 없으므로 기록을 그대로 믿는다.
+    settled = day < today_kst() - dt.timedelta(days=RESETTLE_DAYS)
+    if not force and settled and already_fetched(conn, ep_key, str(meet), ymd):
+        return -1  # 이미 수집됨 (확정된 과거 날짜)
 
     path = resolve(ep_key)
     try:

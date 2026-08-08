@@ -28,6 +28,7 @@ import numpy as np
 import pandas as pd
 
 from . import style
+from .kra.normalize import MAX_ORD, ORD_RAN
 
 log = logging.getLogger(__name__)
 
@@ -332,14 +333,23 @@ def build_history_index(hist: pd.DataFrame) -> pd.DataFrame:
 
     fs = pd.to_numeric(df["field_size"], errors="coerce")
     ordn = pd.to_numeric(df["ord"], errors="coerce")
+    # 91~99 는 착순이 아니라 상태 코드(실격·출전취소·경주취소 등)다. 순위로 쓰면
+    # ord_pct 가 1.0(꼴찌)로 clip 되어, 달리지도 않은 말이 최악의 성적으로
+    # 학습된다. 순위 지표에서는 통째로 빼고, 승패 레이블은 성격에 따라 나눈다.
+    status = ordn.where(ordn >= 91)
+    ordn = ordn.where(ordn <= MAX_ORD)          # 순위로 쓸 값만 남긴다
+    # 달렸지만 성적이 없는 경우(실격·주행중지)는 패배로 센다. 나머지(출전취소·
+    # 경주취소 등)는 경주 자체가 성립하지 않았으므로 레이블에서 제외한다.
+    ran = status.isin(list(ORD_RAN))
+    lost = ordn.notna() | ran
     # 두수가 비어 있으면 경주별 실제 출주 두수로 대체
     fs = fs.fillna(df.groupby("race_key")["hr_no"].transform("count"))
     df["field_size"] = fs
     df["ord_pct"] = ((ordn - 1) / (fs - 1).replace(0, np.nan)).clip(0, 1)
-    df["is_win"] = (ordn == 1).astype(float).where(ordn.notna())
-    df["is_top2"] = (ordn <= 2).astype(float).where(ordn.notna())
-    df["is_top3"] = (ordn <= 3).astype(float).where(ordn.notna())
-    df["is_place"] = (ordn <= 2).astype(float).where(ordn.notna())
+    df["is_win"] = (ordn == 1).astype(float).where(lost)
+    df["is_top2"] = (ordn <= 2).astype(float).where(lost)
+    df["is_top3"] = (ordn <= 3).astype(float).where(lost)
+    df["is_place"] = (ordn <= 2).astype(float).where(lost)
     df["grade_rank"] = df["grade"].map(grade_rank)
 
     hr = df["hr_no"]

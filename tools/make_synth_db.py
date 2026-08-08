@@ -106,7 +106,13 @@ def main() -> int:
                 perf = []
                 for gate, hr in enumerate(runners, start=1):
                     jk, tr = rng.choice(jk_ids), rng.choice(tr_ids)
-                    rating = 40 + horses[hr]["ability"] * 12 + rng.gauss(0, 4)
+                    # 레이팅은 출주를 몇 번 해야 부여된다. 실데이터에서도 27%가
+                    # 비어 있고, 같은 말이라도 초반엔 없다가 나중에 생긴다.
+                    # 생성기가 항상 채워 두면 '말마다 고정' 이 되어, 조회 시점
+                    # 스냅샷을 잡는 누수 테스트가 헛돈다(그 테스트를 위한 픽스처다).
+                    horses[hr]["starts"] = horses[hr].get("starts", 0) + 1
+                    rating = (40 + horses[hr]["ability"] * 12 + rng.gauss(0, 4)
+                              if horses[hr]["starts"] > 3 else None)
                     burden = round(rng.uniform(51, 58) * 2) / 2
                     pace = horses[hr]["pace"]
                     # 전개 유불리: 선행마가 몰리면 서로 물고 늘어져 앞이 무너지고
@@ -139,7 +145,7 @@ def main() -> int:
                     entry_rows.append({
                         "race_key": key, "chul_no": gate, "hr_no": hr,
                         "hr_name": horses[hr]["name"], "sex": horses[hr]["sex"],
-                        "age": horses[hr]["age"], "burden": burden, "rating": round(rating, 1),
+                        "age": horses[hr]["age"], "burden": burden, "rating": round(rating, 1) if rating is not None else None,
                         "jk_no": jk, "jk_name": f"기수{jk[1:]}", "tr_no": tr,
                         "tr_name": f"조교사{tr[1:]}", "ow_name": f"마주{rng.randint(1,300):03d}",
                         "origin": rng.choice(["한", "미", "일"]),
@@ -149,7 +155,7 @@ def main() -> int:
                         "hr_name": horses[hr]["name"], "ord": pos,
                         "jk_no": jk, "jk_name": f"기수{jk[1:]}", "tr_no": tr,
                         "tr_name": f"조교사{tr[1:]}",
-                        "burden": burden, "rating": round(rating, 1),
+                        "burden": burden, "rating": round(rating, 1) if rating is not None else None,
                         "horse_weight": 440 + horses[hr]["ability"] * 8 + rng.gauss(0, 6),
                         "record_sec": sec,
                         "s1f_rank": s1f_rank[hr],

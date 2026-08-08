@@ -27,10 +27,14 @@
 {% endmacro %}
 
 {# 착순 배지 #}
-{% macro ord_badge(ord) %}
+{# 착순 배지.
+   착순 칸에는 91~99 상태 코드(실격·출전취소·경주취소 등)가 함께 실려 온다.
+   그대로 두면 '99착' 같은 표기가 화면에 나가므로 상태로 바꿔 보여준다. #}
+{% macro ord_badge(ord, note='') %}
 {% if ord == 1 %}<span class="ord ord-1">1착</span>
 {% elif ord == 2 %}<span class="ord ord-2">2착</span>
 {% elif ord == 3 %}<span class="ord ord-3">3착</span>
+{% elif ord and ord >= 91 %}<span class="ord ord-none" title="{{ note or '착순 없음' }}">{{ note or '기록없음' }}</span>
 {% elif ord %}<span class="ord">{{ ord }}착</span>
 {% else %}<span class="ord ord-none">-</span>
 {% endif %}
@@ -160,7 +164,7 @@
         <td class="c-num">{{ f.distance }}m</td>
         <td>{{ f.grade or '-' }}</td>
         <td class="c-num">
-          {{ ord_badge(f.ord) }}<small class="form-field">/{{ f.field_text }}</small>
+          {{ ord_badge(f.ord, f.ord_status) }}<small class="form-field">/{{ f.field_text }}</small>
         </td>
         <td class="c-num">{{ f.record_text }}</td>
         <td class="c-num">{{ f.s1f_text }}</td>

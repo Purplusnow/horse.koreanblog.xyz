@@ -63,9 +63,15 @@ def _tags(r, race: pd.DataFrame) -> List[str]:
         elif rank <= max(2, n // 4):
             tags.append("레이팅 상위")
 
-    burden = pd.to_numeric(race["burden"], errors="coerce")
-    if pd.notna(r.burden) and burden.notna().sum() >= 3 and r.burden <= burden.min():
-        tags.append("최경량")
+    # 부담중량 태그는 '남들보다 가볍다'는 뜻이어야 한다. 최소값 이하면 붙이면,
+    # 전원이 같은 중량인 경주에서 열 마리 모두에게 붙어 아무것도 구별하지
+    # 못한다(실제로 제6등급 경주에서 그렇게 나왔다). 실제로 차이가 있고,
+    # 그 최저 중량이 소수일 때만 정보가 된다.
+    burden = pd.to_numeric(race["burden"], errors="coerce").dropna()
+    if pd.notna(r.burden) and len(burden) >= 3 and burden.min() < burden.max():
+        lightest = burden[burden == burden.min()]
+        if r.burden == burden.min() and len(lightest) <= max(1, len(burden) // 3):
+            tags.append("최경량")
 
     if getattr(r, "is_front", 0) == 1 and getattr(r, "race_front_n", 0) == 1:
         tags.append("단독 선행")
