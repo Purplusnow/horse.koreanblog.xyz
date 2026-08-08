@@ -44,30 +44,38 @@
   </div>
 </header>
 
-{# 모든 페이지 머리에 붙는 실적 띠.
-   표본이 적을 때 적중률을 헤드라인으로 내걸면, 첫 주말의 운 좋은 몇 경주가
-   사이트 전체의 주장이 되어 버린다. 수치는 충분히 쌓인 뒤에 올리고 그전에는
-   누적 중임을 그대로 밝힌다 — 어차피 다음 주에 뒤집힐 숫자다. #}
+{# 모든 페이지 머리에 붙는 상태 띠.
+
+   갱신 시각은 항상 띄운다. 자동으로 하루 네 번 갱신되는 사이트에서 '언제 것인가'는
+   그 자체가 신뢰 신호이고, 경마 예상은 특히 하루만 지나도 쓸모가 없어진다.
+
+   적중률은 표본이 충분할 때만 헤드라인으로 올린다. 첫 주말의 운 좋은 몇 경주가
+   사이트 전체의 주장이 되면 곤란하다 — 어차피 다음 주에 뒤집힐 숫자다. #}
 {% set acc = accuracy.overall %}
-{% if acc and acc.n_races %}
 <div class="trustbar">
   <div class="wrap trustbar-inner">
-    {% if acc.n_races >= 100 %}
+    {% if acc and acc.n_races >= 100 %}
     <span class="trustbar-label">검증 실적</span>
-    <span class="trustbar-stat"><b>{{ '%.1f'|format(acc.hit_win * 100) }}%</b> 단승 적중</span>
-    <span class="trustbar-stat"><b>{{ '%.1f'|format(acc.hit_place * 100) }}%</b> 연승 적중</span>
+    <span class="trustbar-stat"><b>{{ '%.1f'|format(acc.hit_win * 100) }}%</b> ◎ 1착</span>
+    <span class="trustbar-stat"><b>{{ '%.1f'|format(acc.hit_place * 100) }}%</b> ◎ 3착 이내</span>
     <span class="trustbar-stat trustbar-muted">{{ '{:,}'.format(acc.n_races) }}경주 검증</span>
-    {% else %}
+    <a class="trustbar-link" href="/accuracy/">전체 보기 →</a>
+    {% elif acc and acc.n_races %}
     <span class="trustbar-label">검증 누적 중</span>
     <span class="trustbar-stat trustbar-muted">
       게재한 예상 <b>{{ '{:,}'.format(acc.n_races) }}</b>경주를 결과와 대조했습니다 —
       아직 적중률을 말하기엔 표본이 적습니다.
     </span>
-    {% endif %}
     <a class="trustbar-link" href="/accuracy/">전체 보기 →</a>
+    {% else %}
+    <span class="trustbar-label">발주 전 게재 · 결과로 검증</span>
+    <a class="trustbar-link" href="/accuracy/">검증 방식 →</a>
+    {% endif %}
+    <span class="trustbar-updated">
+      갱신 <time datetime="{{ build_iso }}">{{ build_time_short }}</time>
+    </span>
   </div>
 </div>
-{% endif %}
 
 <main class="wrap">
 {% block content %}{% endblock %}
@@ -83,7 +91,9 @@
       도움이 필요하시면 <a href="https://www.kcgp.or.kr/" rel="nofollow noopener" target="_blank">한국도박문제예방치유원(1336)</a>에 문의하세요.
     </p>
     <p class="footer-meta">
-      © {{ site.author }} · 마지막 업데이트 {{ build_time }}
+      © {{ site.author }} · 최종 업데이트
+      <time datetime="{{ build_iso }}">{{ build_time }}</time> (KST)
+      · 하루 4회 자동 갱신
       · <a href="/about/">예측 방식</a>
     </p>
   </div>

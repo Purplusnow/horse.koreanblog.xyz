@@ -603,6 +603,9 @@ def build(db: str, out_dir: Path, config: Dict, template_dir: Path,
             "accuracy": accuracy,
             "metrics": metrics,
             "build_time": now_kst().strftime("%Y-%m-%d %H:%M"),
+            # 화면 표기는 사람이 읽기 좋게, datetime 속성은 기계가 읽도록 나눈다.
+            "build_time_short": now_kst().strftime("%m월 %d일 %H:%M"),
+            "build_iso": now_kst().strftime("%Y-%m-%dT%H:%M:00+09:00"),
             "today": today.isoformat(),
         }
 
