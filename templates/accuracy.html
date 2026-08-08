@@ -305,35 +305,14 @@
 </section>
 {% endif %}
 
-{% if accuracy.recent %}
 <section class="table-section">
-  <h2>최근 예상 60건</h2>
-  <p class="panel-lead">가장 최근 경주부터 싣습니다. 그 경주에서 <b>어느 승식이 적중했는지</b>를 함께 적습니다 — 1순위가 2착이어도 복승·삼복승은 적중일 수 있습니다.</p>
-  <div class="table-scroll">
-    <table class="stats-table">
-      <thead><tr><th>일자</th><th>경주</th><th>◎</th><th class="c-num">착순</th><th class="c-num">배당</th><th>적중 승식</th></tr></thead>
-      <tbody>
-        {% for r in accuracy.recent %}
-        <tr>
-          <td>{{ r.date }}</td>
-          <td>{{ r.meet }} {{ r.rc_no }}R</td>
-          <td>{{ r.pick or '-' }}</td>
-          <td class="c-num">{{ r.ord or '-' }}</td>
-          <td class="c-num">{{ r.odds or '-' }}</td>
-          <td class="hit-cell">
-            {% if r.hit_bets %}
-              <b class="hit-count">{{ r.hit_bets|length }}/{{ r.n_bets }}</b>
-              {% for b in r.hit_bets %}<span class="hit-chip">{{ b }}</span>{% endfor %}
-            {% elif r.n_bets %}<span class="ord ord-none">불발</span>
-            {% else %}<span class="ord ord-none" title="배당 자료 미도착">집계 대기</span>{% endif %}
-          </td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
-  </div>
+  <h2>개별 경주 확인</h2>
+  <p class="panel-lead">
+    이 페이지는 성적을 <b>집계</b>합니다. 경주 하나하나의 예상과 결과는
+    <a href="/results/">지난 결과</a>에서 시간순으로 보실 수 있습니다 —
+    경주별로 어느 승식이 적중했는지까지 남아 있습니다.
+  </p>
 </section>
-{% endif %}
 
 <section class="panel panel-caution">
   <h2>이 숫자를 읽을 때</h2>

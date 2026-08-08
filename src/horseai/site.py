@@ -447,7 +447,8 @@ ORDER BY p.race_key, p.pred_rank
 """
 
 
-def load_outcomes(conn: sqlite3.Connection) -> Dict[str, Dict]:
+def load_outcomes(conn: sqlite3.Connection,
+                  div: Optional[Dict] = None) -> Dict[str, Dict]:
     """시행이 끝난 경주의 '예상 vs 실제'.
 
     출주 취소마는 예상에서 빼고 나머지로 순위를 다시 매긴다. 취소는 발주 직전에
@@ -491,6 +492,17 @@ def load_outcomes(conn: sqlite3.Connection) -> Dict[str, Dict]:
             "hit_top3": bool(1 in ords.values()),
             "settled": has_ord,
         }
+        # 승식별 판정. 1순위의 착순 하나로 성패를 적으면 이 예상이 실제로
+        # 쓸모 있었는지 드러나지 않는다 — 1순위가 2착이어도 복승·삼복승은
+        # 적중일 수 있다. 배당 자료가 없는 경주는 판정하지 않는다.
+        table = (div or {}).get(key)
+        if table:
+            bets = race_bets(live, table)
+            out[key]["hit_bets"] = [b["name"] for b in bets if b["hit"]]
+            out[key]["n_bets"] = len(bets)
+        else:
+            out[key]["hit_bets"] = []
+            out[key]["n_bets"] = 0
     return out
 
 
@@ -584,8 +596,8 @@ def build(db: str, out_dir: Path, config: Dict, template_dir: Path,
         races = load_races(conn)
         accuracy = build_report(conn)
         picks = load_picks(conn)
-        outcomes = load_outcomes(conn)
         dividends = load_dividends(conn)
+        outcomes = load_outcomes(conn, dividends)
         metrics = load_metrics()
 
         today = today_kst()

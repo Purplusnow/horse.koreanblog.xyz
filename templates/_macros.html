@@ -130,8 +130,13 @@
   </td>
   <td class="c-num">{{ ord_badge(o.top1_ord if o else None) }}</td>
   <td class="c-num res-odds">{{ '%.1f'|format(o.top1_odds) if o and o.top1_odds else '-' }}</td>
-  <td class="c-num">
-    {{ hit_badge(o) }}
+  <td class="hit-cell">
+    {% if o and o.hit_bets %}
+      <b class="hit-count">{{ o.hit_bets|length }}/{{ o.n_bets }}</b>
+      {% for b in o.hit_bets %}<span class="hit-chip">{{ b }}</span>{% endfor %}
+    {% elif o and o.n_bets %}<span class="ord ord-none">불발</span>
+    {% elif o and o.settled %}<span class="ord ord-none" title="배당 자료 미도착">집계 대기</span>
+    {% else %}<span class="rr-empty">-</span>{% endif %}
     {% if o and o.cancelled %}
     <small class="res-cancel" title="{{ o.cancelled|map(attribute='hr_name')|join(', ') }} 출주취소 — 집계 제외">
       취소 {{ o.cancelled|length }}두

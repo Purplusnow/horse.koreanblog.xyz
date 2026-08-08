@@ -461,7 +461,8 @@ def build_report(conn: sqlite3.Connection) -> Dict:
                     "hit_top3": float((g["_o"] <= 3).mean()),
                 })
 
-    # 최신 경주가 위로 온다. tail(60) 을 먼저 하면 날짜순이 아니라 표의 원래
+    # 최신 경주가 위로 온다. (화면에서는 결과 페이지가 이 역할을 하고,
+    # 여기 값은 accuracy.json 을 직접 읽는 쪽을 위해 남긴다.) tail(60) 을 먼저 하면 날짜순이 아니라 표의 원래
     # 순서(race_key 알파벳순)에서 뒤 60건을 집게 되어, 최근 것이 빠질 수 있다.
     # 같은 날 안에서는 늦게 뛴 경주를 먼저 둔다 — 경마장은 그다음 기준이다.
     recent = (rl.sort_values(["rc_date", "rc_no", "meet"],

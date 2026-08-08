@@ -56,13 +56,6 @@
     <span class="trustbar-stat"><b>{{ '%.1f'|format(acc.hit_place * 100) }}%</b> 1순위 3착 이내</span>
     <span class="trustbar-stat trustbar-muted">{{ '{:,}'.format(acc.n_races) }}경주 검증</span>
     <a class="trustbar-link" href="/accuracy/">전체 보기 →</a>
-    {% elif acc and acc.n_races %}
-    <span class="trustbar-label">검증 누적 중</span>
-    <span class="trustbar-stat trustbar-muted">
-      게재한 예상 <b>{{ '{:,}'.format(acc.n_races) }}</b>경주를 결과와 대조했습니다 —
-      아직 적중률을 말하기엔 표본이 적습니다.
-    </span>
-    <a class="trustbar-link" href="/accuracy/">전체 보기 →</a>
     {% else %}
     <span class="trustbar-label">발주 전 게재 · 결과로 검증</span>
     <a class="trustbar-link" href="/accuracy/">검증 방식 →</a>
