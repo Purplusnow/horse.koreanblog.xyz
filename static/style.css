@@ -1256,3 +1256,7 @@ tbody tr:hover { background: var(--bg-soft); }
   .win-card { padding: 12px 12px 11px; }
   .win-odds { font-size: 26px; }
 }
+.wins-sub {
+  font-size: 15px; font-weight: 700; color: var(--text-soft);
+  margin: 18px 0 10px;
+}

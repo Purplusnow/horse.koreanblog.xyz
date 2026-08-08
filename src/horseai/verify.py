@@ -389,7 +389,7 @@ def daily_summary(rl: pd.DataFrame, limit: int = 60) -> List[Dict]:
 HIGHLIGHT_MIN_ODDS = 10.0
 
 
-def highlights(rl: pd.DataFrame, limit: int = 6) -> List[Dict]:
+def highlights(rl: pd.DataFrame, limit: int = 6) -> Dict[str, List[Dict]]:
     """최근 고배당 적중.
 
     적중률·환수율 표는 성실하지만 눈에 걸리지 않는다. 처음 온 사람이 이 사이트를
@@ -397,7 +397,7 @@ def highlights(rl: pd.DataFrame, limit: int = 6) -> List[Dict]:
     표에 이미 들어 있는 사실을 앞으로 꺼내는 것이므로 없는 말을 지어내지 않는다.
     """
     if rl.empty or "bets" not in rl:
-        return []
+        return {"top": [], "recent": []}
     out = []
     for r in rl.itertuples():
         for name in BET_ORDER:
@@ -425,9 +425,18 @@ def highlights(rl: pd.DataFrame, limit: int = 6) -> List[Dict]:
             best[h["race_key"]] = h
         else:
             best[h["race_key"]]["also"] = best[h["race_key"]].get("also", 0) + 1
-    # 최근 경주를 먼저, 같은 날이면 배당이 큰 것을 먼저
-    return sorted(best.values(), key=lambda h: (h["date"], h["odds"]),
-                  reverse=True)[:limit]
+    rows = list(best.values())
+
+    # 두 갈래로 낸다.
+    #   역대  — 오래돼도 남길 만한 기록. 시간이 지나면 최근 목록에서 밀려나는데,
+    #          이 사이트가 무엇까지 맞혀 봤는지는 계속 말할 수 있어야 한다.
+    #   최근  — 지금도 맞히고 있다는 증거. 옛 기록만 걸어 두면 과거형이 된다.
+    top = sorted(rows, key=lambda h: -h["odds"])[:limit]
+    recent = sorted(rows, key=lambda h: (h["date"], h["odds"]), reverse=True)[:limit]
+    # 최근 목록에 이미 있는 것을 역대에 또 걸면 같은 카드가 두 번 나온다.
+    seen = {h["race_key"] for h in recent}
+    top = [h for h in top if h["race_key"] not in seen]
+    return {"top": top, "recent": recent}
 
 
 def build_report(conn: sqlite3.Connection) -> Dict:
@@ -435,7 +444,7 @@ def build_report(conn: sqlite3.Connection) -> Dict:
     rl = race_level(df, load_dividends(conn))
     if rl.empty:
         empty = {"overall": {"n_races": 0}, "monthly": [], "recent": [],
-                 "daily": [], "highlights": []}
+                 "daily": [], "highlights": {"top": [], "recent": []}}
         for k in ("by_bet", "by_meet", "by_conf", "by_mark", "by_distance", "by_field",
                   "by_grade", "by_weekday", "by_track"):
             empty[k] = []
