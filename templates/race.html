@@ -73,7 +73,7 @@
 {# 지면 좌상단의 대형 마번 블록. 예상지를 펼쳤을 때 가장 먼저 눈에 들어오는 자리다. #}
 <section class="board">
   <div class="board-picks">
-    {% for r in runners[:4] %}
+    {% for r in runners[:5] %}
     <div class="board-pick board-{{ loop.index }}">
       <span class="board-mark" title="{{ r.mark_meaning }}">{{ r.mark }}</span>
       <span class="board-name">{{ r.hr_name }}</span>

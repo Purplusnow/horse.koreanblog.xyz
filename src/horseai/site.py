@@ -449,12 +449,15 @@ SELECT p.race_key, p.pred_rank, p.p_win, p.p_place, p.p_top2, p.style_code,
        e.chul_no, e.hr_name
 FROM predictions p
 JOIN entries e ON e.race_key = p.race_key AND e.hr_no = p.hr_no
-WHERE p.pred_rank <= 3
+WHERE p.pred_rank <= 5
 """
 
 
 def load_picks(conn: sqlite3.Connection) -> Dict[str, List[Dict]]:
-    """경주별 상위 3두. 목록 화면에서 '클릭하지 않고도' 예상을 읽게 하려는 것.
+    """경주별 상위 5두. 목록 화면에서 '클릭하지 않고도' 예상을 읽게 하려는 것.
+
+    5두인 이유는 국내 예상지가 그렇게 싣기 때문이다. 3두만 내밀면 마권을 짤 때
+    한 번 더 눌러 들어가야 하고, 그 순간 예상지 구실을 못 한다.
 
     경마 팬이 목록에서 가장 먼저 알고 싶은 건 거리나 두수가 아니라
     '이 경주는 뭘 미는가'다. 그 답을 목록에 바로 올린다.

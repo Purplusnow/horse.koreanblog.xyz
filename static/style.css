@@ -629,7 +629,7 @@ tbody tr:hover { background: var(--bg-soft); }
   border-radius: var(--radius-lg); overflow: hidden; margin-bottom: 8px;
   box-shadow: var(--shadow);
 }
-.board-picks { display: grid; grid-template-columns: repeat(4, 1fr); }
+.board-picks { display: grid; grid-template-columns: repeat(5, 1fr); }
 .board-pick {
   padding: 16px 12px 14px; text-align: center;
   border-right: 1px solid var(--border);

@@ -75,7 +75,7 @@
     {% if race.grade %}<span class="rr-grade">{{ race.grade }}</span>{% endif %}
     <small>{{ race.field_size }}두</small>
   </td>
-  {% for i in range(3) %}
+  {% for i in range(5) %}
   {% set p = race.picks[i] if race.picks|length > i else None %}
   <td class="rr-pick">
     {% if p %}
