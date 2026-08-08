@@ -69,7 +69,7 @@ def test_site_outcome_reranks(conn: sqlite3.Connection) -> None:
     assert len(o["cancelled"]) == 1, f"취소마 인식 실패: {o['cancelled']}"
     assert o["top1"]["hr_name"] == "실제우승", \
         f"취소마를 빼고 재순위를 매기지 않았다 (축마={o['top1']['hr_name']})"
-    assert o["top1"]["mark"] == "◎", \
+    assert o["top1"]["mark"] in ("★", "◎"), \
         f"재순위 후 기호가 갱신되지 않았다 (본래 2순위였던 말의 기호={o['top1']['mark']})"
     assert o["hit_win"] is True, "재순위 축마가 1착인데 적중으로 판정되지 않았다"
     assert o["winner_pick"]["adj_rank"] == 1, "우승마의 표시 순위가 취소 전 값이다"
@@ -140,48 +140,36 @@ def test_freeze_by_post_time(path: str) -> None:
     print("  ✓ 예측 동결: 발주 시각 기준으로 잠김")
 
 
-def test_marks_follow_probability_not_rank() -> None:
-    """기호는 순위가 아니라 착순 확률 수준에서 나와야 한다.
+def test_marks_fixed_allocation() -> None:
+    """기호는 국내 예상지 관습대로 자리 수가 고정된다.
 
-    순위대로 붙이면 우열이 안 갈리는 경주에서도 1순위에 ◎ 가 찍혀
-    '2착 이내 유력'이라고 말하게 된다. 그런 경주에서는 ◎ 가 없어야 한다.
+        기본       ◎ ◎ ○ △ ※
+        우세 뚜렷   ★ ◎ ○ △ ※
+
+    1순위가 확실히 앞선 경주에 ◎ 를 둘 붙이면 '둘 중 하나'라는 뜻이 되어,
+    실제로는 한 마리가 압도하는 경주를 잘못 전한다. 그래서 ★ 로 갈라 준다.
     """
     from horseai.site import MARK_THRESHOLDS, assign_marks
 
-    t = MARK_THRESHOLDS
+    t = MARK_THRESHOLDS["star"]
 
-    # 한 마리가 확실히 앞선 경주 — ◎ 가 나와야 한다
-    clear = [{"pred_rank": 1, "p_top2": t["top2"] + 0.1, "p_place": 0.9},
-             {"pred_rank": 2, "p_top2": 0.3, "p_place": t["top3"] + 0.05},
-             {"pred_rank": 3, "p_top2": 0.2, "p_place": t["top3_weak"] + 0.02},
-             {"pred_rank": 4, "p_top2": 0.1, "p_place": 0.2},
-             {"pred_rank": 5, "p_top2": 0.05, "p_place": 0.1}]
-    assign_marks(clear)
-    got = [r["mark"] for r in clear]
-    assert got == ["◎", "○", "△", "※", "※"], got
+    def race(top_p2, n=8):
+        rs = [{"pred_rank": i, "p_top2": top_p2 if i == 1 else 0.15,
+               "p_place": 0.4} for i in range(1, n + 1)]
+        assign_marks(rs)
+        return [r["mark"] for r in rs]
 
-    # 접전 경주 — 아무도 '2착 이내 유력' 수준이 아니면 ◎ 가 없어야 한다
-    tight = [{"pred_rank": i, "p_top2": t["top2"] - 0.05,
-              "p_place": t["top3"] - 0.05} for i in range(1, 6)]
-    assign_marks(tight)
-    got = [r["mark"] for r in tight]
-    assert "◎" not in got, f"접전 경주에 ◎ 가 붙었다: {got}"
-    assert got[:3] == ["△", "△", "△"] and got[3:] == ["※", "※"], got
+    got = race(t - 0.05)
+    assert got[:5] == ["◎", "◎", "○", "△", "※"], got
+    assert all(m == "" for m in got[5:]), f"6순위 이하에 기호가 붙었다: {got}"
 
-    # 확률 추정이 순위와 어긋나도 기호는 아래로 갈수록 약해져야 한다
-    messy = [{"pred_rank": 1, "p_top2": 0.2, "p_place": t["top3_weak"] + 0.01},
-             {"pred_rank": 2, "p_top2": 0.9, "p_place": 0.95},
-             {"pred_rank": 3, "p_top2": 0.1, "p_place": 0.9}]
-    assign_marks(messy)
-    order = ["◎", "○", "△", "※"]
-    idx = [order.index(r["mark"]) for r in messy]
-    assert idx == sorted(idx), f"아래 순위가 더 센 기호를 받았다: {[r['mark'] for r in messy]}"
+    got = race(t + 0.05)
+    assert got[:5] == ["★", "◎", "○", "△", "※"], got
 
-    # 6순위부터는 기호를 붙이지 않는다
-    many = [{"pred_rank": i, "p_top2": 0.5, "p_place": 0.6} for i in range(1, 9)]
-    assign_marks(many)
-    assert all(r["mark"] == "" for r in many[5:]), "6순위 이하에 기호가 붙었다"
-    print("  ✓ 예상 기호: 확률 수준 기준 · 접전이면 ◎ 없음 · 내림차순 유지")
+    # 출주가 5두 미만이어도 순서대로만 붙고 넘치지 않는다
+    got = race(t + 0.05, n=3)
+    assert got == ["★", "◎", "○"], got
+    print("  ✓ 예상 기호: 자리 고정 배분 · 우세 뚜렷하면 ★")
 
 
 def main() -> int:
@@ -194,7 +182,7 @@ def main() -> int:
         test_verify_excludes_cancelled(conn)
         test_no_cancellation_is_unchanged(conn)
     test_freeze_by_post_time("data/_test_freeze.sqlite")
-    test_marks_follow_probability_not_rank()
+    test_marks_fixed_allocation()
     Path(path).unlink(missing_ok=True)
     Path("data/_test_freeze.sqlite").unlink(missing_ok=True)
     print("모든 검사 통과")

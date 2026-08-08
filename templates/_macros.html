@@ -80,7 +80,7 @@
   <div class="ri-picks">
     {% for p in race.picks[:5] %}
     <span class="ri-pick">
-      <span class="mark">{{ p.mark }}</span>
+      <span class="mark{% if p.mark == "★" %} is-star{% endif %}">{{ p.mark }}</span>
       <span class="gate gate-sm">{{ p.chul_no }}</span>
       <span class="rr-name" title="{{ p.hr_name }}">{{ p.hr_name }}</span>
       <span class="rr-prob">{{ p.p_win_pct }}%</span>

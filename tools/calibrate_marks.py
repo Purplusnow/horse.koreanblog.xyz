@@ -1,17 +1,20 @@
-"""예상 기호 임계값 보정.
+"""예상 기호 검증 · ★ 기준 보정.
 
-기호는 순위표가 아니라 **약속**이다.
+기호는 국내 예상지 관습대로 자리 수가 고정돼 있다.
 
-    ◎  2착 이내가 유력하다
-    ○  3착 이내가 유력하다
-    △  조건이 맞으면 3착 이내
-    ※  그 아래 참고
+    기본       ◎ ◎ ○ △ ※
+    우세 뚜렷   ★ ◎ ○ △ ※
 
-약속을 걸었으면 지켜지는지 재야 한다. 여기서는 시간순 교차검증 예측에 임계값을
-씌워 **그 기호를 받은 말이 실제로 그 착순에 든 비율**을 본다. ◎ 를 받은 말이
-2착 이내에 반도 못 들면 그 기호는 거짓말이고, 반대로 임계값이 너무 높으면
-경주 대부분에 ◎ 가 없어 예상지 구실을 못 한다. 둘 사이를 잡는 것이 목적이다.
+자리가 고정이므로 ◎○△※ 는 '경주 안에서의 상대 순위'다. 여기서 검증할 것은
+두 가지다.
 
+  1. **순위가 실제로 갈리는가** — 기호가 셀수록 착순이 좋아야 한다. 그렇지
+     않으면 순위 자체가 틀린 것이다.
+  2. **★ 가 약속을 지키는가** — ★ 는 유일하게 절대적인 주장("이 경주는 축이
+     뚜렷하다")이므로, 실제 1착·2착 이내 비율이 그에 걸맞아야 하고 동시에
+     너무 흔하면 안 된다. 매 경주에 ★ 가 뜨면 아무 말도 하지 않는 것과 같다.
+
+    python tools/calibrate_marks.py --scan          # ★ 기준 후보 훑기
     python tools/calibrate_marks.py --save models/metrics.json
 """
 from __future__ import annotations
@@ -22,42 +25,41 @@ import sqlite3
 import sys
 from pathlib import Path
 
-import numpy as np
 import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
+from horseai import site  # noqa: E402
 from horseai.features import build_training_frame  # noqa: E402
 from horseai.model import walk_forward  # noqa: E402
-from horseai import site  # noqa: E402
 
-LEVELS = ["◎", "○", "△", "※"]
+MARKS = ["★", "◎", "○", "△", "※"]
 
 
-def evaluate(pred: pd.DataFrame, t2: float, t3: float, t3w: float) -> pd.DataFrame:
+def apply_marks(pred: pd.DataFrame, star: float) -> pd.Series:
     """기호 부여는 site.assign_marks 를 그대로 쓴다.
 
-    규칙을 여기에 다시 구현하면 언젠가 사이트와 갈리고, 그때 이 보정 결과는
+    규칙을 여기에 다시 구현하면 언젠가 사이트와 갈리고, 그때 이 검증 결과는
     화면에서 실제로 벌어지는 일과 무관한 숫자가 된다.
     """
-    site.MARK_THRESHOLDS = {"top2": t2, "top3": t3, "top3_weak": t3w}
+    site.MARK_THRESHOLDS = {"star": star}
     marks = pd.Series("", index=pred.index, dtype=object)
     for _, g in pred.groupby("race_key", sort=False):
         rows = [{"pred_rank": r.pred_rank,
-                 "p_top2": getattr(r, "p_top2_norm", 0),
-                 "p_place": getattr(r, "p_top3_norm", 0),
+                 "p_top2": getattr(r, "p_top2_norm", 0) or 0,
                  "_idx": r.Index} for r in g.itertuples()]
         site.assign_marks(rows)
         for row in rows:
             marks.at[row["_idx"]] = row["mark"]
+    return marks
 
-    d = pred.assign(mark=marks)
+
+def summarize(pred: pd.DataFrame, star: float) -> pd.DataFrame:
+    d = pred.assign(mark=apply_marks(pred, star))
     d = d[d["mark"] != ""]
-    ordn = pd.to_numeric(d["ord"], errors="coerce")
     n_races = pred["race_key"].nunique()
-
     rows = []
-    for m in LEVELS:
+    for m in MARKS:
         s = d[d["mark"] == m]
         if s.empty:
             continue
@@ -65,13 +67,10 @@ def evaluate(pred: pd.DataFrame, t2: float, t3: float, t3w: float) -> pd.DataFra
         rows.append({
             "기호": m,
             "두수": len(s),
-            "경주당": len(s) / n_races,
-            # 그 기호가 나온 경주 비율 — ◎ 가 어느 경주에나 있으면 변별력이 없고,
-            # 거의 없으면 예상지로 못 쓴다.
             "출현율": s["race_key"].nunique() / n_races,
+            "1착": float((o == 1).mean()),
             "2착이내": float((o <= 2).mean()),
             "3착이내": float((o <= 3).mean()),
-            "1착": float((o == 1).mean()),
         })
     return pd.DataFrame(rows)
 
@@ -79,11 +78,9 @@ def evaluate(pred: pd.DataFrame, t2: float, t3: float, t3w: float) -> pd.DataFra
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--db", default="data/horseai.sqlite")
-    ap.add_argument("--save", default="", help="확정 임계값을 metrics.json 에 병합")
-    ap.add_argument("--t2", type=float, default=0.46)
-    ap.add_argument("--t3", type=float, default=0.52)
-    ap.add_argument("--t3w", type=float, default=0.33)
-    ap.add_argument("--scan", action="store_true", help="후보 임계값을 훑어본다")
+    ap.add_argument("--star", type=float, default=0.58, help="★ 기준 (1순위 p_top2)")
+    ap.add_argument("--scan", action="store_true")
+    ap.add_argument("--save", default="")
     args = ap.parse_args()
 
     conn = sqlite3.connect(args.db)
@@ -92,50 +89,49 @@ def main() -> int:
     _, pred = walk_forward(df)
     pred = pred[pd.to_numeric(pred["ord"], errors="coerce").notna()]
     n_races = pred["race_key"].nunique()
-    print(f"\n시간순 교차검증 {n_races:,}경주 / {len(pred):,}두")
-
     base = pred.groupby("race_key")["hr_no"].count().mean()
-    print(f"평균 출주 {base:.1f}두 → 무작위로 찍었을 때 2착이내 {2/base:.1%} · 3착이내 {3/base:.1%}")
+    print(f"\n시간순 교차검증 {n_races:,}경주 · 평균 {base:.1f}두")
+    print(f"무작위로 찍으면 1착 {1/base:.1%} · 2착이내 {2/base:.1%} · 3착이내 {3/base:.1%}")
 
     if args.scan:
-        print("\n── ◎ 임계값 후보 (1순위 p_top2) ──")
-        print(f"{'임계값':>7}{'출현율':>9}{'2착이내':>10}{'1착':>9}")
-        for t2 in (0.38, 0.42, 0.46, 0.50, 0.55, 0.60):
-            tab = evaluate(pred, t2, args.t3, args.t3w)
-            r = tab[tab["기호"] == "◎"]
-            if r.empty:
+        print(f"\n── ★ 기준 후보 ──")
+        print(f"{'기준':>6}{'★ 출현':>9}{'★ 1착':>9}{'★ 2착이내':>11}{'◎ 1착':>9}")
+        for st in (0.50, 0.54, 0.58, 0.62, 0.66, 0.70):
+            tab = summarize(pred, st)
+            star = tab[tab["기호"] == "★"]
+            circ = tab[tab["기호"] == "◎"]
+            if star.empty:
+                print(f"{st:>6.2f}      (해당 경주 없음)")
                 continue
-            r = r.iloc[0]
-            print(f"{t2:>7.2f}{r['출현율']:>9.0%}{r['2착이내']:>10.1%}{r['1착']:>9.1%}")
-
-        print("\n── ○ 임계값 후보 (p_top3) ──")
-        print(f"{'임계값':>7}{'경주당':>9}{'3착이내':>10}")
-        for t3 in (0.42, 0.46, 0.50, 0.54, 0.58):
-            tab = evaluate(pred, args.t2, t3, args.t3w)
-            r = tab[tab["기호"] == "○"]
-            if r.empty:
-                continue
-            r = r.iloc[0]
-            print(f"{t3:>7.2f}{r['경주당']:>9.2f}{r['3착이내']:>10.1%}")
+            s0, c0 = star.iloc[0], circ.iloc[0]
+            print(f"{st:>6.2f}{s0['출현율']:>9.0%}{s0['1착']:>9.1%}"
+                  f"{s0['2착이내']:>11.1%}{c0['1착']:>9.1%}")
         return 0
 
-    tab = evaluate(pred, args.t2, args.t3, args.t3w)
-    print(f"\n임계값  ◎ p_top2≥{args.t2}  ○ p_top3≥{args.t3}  △ p_top3≥{args.t3w}")
-    print(f"\n{'기호':<5}{'두수':>8}{'경주당':>8}{'출현율':>9}{'1착':>8}{'2착이내':>9}{'3착이내':>9}")
-    print("-" * 56)
+    tab = summarize(pred, args.star)
+    print(f"\n★ 기준: 1순위 p_top2 ≥ {args.star}")
+    print(f"\n{'기호':<5}{'두수':>8}{'출현율':>9}{'1착':>9}{'2착이내':>10}{'3착이내':>10}")
+    print("-" * 52)
     for r in tab.itertuples():
-        print(f"{r.기호:<5}{r.두수:>8,}{r.경주당:>8.2f}{r.출현율:>9.0%}"
-              f"{r._7:>8.1%}{r._5:>9.1%}{r._6:>9.1%}")
+        print(f"{r.기호:<5}{r.두수:>8,}{r.출현율:>9.0%}{r._4:>9.1%}{r._5:>10.1%}{r._6:>10.1%}")
 
     # 약속 점검 — 어긋나면 그대로 말한다
     print()
-    for r in tab.itertuples():
-        if r.기호 == "◎" and r._5 < 0.50:
-            print(f"  ⚠ ◎ 의 2착 이내 비율 {r._5:.1%} — '유력'이라 하기 어렵다. 임계값을 올릴 것")
-        if r.기호 == "○" and r._6 < 0.45:
-            print(f"  ⚠ ○ 의 3착 이내 비율 {r._6:.1%} — 임계값을 올릴 것")
-        if r.기호 == "△" and r._6 < 3 / base:
-            print(f"  ⚠ △ 의 3착 이내 비율 {r._6:.1%} 이 무작위({3/base:.1%})보다 낮다")
+    star = tab[tab["기호"] == "★"]
+    if star.empty:
+        print("  ⚠ ★ 가 한 경주도 나오지 않는다 — 기준이 너무 높다")
+    else:
+        s0 = star.iloc[0]
+        if s0["2착이내"] < 0.60:
+            print(f"  ⚠ ★ 의 2착 이내 {s0['2착이내']:.1%} — '우세가 뚜렷'이라 하기 어렵다")
+        if s0["출현율"] > 0.35:
+            print(f"  ⚠ ★ 가 경주의 {s0['출현율']:.0%} 에 등장 — 너무 흔하면 아무 말도 하지 않는 셈")
+    # 기호가 셀수록 착순이 좋아지는가
+    order = [r._6 for r in tab.itertuples()]           # 3착이내
+    if order != sorted(order, reverse=True):
+        print(f"  ⚠ 기호 순서와 실제 착순이 어긋난다: {[f'{x:.1%}' for x in order]}")
+    else:
+        print("  ✓ 기호가 셀수록 착순이 좋아진다 (단조)")
 
     if args.save:
         path = Path(args.save)
@@ -145,11 +141,11 @@ def main() -> int:
             blob = {}
         blob["marks"] = {
             "n_races": int(n_races),
-            "thresholds": {"top2": args.t2, "top3": args.t3, "top3_weak": args.t3w},
+            "star_threshold": args.star,
             "levels": [
                 {"mark": r.기호, "share_of_races": round(r.출현율, 4),
-                 "per_race": round(r.경주당, 3), "hit_win": round(r._7, 4),
-                 "hit_top2": round(r._5, 4), "hit_top3": round(r._6, 4)}
+                 "hit_win": round(r._4, 4), "hit_top2": round(r._5, 4),
+                 "hit_top3": round(r._6, 4)}
                 for r in tab.itertuples()
             ],
         }

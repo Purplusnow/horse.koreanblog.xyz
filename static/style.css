@@ -952,3 +952,9 @@ tbody tr:hover { background: var(--bg-soft); }
   .res-table .rr-name { max-width: 5.5em; }
   .res-rank { display: block; margin-left: 0; }
 }
+
+/* ★ 는 다른 기호보다 시각적으로 무겁다. 크기를 살짝 줄여 줄의 균형을 맞추고
+   금색으로 우세를 드러낸다 — 이 기호만 '이 경주는 축이 뚜렷하다'고 말한다. */
+.mark.is-star { color: var(--gold); }
+.ri-pick .mark, .board-mark, .c-mark .mark { font-variant-emoji: text; }
+.mark-legend-note { display: block; margin-top: 4px; color: var(--text-faint); }

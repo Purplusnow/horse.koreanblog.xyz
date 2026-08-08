@@ -118,7 +118,7 @@
 </section>
 
 <p class="mark-legend">
-  <b>◎</b> 2착 이내 유력 &nbsp; <b>○</b> 3착 이내 유력 &nbsp; <b>△</b> 조건 맞으면 3착 이내 &nbsp; <b>※</b> 참고
+  <b>★</b> 우세가 뚜렷 &nbsp; <b>◎</b> 축 &nbsp; <b>○</b> 상위 후보 &nbsp; <b>△</b> 복병 &nbsp; <b>※</b> 참고<span class="mark-legend-note">— 추천 순서는 ★·◎ → ○ → △ → ※</span>
   <span>· 예측 엔진이 산출한 승률 순서입니다. 조합은 구매 권유가 아닙니다.</span>
 </p>
 {% endif %}
@@ -242,7 +242,7 @@
       <tbody>
         {% for r in runners %}
         <tr{% if loop.index == 1 %} class="row-top"{% endif %}>
-          <td class="c-mark"><span class="mark" title="{{ r.mark_meaning }}">{{ r.mark }}</span></td>
+          <td class="c-mark"><span class="mark{% if r.mark == "★" %} is-star{% endif %}" title="{{ r.mark_meaning }}">{{ r.mark }}</span></td>
           <td class="c-gate"><span class="gate">{{ r.chul_no }}</span></td>
           <td class="c-name">
             <a href="{{ r.horse_url }}">{{ r.hr_name }}</a>
