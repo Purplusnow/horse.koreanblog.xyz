@@ -196,6 +196,21 @@ ENTRY_WEIGHT = Endpoint(
     ),
 )
 
+DAILY_TRAINING = Endpoint(
+    key="daily_training",
+    title="일별훈련 상세정보",
+    operation="dailyTraining_1",
+    api_segments=["API18_1"],
+    dataset_pk="15058782",
+    note=(
+        "서울·제주·부산경남 전 경마장의 마필 단위 조교 기록. tr_date 로 과거 조회가 "
+        "되고 2019년까지 소급된다 — 매일 받아 쌓을 필요 없이 한 번에 백필할 수 있다. "
+        "chulGubun('금주출전예정')은 마방의 출전 계획, prGubun 은 기승자(기수가 태우면 "
+        "본격 조교), trTerm·run1Cnt·run2Cnt 는 운동량이다. 공개 데이터 중 마방 내부 "
+        "정보에 가장 가까운 자료."
+    ),
+)
+
 RACE_CANCEL = Endpoint(
     key="race_cancel",
     title="경주마 출전취소 정보",
@@ -213,6 +228,7 @@ REGISTRY: Dict[str, Endpoint] = {
     for e in (
         ENTRY_SHEET,
         RACE_RESULT,
+        DAILY_TRAINING,
         RACE_CANCEL,
         START_TRAINING,
         ENTRY_WEIGHT,

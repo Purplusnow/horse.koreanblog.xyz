@@ -243,6 +243,17 @@ MIGRATIONS = [
     # 예상 기호가 '2착 이내 수준'을 뜻하므로 그 확률을 예측과 함께 동결한다.
     # 나중에 다시 계산하면 공개 당시 화면과 기호가 달라질 수 있다.
     ("predictions", "p_top2", "REAL"),
+    # 일별훈련 상세(API18_1) — 마필 단위. 기존 서울 전용 조교표(API329)보다
+    # 넓고 깊어서 이쪽을 주 자료로 삼는다.
+    ("daily_training", "hr_no", "TEXT"),
+    ("daily_training", "tr_name", "TEXT"),
+    ("daily_training", "part", "TEXT"),
+    ("daily_training", "pr_gubun", "TEXT"),      # 기승자 구분 (기수/조교사/조교보…)
+    ("daily_training", "tr_term", "INTEGER"),    # 훈련 시간(초)
+    ("daily_training", "run1_cnt", "INTEGER"),   # 구보
+    ("daily_training", "run2_cnt", "INTEGER"),   # 습보
+    ("daily_training", "chul_gubun", "TEXT"),    # 금주/차주 출전예정
+    ("daily_training", "st_time", "TEXT"),
 ]
 
 

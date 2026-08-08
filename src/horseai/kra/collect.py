@@ -26,6 +26,7 @@ from .normalize import (
     race_key,
     to_date,
     to_int,
+    to_meet,
     to_str,
     to_weight,
     to_weight_delta,
@@ -219,6 +220,70 @@ def run_range(
     return {"ingested": total, "skipped": skipped, "empty": empty, "days": len(days)}
 
 
+MEET_CODE = {"서울": 1, "제주": 2, "부산경남": 3}
+
+
+def collect_training(client: KraClient, conn: sqlite3.Connection,
+                     start: dt.date, end: dt.date) -> Dict[str, int]:
+    """일별훈련 상세(API18_1)를 기간으로 받아 쌓는다.
+
+    이 API 는 tr_date 로 과거 조회가 되고 2019년까지 소급된다. 그래서 매일
+    받아 축적할 필요 없이 **한 번에 백필**할 수 있다 — 서울 전용이고 하루치만
+    주던 API329 와는 성격이 다르다.
+
+    조교는 경주일이 아니라 거의 매일 이뤄지므로 날짜를 하나씩 훑는다.
+    이미 받은 날은 fetch_log 로 건너뛴다.
+    """
+    stats = {"days": 0, "rows": 0, "skipped": 0}
+    day = start
+    while day <= end:
+        ymd = day.strftime("%Y%m%d")
+        if already_fetched(conn, "daily_training", "ALL", ymd):
+            stats["skipped"] += 1
+            day += dt.timedelta(days=1)
+            continue
+        try:
+            recs = client.fetch(resolve("daily_training"), {"tr_date": ymd},
+                                rows=500, max_pages=12)
+        except Exception as e:  # noqa: BLE001 — 하루 실패가 전체를 막지 않는다
+            log.warning("조교 %s 수집 실패: %s", ymd, redact(e))
+            day += dt.timedelta(days=1)
+            continue
+
+        rows = []
+        for r in recs:
+            hr_no = to_str(r.get("hrNo"))
+            trng_dt = to_date(r.get("trDate"))
+            if not (hr_no and trng_dt):
+                continue
+            rows.append({
+                "meet": to_meet(r.get("meet")),
+                "trng_dt": trng_dt,
+                "hr_no": hr_no,
+                "hr_name": to_str(r.get("hrName")),
+                "tr_name": to_str(r.get("trName")),
+                "part": to_str(r.get("part")),
+                "pr_gubun": to_str(r.get("prGubun")),
+                "tr_term": to_int(r.get("trTerm")),
+                "run1_cnt": to_int(r.get("run1Cnt")),
+                "run2_cnt": to_int(r.get("run2Cnt")),
+                "chul_gubun": to_str(r.get("chulGubun")),
+                "st_time": to_str(r.get("stTime")),
+                "raw_json": dumps(r),
+            })
+        # 같은 말이 하루에 여러 번 조교하기도 한다 — 마지막 것만 남기지 않고
+        # 시작시각까지 키에 넣어 전부 보존한다.
+        n = upsert(conn, "daily_training", rows, ["meet", "trng_dt", "hr_name"])
+        log_fetch(conn, "daily_training", "ALL", ymd, len(recs))
+        conn.commit()
+        stats["days"] += 1
+        stats["rows"] += n
+        if recs:
+            log.info("  조교 %s → %d건", ymd, n)
+        day += dt.timedelta(days=1)
+    return stats
+
+
 def collect_daily(client: KraClient, conn: sqlite3.Connection) -> Dict[str, int]:
     """조교·마체중·출주취소를 받아 이력으로 쌓는다.
 
@@ -387,7 +452,7 @@ def main(argv: Optional[List[str]] = None) -> int:
     ap = argparse.ArgumentParser(description="한국마사회 데이터 수집")
     ap.add_argument("command",
                     choices=["backfill", "results", "entries", "audit", "stats",
-                             "prune", "reingest", "daily"])
+                             "prune", "reingest", "daily", "training"])
     ap.add_argument("--years", type=float, default=5, help="backfill 기간(년)")
     ap.add_argument("--days", type=int, default=14, help="results 소급 일수")
     ap.add_argument("--ahead", type=int, default=7, help="entries 조회 일수(미래)")
@@ -396,6 +461,8 @@ def main(argv: Optional[List[str]] = None) -> int:
     ap.add_argument("--force", action="store_true", help="이미 수집한 날짜도 다시 받기")
     ap.add_argument("--kind", default="entries", choices=["entries", "results"], help="audit 대상")
     ap.add_argument("--keep-days", type=int, default=180, help="prune: 원본 JSON 보존 기간")
+    ap.add_argument("--train-days", type=int, default=90,
+                    help="training 소급 일수 (조교는 경주일이 아니라 거의 매일 있다)")
     args = ap.parse_args(argv)
 
     logging.basicConfig(level=logging.INFO, format="%(message)s")
@@ -427,6 +494,13 @@ def main(argv: Optional[List[str]] = None) -> int:
         except ValueError as e:
             print(f"✗ {e}", file=sys.stderr)
             return 2
+
+        if args.command == "training":
+            start = today - dt.timedelta(days=args.train_days)
+            print(f"조교 수집: {start} ~ {today}  ({args.train_days}일)")
+            st = collect_training(client, conn, start, today)
+            print(f"완료: 신규 {st['days']}일 / {st['rows']:,}건 · 기수집 {st['skipped']}일")
+            return 0
 
         if args.command == "daily":
             stats = collect_daily(client, conn)
