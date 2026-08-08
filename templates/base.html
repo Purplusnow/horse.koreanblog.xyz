@@ -44,13 +44,26 @@
   </div>
 </header>
 
-{% if accuracy.overall and accuracy.overall.n_races %}
+{# 모든 페이지 머리에 붙는 실적 띠.
+   표본이 적을 때 적중률을 헤드라인으로 내걸면, 첫 주말의 운 좋은 몇 경주가
+   사이트 전체의 주장이 되어 버린다. 수치는 충분히 쌓인 뒤에 올리고 그전에는
+   누적 중임을 그대로 밝힌다 — 어차피 다음 주에 뒤집힐 숫자다. #}
+{% set acc = accuracy.overall %}
+{% if acc and acc.n_races %}
 <div class="trustbar">
   <div class="wrap trustbar-inner">
+    {% if acc.n_races >= 100 %}
     <span class="trustbar-label">검증 실적</span>
-    <span class="trustbar-stat"><b>{{ '%.1f'|format(accuracy.overall.hit_win * 100) }}%</b> 단승 적중</span>
-    <span class="trustbar-stat"><b>{{ '%.1f'|format(accuracy.overall.hit_place * 100) }}%</b> 연승 적중</span>
-    <span class="trustbar-stat trustbar-muted">{{ '{:,}'.format(accuracy.overall.n_races) }}경주 검증</span>
+    <span class="trustbar-stat"><b>{{ '%.1f'|format(acc.hit_win * 100) }}%</b> 단승 적중</span>
+    <span class="trustbar-stat"><b>{{ '%.1f'|format(acc.hit_place * 100) }}%</b> 연승 적중</span>
+    <span class="trustbar-stat trustbar-muted">{{ '{:,}'.format(acc.n_races) }}경주 검증</span>
+    {% else %}
+    <span class="trustbar-label">검증 누적 중</span>
+    <span class="trustbar-stat trustbar-muted">
+      게재한 예상 <b>{{ '{:,}'.format(acc.n_races) }}</b>경주를 결과와 대조했습니다 —
+      아직 적중률을 말하기엔 표본이 적습니다.
+    </span>
+    {% endif %}
     <a class="trustbar-link" href="/accuracy/">전체 보기 →</a>
   </div>
 </div>

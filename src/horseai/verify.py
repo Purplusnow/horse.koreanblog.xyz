@@ -137,12 +137,15 @@ def build_report(conn: sqlite3.Connection) -> Dict:
         s["meet"] = meet
         by_meet.append(s)
 
-    # 신뢰도 등급이 실제로 작동하는지 — 강승부가 정말 더 잘 맞는지 공개한다
+    # 신뢰도 등급이 실제로 작동하는지 — 강승부가 정말 더 잘 맞는지 공개한다.
+    # 다만 표본이 적으면 등급별 적중률은 거의 잡음이다. 6경주에서 83%가 찍히면
+    # 우리 의도와 무관하게 과장으로 읽히므로, 의미를 가질 때까지는 내보내지 않는다.
+    MIN_TIER_RACES = 30
     by_conf = []
     if "conf_label" in rl and rl["conf_label"].notna().any():
         for label in ("강승부", "중승부", "약승부"):
             g = rl[rl["conf_label"] == label]
-            if len(g) < 5:
+            if len(g) < MIN_TIER_RACES:
                 continue
             s = summarize(g)
             s["label"] = label

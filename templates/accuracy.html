@@ -23,6 +23,18 @@
 
 {% if o and o.n_races %}
 
+{% if o.n_races < 100 %}
+<section class="panel panel-caution">
+  <h2>표본이 아직 적습니다</h2>
+  <p>
+    현재 {{ '{:,}'.format(o.n_races) }}경주를 대조했습니다. 이 정도 표본에서는
+    적중률이 한 주 만에 10%p 넘게 움직입니다. 아래 수치는 숨기지 않고 그대로
+    싣지만, <b>지금 시점의 실력을 나타내는 값으로 읽지 마세요.</b>
+    최소 수백 경주가 쌓인 뒤에 판단하는 것이 맞습니다.
+  </p>
+</section>
+{% endif %}
+
 <section class="stat-grid">
   <div class="stat">
     <span class="stat-label">단승 적중률</span>
