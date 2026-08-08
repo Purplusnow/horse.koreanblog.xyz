@@ -330,6 +330,55 @@ def confidence(sim: RaceSim) -> Dict:
     }
 
 
+def expected_run(runners: Sequence[Runner], distance: float,
+                 n_sims: int = 800, noise_scale: float = 1.0,
+                 seed: int = 20260808) -> np.ndarray:
+    """**예상대로 전개될 경우**의 구간 소요시간을 만든다.
+
+    화면의 미리보기가 답해야 할 질문은 '이번엔 어떻게 될까'가 아니라
+    '우리 예상대로 흘러가면 어떤 그림인가'다. 수천 판 중 한 판을 뽑아 보여 주면
+    승률 30%인 말이 지는 그림이 나오고 — 확률적으로는 지극히 정상이지만 —
+    추천 순서 옆에 붙는 순간 방문자에게는 모순으로 읽힌다.
+
+    그래서 두 가지를 나눈다.
+      * **승률**은 잡음을 넣은 수천 번의 시행에서 나온다 (분포)
+      * **미리보기**는 예상 순서대로 들어오는 한 판이다 (요약)
+
+    만드는 방법:
+      1. 실제로 여러 판을 달려 보고 **예상 순서와 가장 가까운 판**을 고른다.
+         도중 전개(누가 앞서 나가고 누가 따라붙는지)는 이 판에서 그대로 온다.
+      2. 그 판의 완주 순서가 예상과 어긋나는 부분만 **마지막 구간에서** 바로잡는다.
+         착차의 크기는 시뮬레이션이 정하고 순서만 예상이 정한다.
+
+    잡음을 꺼 버리면 모든 말이 같은 모양으로 달려 구간 순위가 한 번도 바뀌지
+    않는 정지화면이 된다. 전개를 보여 주는 것이 목적이므로 그렇게 하지 않는다.
+    """
+    n = len(runners)
+    if n == 0:
+        return np.zeros((0, 0))
+    sim = simulate(runners, distance, n_sims=n_sims, noise_scale=noise_scale, seed=seed)
+    seg = sim.seg_times.copy()
+    if seg.size == 0:
+        return seg
+
+    cum = np.cumsum(seg, axis=1)
+    final = cum[:, -1]
+    # runners 는 예상 순위대로 들어온다 → i 번째가 i+1 순위.
+    # 관측된 완주 시간 분포는 그대로 두고, i 번째로 빠른 시간을 i 번째 말에게 준다.
+    target = np.sort(final)
+    delta = target - final
+
+    # 보정은 마지막 두 구간에만 싣는다. 앞 구간을 건드리면 도중 전개가 바뀐다.
+    k = min(2, seg.shape[1])
+    tail = seg[:, -k:]
+    weight = tail / np.maximum(tail.sum(axis=1, keepdims=True), 1e-6)
+    adjusted = tail + delta[:, None] * weight
+    # 구간 시간이 비현실적으로 줄지 않도록 바닥을 둔다
+    adjusted = np.maximum(adjusted, tail * 0.45)
+    seg[:, -k:] = adjusted
+    return seg
+
+
 def animation_payload(sim: RaceSim, distance: float, top_k: int = 99) -> Dict:
     """웹 애니메이션이 그대로 먹을 수 있는 형태로 압축한다.
 
