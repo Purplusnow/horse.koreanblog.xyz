@@ -40,7 +40,7 @@
     <li><b>{{ '{:,}'.format(metrics.verified_races) }}</b><span>검증 경주</span></li>
     {% endif %}
     {% if metrics.strong_hit_win %}
-    <li class="cred-edge"><b>{{ '%.1f'|format(metrics.strong_hit_win * 100) }}%</b><span>추천경주 적중률</span></li>
+    <li class="cred-edge"><b>{{ '%.1f'|format(metrics.strong_hit_win * 100) }}%</b><span>강승부 1순위 1착률</span></li>
     {% endif %}
   </ul>
   {% endif %}
