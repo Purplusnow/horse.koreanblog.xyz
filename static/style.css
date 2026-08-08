@@ -546,8 +546,11 @@ tbody tr:hover { background: var(--bg-soft); }
 .cred-edge b { color: var(--accent-text); }
 
 /* 경주 목록표 */
+/* 추천 5두가 들어가면서 폭이 빠듯하다. 이 표만 여백을 좁혀 한 화면에 담는다 —
+   좌우로 밀어 보게 만드는 순간 예상지 구실을 못 한다. */
 .race-table { font-size: 13.5px; }
-.race-table thead th { font-size: 11.5px; }
+.race-table thead th { font-size: 11.5px; padding: 9px 8px; }
+.race-table tbody td { padding: 10px 8px; }
 .race-row { cursor: pointer; }
 .race-row:hover { background: var(--accent-soft); }
 .rr-no { white-space: nowrap; }
@@ -561,8 +564,14 @@ tbody tr:hover { background: var(--bg-soft); }
   background: var(--bg-sunken); color: var(--text-soft); font-size: 11px;
 }
 .rr-pick { white-space: nowrap; }
-.rr-pick .mark { font-size: 14px; margin-right: 3px; }
-.rr-name { font-weight: 600; margin: 0 4px 0 2px; }
+.rr-pick .mark { font-size: 14px; margin-right: 2px; }
+/* 마명은 최대 12자까지 있다(아메리칸포스원 등). 긴 이름 하나가 표 전체를
+   가로로 밀어내지 않도록 폭을 묶고 넘치면 줄인다. 전체 이름은 title 로 남는다. */
+.rr-name {
+  font-weight: 600; margin: 0 3px 0 2px;
+  display: inline-block; max-width: 6.5em; overflow: hidden;
+  text-overflow: ellipsis; white-space: nowrap; vertical-align: bottom;
+}
 .rr-prob {
   color: var(--text-soft); font-variant-numeric: tabular-nums; font-size: 12.5px;
 }
@@ -884,3 +893,35 @@ tbody tr:hover { background: var(--bg-soft); }
 /* 적중률 페이지의 기호 표 — 기호가 본문 글자에 묻히지 않게 조금 키운다 */
 .stats-table .c-mark { text-align: center; }
 .stats-table .c-mark .mark { font-size: 17px; font-weight: 700; }
+
+
+/* ── 경주 목록 반응형 ──────────────────────────────────────────
+   5두를 싣기 시작하면서 표가 좁은 화면을 넘어섰다. 예상지를 좌우로 밀어 가며
+   읽어야 한다면 목록으로서 실격이므로, 폭이 모자라면 표를 카드로 바꾼다.
+   한 경주가 한 덩어리가 되고 추천 5두는 2열로 흐른다. */
+@media (max-width: 900px) {
+  .table-scroll:has(.race-table) { overflow-x: visible; }
+  .race-table thead { display: none; }
+  .race-table, .race-table tbody { display: block; }
+  .race-row {
+    display: flex; flex-wrap: wrap; align-items: center;
+    gap: 5px 10px; padding: 12px 14px;
+    border-bottom: 1px solid var(--border);
+  }
+  .race-row:last-child { border-bottom: none; }
+  .race-table tbody td { display: block; border: none; padding: 0; }
+  .rr-no { flex: 0 0 auto; }
+  .rr-time, .rr-cond { flex: 0 0 auto; font-size: 12.5px; color: var(--text-faint); }
+  /* 경주 정보 줄과 추천 줄을 가르는 얇은 여백 */
+  .rr-cond { margin-right: auto; }
+  .rr-pick {
+    flex: 1 1 calc(50% - 10px); min-width: 150px;
+    font-size: 13px; padding-top: 2px;
+  }
+  .res-pick, .res-actual { flex: 1 1 100%; }
+}
+
+@media (max-width: 420px) {
+  /* 아주 좁으면 추천도 한 줄에 하나씩 — 마명이 잘리는 것보다 낫다 */
+  .rr-pick { flex: 1 1 100%; }
+}

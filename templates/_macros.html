@@ -81,8 +81,7 @@
     {% if p %}
     <span class="mark">{{ p.mark }}</span>
     <span class="gate gate-sm">{{ p.chul_no }}</span>
-    <span class="rr-name">{{ p.hr_name }}</span>
-    {% if p.style_label %}<span class="style style-{{ p.style_code }}">{{ p.style_label }}</span>{% endif %}
+    <span class="rr-name" title="{{ p.hr_name }}">{{ p.hr_name }}</span>
     <span class="rr-prob">{{ p.p_win_pct }}%</span>
     {% else %}<span class="rr-empty">-</span>{% endif %}
   </td>
