@@ -69,7 +69,13 @@ jobs:
           gh release download "$DB_RELEASE_TAG" -p "model.joblib" -D models 2>/dev/null || true
           gh release download "$DB_RELEASE_TAG" -p "metrics.json" -D models 2>/dev/null || true
 
-      - name: 엔드포인트 확인
+      # 진단 단계다. 예상 갱신에 필요한 건 아니고, 어떤 API 가 죽었는지 로그에
+      # 남기는 용도다. 그런데 응답 없는 엔드포인트에서 재시도를 반복하며 22분을
+      # 잡아먹고 배포 전체를 막은 적이 있다(14개 × 재시도 × 타임아웃).
+      # 시간을 못 박고, 실패해도 배포를 세우지 않는다.
+      - name: 엔드포인트 확인 (진단)
+        continue-on-error: true
+        timeout-minutes: 4
         env:
           KRA_SERVICE_KEY: ${{ secrets.KRA_SERVICE_KEY }}
         run: PYTHONPATH=src python -m horseai.kra.probe
@@ -84,11 +90,13 @@ jobs:
             --years "${{ inputs.backfill_years || '5' }}" --db "$DB"
 
       - name: 최근 성적 갱신
+        timeout-minutes: 20
         env:
           KRA_SERVICE_KEY: ${{ secrets.KRA_SERVICE_KEY }}
         run: PYTHONPATH=src python -m horseai.kra.collect results --days 21 --db "$DB"
 
       - name: 출전표 수집
+        timeout-minutes: 15
         env:
           KRA_SERVICE_KEY: ${{ secrets.KRA_SERVICE_KEY }}
         run: PYTHONPATH=src python -m horseai.kra.collect entries --ahead 10 --db "$DB"
@@ -98,6 +106,7 @@ jobs:
       # 매 실행마다 반드시 시도한다. 반년쯤 쌓이면 비공개 정보에 가장 가까운
       # 자산이 되고, 지금 시장을 못 이기는 격차를 좁힐 유일한 후보다.
       - name: 일일 데이터 축적 (조교·마체중·출주취소)
+        timeout-minutes: 10
         continue-on-error: true
         env:
           KRA_SERVICE_KEY: ${{ secrets.KRA_SERVICE_KEY }}
@@ -149,6 +158,7 @@ jobs:
 
       # --- 예측 · 코멘트 · 검증 ---------------------------------------------
       - name: 예측 생성
+        timeout-minutes: 20
         run: PYTHONPATH=src python -m horseai.predict --db "$DB"
 
       - name: AI 코멘트 생성
@@ -161,6 +171,7 @@ jobs:
 
       # --- 빌드 · 배포 -------------------------------------------------------
       - name: 사이트 빌드
+        timeout-minutes: 15
         run: PYTHONPATH=src python -m horseai.site --db "$DB" --out dist
 
       - uses: actions/configure-pages@v5
