@@ -871,20 +871,7 @@ tbody tr:hover { background: var(--bg-soft); }
 .res-table .rr-name { font-weight: 600; }
 .res-rank { color: var(--text-faint); font-size: 11.5px; margin-left: 5px; }
 .res-odds { font-variant-numeric: tabular-nums; color: var(--text-soft); }
-/* 행 바탕 = 그 경주에서 맞힌 승식 수(0~7).
-   일곱 승식을 다 맞힌 경주와 단승 하나만 맞힌 경주는 같은 색일 수 없다.
-   목록을 훑을 때 잘한 날이 색의 농도로 먼저 읽히게 하는 것이 목적이다. */
 
-@media (prefers-color-scheme: dark) {
-  .race-row.hit-1 { background: #14201a; }
-  .race-row.hit-2 { background: #16281f; }
-  .race-row.hit-3 { background: #183024; }
-  .race-row.hit-4 { background: #1a3829; }
-  .race-row.hit-5 { background: #1c412e; }
-  .race-row.hit-6 { background: #1e4933; }
-  .race-row.hit-7 { background: #205238; }
-  .race-row[class*="hit-"]:hover { filter: brightness(1.15); }
-}
 
 .hit {
   display: inline-block; font-size: 11.5px; font-weight: 700;
@@ -1089,18 +1076,7 @@ tbody tr:hover { background: var(--bg-soft); }
 }
 
 
-/* 3착 이내는 티가 나야 한다 — 이 표에서 가장 먼저 찾는 정보가 그것이다.
-   테두리만으로는 한 줄에 다섯 칩이 늘어섰을 때 눈에 걸리지 않는다.
-   바탕을 채우고 착순 숫자를 배지로 세워 색으로 먼저 읽히게 한다. */
-/* 1착은 그중에서도 따로 세운다 */
-/* 착순 밖은 뒤로 물린다 — 들어온 말이 상대적으로 더 드러난다 */
 
-@media (prefers-color-scheme: dark) {
-  .res-picks .rp { background: #1b1f26; color: var(--text); }
-  .res-picks .rp-place { border-color: #3f8a64; }
-  .res-picks .rp-place .rr-name { color: #7fd3a6; }
-  .res-picks .rp-win .rr-name { color: #e8c884; }
-}
 
 /* ─────────────────────────────────── 결과 한 줄
    바탕을 칠하지 않는다. 다섯 추천과 일곱 승식이 한 행에 놓이는데 저마다
