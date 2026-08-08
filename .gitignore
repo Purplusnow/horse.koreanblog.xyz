@@ -1,0 +1,12 @@
+.venv/
+__pycache__/
+*.pyc
+.env
+
+# 데이터·산출물은 저장소에 넣지 않는다.
+# DB는 릴리스 자산(db-state)으로, 사이트는 GitHub Pages로 배포된다.
+data/
+dist/
+models/
+config/endpoints.resolved.json
+config/api_fields.json

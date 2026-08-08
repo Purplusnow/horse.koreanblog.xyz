@@ -1,0 +1,376 @@
+{% extends "base.html" %}
+{% from "_macros.html" import ad, prob_bar, ord_badge, form_table %}
+
+{% set top = runners[0] if runners else None %}
+{% set has_pace = pace and (pace.front or pace.stalk or pace.close) %}
+{% set has_sim = sim and sim.payload and sim.payload.runners %}
+{% set title_text = race.rc_date ~ ' ' ~ race.meet ~ ' 제' ~ race.rc_no ~ '경주 예상' %}
+
+{% block title %}{{ title_text }} | {{ site.name }}{% endblock %}
+{% block description %}
+{{ race.rc_date }} {{ race.meet }}경마장 제{{ race.rc_no }}경주({{ race.distance }}m{% if race.grade %}, {{ race.grade }}{% endif %}) 출주마별 승률과 전적 정리.
+{% if top %}본명 {{ top.chul_no }}번 {{ top.hr_name }} 예상 승률 {{ '%.0f'|format(top.p_win_pct) }}%.{% endif %}
+출주마 전원의 승률과 연승률을 공개합니다.
+{% endblock %}
+
+{% block head_extra %}
+<script type="application/ld+json">
+{{ {
+  "@context": "https://schema.org",
+  "@type": "SportsEvent",
+  "name": title_text,
+  "startDate": race.rc_date,
+  "eventStatus": "https://schema.org/EventScheduled",
+  "location": {"@type": "Place", "name": race.meet ~ "경마장", "address": {"@type": "PostalAddress", "addressCountry": "KR"}},
+  "url": site.url ~ page_url
+} | tojson }}
+</script>
+{% endblock %}
+
+{% block content %}
+
+<nav class="breadcrumb" aria-label="탐색 경로">
+  <a href="/">홈</a> <span>/</span>
+  {% if race.has_result %}<a href="/results/">지난 결과</a> <span>/</span>{% endif %}
+  <span>{{ race.meet }} 제{{ race.rc_no }}경주</span>
+</nav>
+
+<article class="race-detail">
+
+<header class="race-header">
+  <div class="race-header-tags">
+    <span class="meet meet-{{ race.meet }}">{{ race.meet }}</span>
+    {% if race.has_result %}<span class="tag tag-done">경주 종료</span>
+    {% else %}<span class="tag tag-live">예상 공개</span>{% endif %}
+  </div>
+  <h1>{{ race.rc_date }} ({{ race.weekday }}) 제{{ race.rc_no }}경주</h1>
+  <ul class="race-facts">
+    {% if race.distance %}<li><span>거리</span><b>{{ race.distance }}m</b></li>{% endif %}
+    {% if race.grade %}<li><span>등급</span><b>{{ race.grade }}</b></li>{% endif %}
+    {% if race.field_size %}<li><span>두수</span><b>{{ race.field_size }}두</b></li>{% endif %}
+    {% if race.post_time %}<li><span>발주</span><b>{{ race.post_time }}</b></li>{% endif %}
+  </ul>
+</header>
+
+{{ ad(adsense, 'slot_top') }}
+
+{% if commentary %}
+<section class="commentary">
+  <h2 class="commentary-headline">{{ commentary.headline }}</h2>
+  <div class="commentary-body">
+    {% for para in commentary.body.split('\n\n') %}
+    {% if para.strip() %}<p>{{ para.strip() }}</p>{% endif %}
+    {% endfor %}
+  </div>
+  <p class="commentary-note">
+    단평은 위 산출 수치와 출전표 정보만을 근거로 작성됩니다. 출전표에 없는 내용
+    (부상 이력 · 조교 상태 등)은 서술하지 않습니다.
+  </p>
+</section>
+{% endif %}
+
+{% if top %}
+{# 지면 좌상단의 대형 마번 블록. 예상지를 펼쳤을 때 가장 먼저 눈에 들어오는 자리다. #}
+<section class="board">
+  <div class="board-picks">
+    {% for r in runners[:4] %}
+    <div class="board-pick board-{{ loop.index }}">
+      <span class="board-mark" title="{{ r.mark_name }}">{{ r.mark }}</span>
+      <span class="board-name">{{ r.hr_name }}</span>
+      <span class="board-gate">{{ r.chul_no }}</span>
+      <span class="board-meta">
+        {% if r.style_label %}<span class="style style-{{ r.style_code }}">{{ r.style_label }}</span>{% endif %}
+        <b>{{ '%.0f'|format(r.p_win_pct) }}%</b>
+      </span>
+      {% if race.has_result %}<span class="board-ord">{{ ord_badge(r.ord) }}</span>{% endif %}
+    </div>
+    {% endfor %}
+  </div>
+
+  <div class="board-side">
+    {% if combos %}
+    <table class="board-combo">
+      <tbody>
+        {% for c in combos %}
+        <tr>
+          <th>{{ c.label }}</th>
+          <td>{{ c.value }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% endif %}
+    {% if has_pace %}
+    <div class="board-style">
+      {% for s in styles %}
+      {% if pace[s.code] %}
+      <div class="board-style-row">
+        <span class="style style-{{ s.code }}">{{ s.label }}</span>
+        <span class="board-style-gates">
+          {% for r in pace[s.code] %}<i>{{ r.chul_no }}</i>{% endfor %}
+        </span>
+      </div>
+      {% endif %}
+      {% endfor %}
+    </div>
+    {% endif %}
+  </div>
+</section>
+
+<p class="mark-legend">
+  <b>◎</b> 본명 &nbsp; <b>○</b> 대항 &nbsp; <b>▲</b> 복병 &nbsp; <b>△</b> 연복
+  <span>· 예측 엔진이 산출한 승률 순서입니다. 조합은 구매 권유가 아닙니다.</span>
+</p>
+{% endif %}
+
+{% if has_sim %}
+<section class="preview">
+  <div class="preview-head">
+    <h2>경주 미리보기</h2>
+    <span class="conf conf-{{ sim.label }}">{{ sim.label }}</span>
+    <span class="conf-score">신뢰도 {{ sim.score }}</span>
+    <span class="preview-note">{{ sim.desc }}</span>
+  </div>
+
+  <div class="track-wrap">
+    <canvas id="track" class="track" width="1100" height="380"
+            aria-label="경주 전개 미리보기"></canvas>
+  </div>
+
+  <div class="track-controls">
+    <button id="tk-play" class="tk-btn" type="button">▶ 재생</button>
+    <button id="tk-replay" class="tk-btn tk-ghost" type="button">↻ 다시</button>
+    <label class="tk-speed">속도
+      <select id="tk-speed">
+        <option value="0.5">0.5×</option><option value="1" selected>1×</option><option value="2">2×</option>
+      </select>
+    </label>
+    <span id="tk-clock" class="tk-clock">0.0초</span>
+    <input id="tk-seek" class="tk-seek" type="range" min="0" max="1000" value="0" aria-label="구간 이동">
+  </div>
+
+  <p class="preview-foot">
+    출주마의 과거 <strong>구간기록</strong>(초반 200m · 막판 600m · 최후 200m)과 <strong>각질</strong>,
+    선두권 경쟁에 따른 <strong>체력 소모</strong>를 반영해 경주를
+    {{ '{:,}'.format(sim.n_sims) }}회 시뮬레이션했습니다. 위 화면은 그중
+    <strong>예상대로 흘러갔을 때 가장 전형적인 한 판</strong>입니다. 실제 경주는 다르게 전개될 수 있습니다.
+  </p>
+
+  <script id="sim-data" type="application/json">{{ sim.payload_json | safe }}</script>
+  <script src="/static/track.js" defer></script>
+</section>
+{% endif %}
+
+{% if has_pace %}
+<section class="pace-box">
+  <h2>예상 전개</h2>
+  <p class="pace-lead">
+    각 마필이 과거 경주에서 초반에 어디를 달렸는지(S1F 통과순위)로 각질을 판정했습니다.
+    전개는 결과를 크게 좌우합니다 — 선행마가 몰리면 초반이 빨라져 뒤에서 오는 말이 유리해집니다.
+  </p>
+  <div class="pace-track">
+    {% for s in styles %}
+    <div class="pace-lane">
+      <div class="pace-lane-head">
+        <span class="style style-{{ s.code }}">{{ s.label }}</span>
+        <span class="pace-count">{{ pace[s.code]|length }}두</span>
+      </div>
+      <div class="pace-gates">
+        {% for r in pace[s.code] %}
+        <span class="pace-gate{% if r.pred_rank <= 3 %} is-pick{% endif %}"
+              title="{{ r.hr_name }} · 승률 {{ '%.0f'|format(r.p_win_pct) }}%">{{ r.chul_no }}</span>
+        {% else %}
+        <span class="pace-empty">해당 없음</span>
+        {% endfor %}
+      </div>
+      <p class="pace-desc">{{ s.desc }}</p>
+    </div>
+    {% endfor %}
+  </div>
+  {% if pace.unknown %}
+  <p class="pace-unknown">
+    각질 미판정 ({{ pace.unknown|length }}두):
+    {% for r in pace.unknown %}<span class="pace-gate">{{ r.chul_no }}</span>{% endfor %}
+    <span>— 출주 이력이 부족한 마필입니다</span>
+  </p>
+  {% endif %}
+</section>
+{% endif %}
+
+{% if focus %}
+<section class="focus-box">
+  <h2>체크 포인트</h2>
+  <ul class="focus-list">
+    {% for f in focus %}
+    <li>
+      <span class="focus-label">{{ f.label }}</span>
+      <span class="focus-gates">
+        {% for g in f.gates %}<span class="pace-gate">{{ g }}</span>{% endfor %}
+      </span>
+    </li>
+    {% endfor %}
+  </ul>
+</section>
+{% endif %}
+
+{{ ad(adsense, 'slot_in_article') }}
+
+<section class="table-section">
+  <h2>출주마 일람</h2>
+  <div class="table-scroll">
+    <table class="runners">
+      <thead>
+        <tr>
+          <th class="c-mark">기호</th>
+          <th class="c-gate">마번</th>
+          <th class="c-name">마명</th>
+          <th class="c-style">각질</th>
+          <th class="c-prob">승률</th>
+          <th class="c-num">연승률</th>
+          <th class="c-num">부담중량</th>
+          <th class="c-num">레이팅</th>
+          <th class="c-text">기수</th>
+          <th class="c-text">조교사</th>
+          <th class="c-form">최근 전적</th>
+          <th class="c-tags">특징</th>
+          {% if race.has_result %}
+          <th class="c-num">착순</th>
+          <th class="c-num">단승배당</th>
+          {% endif %}
+        </tr>
+      </thead>
+      <tbody>
+        {% for r in runners %}
+        <tr{% if loop.index == 1 %} class="row-top"{% endif %}>
+          <td class="c-mark"><span class="mark" title="{{ r.mark_name }}">{{ r.mark }}</span></td>
+          <td class="c-gate"><span class="gate">{{ r.chul_no }}</span></td>
+          <td class="c-name">
+            <a href="{{ r.horse_url }}">{{ r.hr_name }}</a>
+            <small>{% if r.sex %}{{ r.sex }}{% endif %}{% if r.age %} {{ r.age }}세{% endif %}{% if r.origin %} · {{ r.origin }}{% endif %}{% if r.career_text != '-' %} · {{ r.career_text }}{% endif %}</small>
+          </td>
+          <td class="c-style">
+            {% if r.style_label %}<span class="style style-{{ r.style_code }}">{{ r.style_label }}</span>{% else %}<span class="style style-unknown">-</span>{% endif %}
+          </td>
+          <td class="c-prob">{{ prob_bar(r.p_win_pct, r.pred_rank) }}</td>
+          <td class="c-num">{{ '%.0f'|format(r.p_place_pct) }}%</td>
+          <td class="c-num">{{ r.burden or '-' }}</td>
+          <td class="c-num">{{ r.rating|int if r.rating else '-' }}</td>
+          <td class="c-text">{{ r.jk_name or '-' }}</td>
+          <td class="c-text">{{ r.tr_name or '-' }}</td>
+          <td class="c-form"><span class="ordstr">{{ r.ord_string }}</span></td>
+          <td class="c-tags">
+            {% for t in r.tag_list %}<span class="tagchip">{{ t }}</span>{% endfor %}
+          </td>
+          {% if race.has_result %}
+          <td class="c-num">{{ ord_badge(r.ord) }}</td>
+          <td class="c-num">{{ r.win_odds or '-' }}</td>
+          {% endif %}
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  <p class="table-note">
+    승률은 자체 예측 엔진이 산출한 각 마필의 우승 확률이며, 경주 내 합계가 100%가 되도록
+    정규화했습니다. 연승률은 3착 이내에 들 확률입니다. 각질은 과거 경주의 S1F 통과순위에서
+    판정했습니다.
+  </p>
+</section>
+
+<section class="form-section">
+  <h2>출주마별 최근 전적</h2>
+  <p class="panel-lead">
+    각 마필의 직전 출주 기록입니다. 착순뿐 아니라 경주기록 · S1F 통과순위 · 부담중량 ·
+    마체중 · 당시 배당까지 함께 봐야 그 성적이 어떤 조건에서 나온 것인지 읽힙니다.
+    이 경주 이후의 성적은 표시하지 않습니다.
+  </p>
+  {% for r in runners %}
+  {% if r.form %}
+  <details class="form-item"{% if r.pred_rank <= 3 %} open{% endif %}>
+    <summary>
+      <span class="mark">{{ r.mark }}</span>
+      <span class="gate">{{ r.chul_no }}</span>
+      <span class="form-name">{{ r.hr_name }}</span>
+      {% if r.style_label %}<span class="style style-{{ r.style_code }}">{{ r.style_label }}</span>{% endif %}
+      {% if r.form_summary and r.form_summary.n %}
+      <span class="form-record">최근 {{ r.form_summary.n }}전 {{ r.form_summary.wins }}승 · 3착내 {{ r.form_summary.top3 }}회</span>
+      {% endif %}
+      <span class="form-prob">{{ '%.0f'|format(r.p_win_pct) }}%</span>
+    </summary>
+    <div class="hb">
+      {# 좌: 마필 신상 · 기수 · 조교사 성적 #}
+      <div class="hb-profile">
+        <dl class="hb-dl">
+          <dt>산지·성·연령</dt>
+          <dd>{{ r.origin or '-' }} {{ r.sex or '' }} {{ r.age }}세</dd>
+          <dt>부담중량</dt>
+          <dd>{{ r.burden or '-' }}kg</dd>
+          <dt>레이팅</dt>
+          <dd>{{ r.rating|int if r.rating else '-' }}</dd>
+          <dt>마주</dt>
+          <dd>{{ r.ow_name or '-' }}</dd>
+        </dl>
+        <table class="hb-person">
+          <thead>
+            <tr><th></th><th class="c-num">출주</th><th class="c-num">승률</th><th class="c-num">복승률</th></tr>
+          </thead>
+          <tbody>
+            {% for who, st in [('기수 ' ~ (r.jk_name or '-'), r.jk_stats), ('조교사 ' ~ (r.tr_name or '-'), r.tr_stats)] %}
+            {% if st and st.all and st.all.n %}
+            <tr>
+              <th>{{ who }} <small>최근1년</small></th>
+              <td class="c-num">{{ st.y1.n }}</td>
+              <td class="c-num">{{ '%.1f'|format(st.y1.win_rate * 100) if st.y1.win_rate is not none else '-' }}%</td>
+              <td class="c-num">{{ '%.1f'|format(st.y1.top3_rate * 100) if st.y1.top3_rate is not none else '-' }}%</td>
+            </tr>
+            <tr class="hb-alt">
+              <th><small>통산</small></th>
+              <td class="c-num">{{ st.all.n }}</td>
+              <td class="c-num">{{ '%.1f'|format(st.all.win_rate * 100) if st.all.win_rate is not none else '-' }}%</td>
+              <td class="c-num">{{ '%.1f'|format(st.all.top3_rate * 100) if st.all.top3_rate is not none else '-' }}%</td>
+            </tr>
+            {% endif %}
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+
+      {# 우: 직전 경주 착순표 — 몇 착인가보다 '누구에게 얼마 차로 졌는가' #}
+      {% if r.last_lines %}
+      <div class="hb-last">
+        <div class="hb-last-head">
+          직전 <b>{{ r.last_race.rc_date[2:] }}</b>
+          <span class="meet meet-{{ r.last_race.meet }}">{{ r.last_race.meet }}</span>
+          {{ r.last_race.rc_no }}R · {{ r.last_race.distance }}m
+          {% if r.last_race.grade %}· {{ r.last_race.grade }}{% endif %}
+          {% if r.last_race.track_cond %}· {{ r.last_race.track_cond }}{% endif %}
+        </div>
+        <table class="hb-lines">
+          <tbody>
+            {% for L in r.last_lines %}
+            <tr{% if L.is_focus %} class="is-focus"{% endif %}>
+              <td class="c-num">{{ L.ord }}</td>
+              <td class="hb-lname">{{ L.hr_name }}</td>
+              <td class="c-num">{{ L.margin or '' }}</td>
+              <td class="c-num">{{ L.record_text }}</td>
+              <td class="c-text">{{ L.jk_name or '' }}</td>
+              <td class="c-num">{{ L.burden or '' }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% endif %}
+    </div>
+
+    {{ form_table(r.form, compact=true) }}
+    <p class="form-more"><a href="{{ r.horse_url }}">{{ r.hr_name }} 전체 전적 →</a></p>
+  </details>
+  {% endif %}
+  {% endfor %}
+</section>
+
+{{ ad(adsense, 'slot_bottom') }}
+
+</article>
+{% endblock %}

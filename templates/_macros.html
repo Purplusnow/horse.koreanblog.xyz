@@ -1,0 +1,177 @@
+{# 광고 슬롯. client 나 slot 이 비어 있으면 아무것도 렌더링하지 않는다. #}
+{% macro ad(adsense, slot_key, label='') %}
+{% set slot = adsense.get(slot_key) %}
+{% if adsense.client and slot %}
+<aside class="ad-slot" aria-label="광고">
+  {% if label %}<span class="ad-label">{{ label }}</span>{% endif %}
+  <ins class="adsbygoogle"
+       style="display:block"
+       data-ad-client="{{ adsense.client }}"
+       data-ad-slot="{{ slot }}"
+       data-ad-format="auto"
+       data-full-width-responsive="true"></ins>
+  <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
+</aside>
+{% endif %}
+{% endmacro %}
+
+{# 승률 막대. 숫자만 나열하면 비교가 안 되므로 길이로 즉시 읽히게 한다. #}
+{% macro prob_bar(pct, rank) %}
+<div class="bar" role="img" aria-label="예상 승률 {{ pct }}%">
+  <div class="bar-track">
+    <div class="bar-fill{% if rank == 1 %} bar-top{% endif %}"
+         style="width: {{ [pct * 1.8, 100]|min|round|int }}%"></div>
+  </div>
+  <span class="bar-value">{{ '%.0f'|format(pct) }}%</span>
+</div>
+{% endmacro %}
+
+{# 착순 배지 #}
+{% macro ord_badge(ord) %}
+{% if ord == 1 %}<span class="ord ord-1">1착</span>
+{% elif ord == 2 %}<span class="ord ord-2">2착</span>
+{% elif ord == 3 %}<span class="ord ord-3">3착</span>
+{% elif ord %}<span class="ord">{{ ord }}착</span>
+{% else %}<span class="ord ord-none">-</span>
+{% endif %}
+{% endmacro %}
+
+{# 신뢰도 배지. 시뮬레이션 결과가 얼마나 좁게 모였는지를 한 단어로 압축한다.
+   매 경주를 같은 자신감으로 내밀지 않는다는 표시이기도 하다. #}
+{% macro conf_badge(label, score=None, size='') %}
+{% if label %}
+<span class="conf conf-{{ label }}{% if size %} conf-{{ size }}{% endif %}"
+      {% if score %}title="예측 신뢰도 {{ score }}점"{% endif %}>{{ label }}</span>
+{% endif %}
+{% endmacro %}
+
+{# 적중 배지 — 결과 페이지에서 한 눈에 성패가 읽히게 #}
+{% macro hit_badge(outcome) %}
+{% if not outcome or not outcome.settled %}<span class="hit hit-none">집계중</span>
+{% elif outcome.hit_win %}<span class="hit hit-win">적중</span>
+{% elif outcome.hit_place %}<span class="hit hit-place">연대</span>
+{% else %}<span class="hit hit-miss">불발</span>
+{% endif %}
+{% endmacro %}
+
+{# 경주 한 줄 — 목록에서 클릭 없이 예상까지 읽히게 한다.
+   경마 팬이 목록에서 알고 싶은 건 거리나 두수가 아니라 '뭘 미는가'다. #}
+{% macro race_row(race) %}
+<tr class="race-row" onclick="location.href='{{ race.url }}'">
+  <td class="rr-no">
+    <a href="{{ race.url }}">
+      <span class="meet meet-{{ race.meet }}">{{ race.meet }}</span>
+      <b>{{ race.rc_no }}R</b>
+    </a>
+    {{ conf_badge(race.conf_label, race.conf_score, 'sm') }}
+  </td>
+  <td class="rr-time">{{ race.post_time or '-' }}</td>
+  <td class="rr-cond">
+    {{ race.distance }}m
+    {% if race.grade %}<span class="rr-grade">{{ race.grade }}</span>{% endif %}
+    <small>{{ race.field_size }}두</small>
+  </td>
+  {% for i in range(3) %}
+  {% set p = race.picks[i] if race.picks|length > i else None %}
+  <td class="rr-pick">
+    {% if p %}
+    <span class="mark">{{ p.mark }}</span>
+    <span class="gate gate-sm">{{ p.chul_no }}</span>
+    <span class="rr-name">{{ p.hr_name }}</span>
+    {% if p.style_label %}<span class="style style-{{ p.style_code }}">{{ p.style_label }}</span>{% endif %}
+    <span class="rr-prob">{{ p.p_win_pct }}%</span>
+    {% else %}<span class="rr-empty">-</span>{% endif %}
+  </td>
+  {% endfor %}
+</tr>
+{% endmacro %}
+
+{# 결과 한 줄 — 우리가 뭘 밀었고 실제로 어떻게 됐는지를 나란히 놓는다.
+   빗나간 예상을 감추면 맞은 예상도 믿을 수 없게 되므로 전량 그대로 싣는다. #}
+{% macro result_row(race) %}
+{% set o = race.outcome %}
+<tr class="race-row{% if o and o.hit_win %} res-hit{% endif %}"
+    onclick="location.href='{{ race.url }}'">
+  <td class="rr-no">
+    <a href="{{ race.url }}">
+      <span class="meet meet-{{ race.meet }}">{{ race.meet }}</span>
+      <b>{{ race.rc_no }}R</b>
+    </a>
+    <small class="res-date">{{ race.rc_date[5:] }}</small>
+  </td>
+  <td class="rr-cond">
+    {{ race.distance }}m
+    {% if race.grade %}<span class="rr-grade">{{ race.grade }}</span>{% endif %}
+  </td>
+  <td class="res-pick">
+    {% if o %}
+    <span class="mark">◎</span>
+    <span class="gate gate-sm">{{ o.top1.chul_no }}</span>
+    <span class="rr-name">{{ o.top1.hr_name }}</span>
+    {% else %}<span class="rr-empty">-</span>{% endif %}
+  </td>
+  <td class="c-num">{{ ord_badge(o.top1_ord if o else None) }}</td>
+  <td class="res-actual">
+    {% if o and o.winner_pick %}
+      <span class="mark">{{ o.winner_pick.mark or '－' }}</span>
+      <span class="rr-name">{{ o.winner_pick.hr_name }}</span>
+      <small class="res-rank">예상 {{ o.winner_pick.adj_rank }}순위</small>
+    {% elif o and o.settled %}
+      <small class="res-rank">예상 밖</small>
+    {% else %}<span class="rr-empty">-</span>{% endif %}
+  </td>
+  <td class="c-num res-odds">{{ '%.1f'|format(o.top1_odds) if o and o.top1_odds else '-' }}</td>
+  <td class="c-num">
+    {{ hit_badge(o) }}
+    {% if o and o.cancelled %}
+    <small class="res-cancel" title="{{ o.cancelled|map(attribute='hr_name')|join(', ') }} 출주취소 — 집계 제외">
+      취소 {{ o.cancelled|length }}두
+    </small>
+    {% endif %}
+  </td>
+</tr>
+{% endmacro %}
+
+{# 마필 전적표 — 예상지의 개별 마필 블록에 해당하는 핵심 정보 #}
+{% macro form_table(form, compact=false) %}
+<div class="table-scroll">
+  <table class="form-table{% if compact %} is-compact{% endif %}">
+    <thead>
+      <tr>
+        <th>일자</th>
+        <th>경주</th>
+        <th class="c-num">거리</th>
+        <th>등급</th>
+        <th class="c-num">착순</th>
+        <th class="c-num">기록</th>
+        <th class="c-num">S1F</th>
+        <th class="c-num">부담</th>
+        <th class="c-num">마체중</th>
+        <th class="c-text">기수</th>
+        <th class="c-num">단승</th>
+        <th class="c-text">주로</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for f in form %}
+      <tr{% if f.is_win %} class="form-win"{% endif %}>
+        <td class="form-date"><a href="{{ f.url }}">{{ f.rc_date[2:] }}</a></td>
+        <td><span class="meet meet-{{ f.meet }}">{{ f.meet }}</span> {{ f.rc_no }}R</td>
+        <td class="c-num">{{ f.distance }}m</td>
+        <td>{{ f.grade or '-' }}</td>
+        <td class="c-num">
+          {{ ord_badge(f.ord) }}<small class="form-field">/{{ f.field_text }}</small>
+        </td>
+        <td class="c-num">{{ f.record_text }}</td>
+        <td class="c-num">{{ f.s1f_text }}</td>
+        <td class="c-num">{{ f.burden or '-' }}</td>
+        <td class="c-num">{{ f.horse_weight|round|int if f.horse_weight else '-' }}</td>
+        <td class="c-text">{{ f.jk_name or '-' }}</td>
+        <td class="c-num">{{ f.win_odds or '-' }}</td>
+        <td class="c-text">{{ f.track_cond or '-' }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endmacro %}

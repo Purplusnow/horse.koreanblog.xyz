@@ -1,0 +1,215 @@
+"""출전표 → 예측 생성.
+
+    python -m horseai.predict --db data/horseai.sqlite
+
+**예측 동결 규칙** — 적중률 공개가 이 사이트의 유일한 자산이므로, 경주일이 지난
+예측은 어떤 경우에도 다시 쓰지 않는다. 경주일 이전에는 기수 변경·출주 취소가
+반영되도록 갱신을 허용한다. 이 규칙이 깨지면 적중률 통계 전체가 무의미해진다.
+"""
+
+from __future__ import annotations
+
+import argparse
+import datetime as dt
+import json
+import logging
+import sqlite3
+import sys
+from typing import Dict, List, Optional
+
+import numpy as np
+import pandas as pd
+
+from .features import build_prediction_frame
+from .kra.store import session, upsert
+from .model import MODEL_VERSION, load, predict_frame
+from .simulate import (
+    animation_payload, build_runners, confidence, fit_noise, simulate,
+)
+
+log = logging.getLogger(__name__)
+
+
+def upcoming_race_keys(conn: sqlite3.Connection, days_ahead: int = 10) -> List[str]:
+    """아직 결과가 없고 출전표가 있는 경주."""
+    today = dt.date.today().isoformat()
+    until = (dt.date.today() + dt.timedelta(days=days_ahead)).isoformat()
+    rows = conn.execute(
+        "SELECT DISTINCT r.race_key FROM races r "
+        "JOIN entries e ON e.race_key = r.race_key "
+        "WHERE r.rc_date >= ? AND r.rc_date <= ? AND COALESCE(r.has_result,0) = 0 "
+        "ORDER BY r.rc_date, r.meet, r.rc_no",
+        (today, until),
+    ).fetchall()
+    return [r[0] for r in rows]
+
+
+def _tags(r, race: pd.DataFrame) -> List[str]:
+    """출주마 한 줄 특징 태그.
+
+    시중 예상지의 '마필단평'에 해당하지만, 사람의 인상평이 아니라 데이터에서
+    기계적으로 뽑는다. 근거 없는 문장을 만들지 않으므로 검증 가능하고,
+    경주당 열 몇 두를 LLM으로 돌리는 비용도 들지 않는다.
+    """
+    tags: List[str] = []
+    n = len(race)
+
+    rating = pd.to_numeric(race["rating"], errors="coerce")
+    if pd.notna(r.rating) and rating.notna().sum() >= 3:
+        rank = int((rating > r.rating).sum()) + 1
+        if rank == 1:
+            tags.append("레이팅 1위")
+        elif rank <= max(2, n // 4):
+            tags.append("레이팅 상위")
+
+    burden = pd.to_numeric(race["burden"], errors="coerce")
+    if pd.notna(r.burden) and burden.notna().sum() >= 3 and r.burden <= burden.min():
+        tags.append("최경량")
+
+    if getattr(r, "is_front", 0) == 1 and getattr(r, "race_front_n", 0) == 1:
+        tags.append("단독 선행")
+    if getattr(r, "pace_edge", 0) and r.pace_edge > 0.5:
+        tags.append("전개 수혜")
+
+    starts = getattr(r, "starts_prior", 0) or 0
+    if starts == 0:
+        tags.append("첫 출전")
+    else:
+        wr = getattr(r, "win_rate", None)
+        if wr is not None and wr == wr and starts >= 5 and wr >= 0.20:
+            tags.append(f"승률 {wr:.0%}")
+        recent = getattr(r, "avg_ord_pct_3", None)
+        if recent is not None and recent == recent and recent <= 0.30:
+            tags.append("최근 3전 호조")
+
+    jk = getattr(r, "jk_win_rate", None)
+    if jk is not None and jk == jk and (getattr(r, "jk_starts", 0) or 0) >= 100 and jk >= 0.12:
+        tags.append("기수 호조")
+
+    # 간격 태그는 '드물어야' 정보가 된다. 느슨하게 잡으면 절반 넘는 말에 붙어
+    # 아무것도 구별해 주지 못한다. 양 극단만 남긴다.
+    days = getattr(r, "days_since_last", None)
+    if days is not None and days == days:
+        if days >= 150:
+            tags.append("장기 휴양 후")
+        elif days <= 8:
+            tags.append("강행군")
+
+    return tags[:4]
+
+
+def build_rows(pred: pd.DataFrame) -> List[Dict]:
+    """예측 프레임 → predictions 테이블 행. 각질·태그도 이때 함께 확정한다."""
+    rows: List[Dict] = []
+    for key, race in pred.groupby("race_key"):
+        for r in race.itertuples():
+            rows.append({
+                "race_key": key,
+                "hr_no": r.hr_no,
+                "chul_no": int(r.chul_no) if pd.notna(r.chul_no) else None,
+                "p_win": float(r.p_win_norm),
+                "p_place": float(r.p_top3_norm) if pd.notna(r.p_top3_norm) else None,
+                "pred_rank": int(r.pred_rank),
+                "model_version": MODEL_VERSION,
+                "style_code": getattr(r, "style_code", None) or "unknown",
+                "tags": json.dumps(_tags(r, race), ensure_ascii=False),
+            })
+    return rows
+
+
+def build_simulations(pred: pd.DataFrame, n_sims: int = 2000) -> List[Dict]:
+    """경주별 시뮬레이션을 돌려 미리보기 대본과 신뢰도를 만든다."""
+    out: List[Dict] = []
+    for key, race in pred.groupby("race_key"):
+        race = race.sort_values("pred_rank")
+        dist = pd.to_numeric(race["distance"], errors="coerce").dropna()
+        if dist.empty or len(race) < 3:
+            continue
+        distance = float(dist.iloc[0])
+        runners = build_runners(race.to_dict("records"))
+        target = race["p_win_norm"].tolist()
+        # 경주마다 이변의 여지를 보정해 시뮬 승률을 게재 승률에 맞춘다
+        noise = fit_noise(runners, distance, target)
+        # 대표 시나리오는 '본명마가 이긴 판' 중 가장 전형적인 전개로 고른다
+        sim = simulate(runners, distance, n_sims=n_sims,
+                       noise_scale=noise, scenario_winner=0)
+        conf = confidence(sim)
+        out.append({
+            "race_key": key,
+            "payload": json.dumps(animation_payload(sim, distance), ensure_ascii=False),
+            "conf_score": conf["score"], "conf_label": conf["label"],
+            "conf_desc": conf["desc"], "n_sims": n_sims,
+            "noise_scale": round(float(noise), 3),
+        })
+    return out
+
+
+def frozen_race_keys(conn: sqlite3.Connection) -> set:
+    """이미 경주일이 지났거나 결과가 들어온 경주 — 예측 수정 금지."""
+    today = dt.date.today().isoformat()
+    rows = conn.execute(
+        "SELECT DISTINCT p.race_key FROM predictions p "
+        "JOIN races r ON r.race_key = p.race_key "
+        "WHERE r.rc_date < ? OR COALESCE(r.has_result,0) = 1",
+        (today,),
+    ).fetchall()
+    return {r[0] for r in rows}
+
+
+def generate(conn: sqlite3.Connection, race_keys: Optional[List[str]] = None,
+             days_ahead: int = 10) -> pd.DataFrame:
+    keys = race_keys or upcoming_race_keys(conn, days_ahead)
+    if not keys:
+        log.info("예측할 신규 경주가 없습니다.")
+        return pd.DataFrame()
+
+    frozen = frozen_race_keys(conn)
+    keys = [k for k in keys if k not in frozen]
+    if not keys:
+        log.info("대상 경주가 모두 동결 상태입니다 (경주일 경과).")
+        return pd.DataFrame()
+
+    target, _ = build_prediction_frame(conn, keys)
+    if target.empty:
+        log.warning("출전표에서 피처를 만들지 못했습니다.")
+        return target
+
+    bundle = load()
+    pred = predict_frame(bundle["models"], target)
+
+    rows = build_rows(pred)
+    upsert(conn, "predictions", rows, ["race_key", "hr_no", "model_version"])
+    upsert(conn, "simulations", build_simulations(pred), ["race_key"])
+    conn.commit()
+    log.info("예측 생성: %d경주 / %d두", pred["race_key"].nunique(), len(rows))
+    return pred
+
+
+def main(argv: Optional[List[str]] = None) -> int:
+    ap = argparse.ArgumentParser(description="출전표 기반 예측 생성")
+    ap.add_argument("--db", default="data/horseai.sqlite")
+    ap.add_argument("--days-ahead", type=int, default=10)
+    ap.add_argument("--race", nargs="*", help="특정 race_key 만")
+    args = ap.parse_args(argv)
+
+    logging.basicConfig(level=logging.INFO, format="%(message)s")
+    with session(args.db) as conn:
+        try:
+            pred = generate(conn, args.race, args.days_ahead)
+        except FileNotFoundError as e:
+            print(f"✗ {e}", file=sys.stderr)
+            return 1
+    if pred.empty:
+        return 0
+
+    for key, grp in pred.groupby("race_key"):
+        g = grp.sort_values("pred_rank").head(3)
+        picks = "  ".join(
+            f"{int(r.chul_no)}번 {r.hr_name}({r.p_win_norm:.0%})" for r in g.itertuples()
+        )
+        print(f"{key}  {picks}")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

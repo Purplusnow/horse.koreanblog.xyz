@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+{% from "_macros.html" import ad, form_table %}
+
+{% block title %}{{ horse.hr_name }} 전적 · 출주 이력 | {{ site.name }}{% endblock %}
+{% block description %}
+{{ horse.hr_name }}({% if horse.sex %}{{ horse.sex }}{% endif %}{% if horse.age %} {{ horse.age }}세{% endif %}) 경주마 전적.
+최근 {{ form|length }}전 착순 · 경주기록 · 구간 통과순위 · 부담중량 · 마체중 · 배당률을 정리했습니다.
+{% endblock %}
+
+{% block content %}
+
+<nav class="breadcrumb" aria-label="탐색 경로">
+  <a href="/">홈</a> <span>/</span> <span>{{ horse.hr_name }}</span>
+</nav>
+
+<header class="race-header">
+  <h1>{{ horse.hr_name }}</h1>
+  <ul class="race-facts">
+    {% if horse.sex %}<li><span>성별</span><b>{{ horse.sex }}</b></li>{% endif %}
+    {% if horse.age %}<li><span>연령</span><b>{{ horse.age }}세</b></li>{% endif %}
+    {% if horse.origin %}<li><span>산지</span><b>{{ horse.origin }}</b></li>{% endif %}
+    {% if horse.rating %}<li><span>레이팅</span><b>{{ horse.rating|int }}</b></li>{% endif %}
+    {% if horse.tr_name %}<li><span>조교사</span><b>{{ horse.tr_name }}</b></li>{% endif %}
+    {% if horse.ow_name %}<li><span>마주</span><b>{{ horse.ow_name }}</b></li>{% endif %}
+  </ul>
+</header>
+
+{% if summary and summary.n %}
+<section class="stat-grid stat-grid-sm">
+  <div class="stat">
+    <span class="stat-label">최근 {{ summary.n }}전</span>
+    <span class="stat-value">{{ summary.wins }}<small>승</small></span>
+    <span class="stat-note">3착 이내 {{ summary.top3 }}회</span>
+  </div>
+  <div class="stat">
+    <span class="stat-label">승률</span>
+    <span class="stat-value">{{ '%.0f'|format(summary.wins / summary.n * 100) }}<small>%</small></span>
+    <span class="stat-note">최근 {{ summary.n }}전 기준</span>
+  </div>
+  <div class="stat">
+    <span class="stat-label">복승률</span>
+    <span class="stat-value">{{ '%.0f'|format(summary.top3 / summary.n * 100) }}<small>%</small></span>
+    <span class="stat-note">3착 이내 비율</span>
+  </div>
+  {% if summary.best_odds %}
+  <div class="stat">
+    <span class="stat-label">최고 배당 우승</span>
+    <span class="stat-value">{{ summary.best_odds }}<small>배</small></span>
+    <span class="stat-note">단승 기준</span>
+  </div>
+  {% endif %}
+</section>
+{% endif %}
+
+{{ ad(adsense, 'slot_top') }}
+
+<section class="table-section">
+  <h2>출주 이력</h2>
+  {{ form_table(form) }}
+  <p class="table-note">
+    S1F는 출발 200m 지점 통과순위입니다. 이 값이 각질(선행 · 선입 · 추입) 판정의 근거이며,
+    숫자가 작을수록 초반에 앞에서 달렸다는 뜻입니다. 마체중 단위는 kg, 단승은 배당 배율입니다.
+  </p>
+</section>
+
+{{ ad(adsense, 'slot_bottom') }}
+
+{% endblock %}

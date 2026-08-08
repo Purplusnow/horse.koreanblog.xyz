@@ -1,0 +1,169 @@
+{% extends "base.html" %}
+{% from "_macros.html" import ad, race_row, result_row, conf_badge %}
+
+{% block title %}{{ site.name }} — 경마 출마표 · 전적 · 예상{% endblock %}
+{% block description %}{{ site.description }}{% endblock %}
+
+{% block head_extra %}
+<script type="application/ld+json">
+{{ {
+  "@context": "https://schema.org",
+  "@type": "WebSite",
+  "name": site.name,
+  "url": site.url,
+  "description": site.description
+} | tojson }}
+</script>
+{% endblock %}
+
+{% block content %}
+
+<section class="hero">
+  <h1>발주 전에 공개하고, 결과로 검증합니다</h1>
+  <p class="hero-sub">
+    자체 예측 엔진이 서울 · 부산경남 · 제주 전 경주의 출주마별 승률을 산출합니다.
+    모든 예상은 발주 전에 공개된 그대로 고정되며, 빗나간 예상까지 포함해
+    <a href="/accuracy/">적중률 전량</a>을 공개합니다.
+  </p>
+  {% if metrics.trained_races or metrics.verified_races %}
+  <ul class="cred-strip">
+    {% if metrics.trained_races %}
+    <li><b>{{ '{:,}'.format(metrics.trained_races) }}</b><span>학습 경주</span></li>
+    {% endif %}
+    {% if metrics.n_features %}
+    <li><b>{{ metrics.n_features }}</b><span>산출 지표</span></li>
+    {% endif %}
+    {% if metrics.verified_races %}
+    <li><b>{{ '{:,}'.format(metrics.verified_races) }}</b><span>검증 경주</span></li>
+    {% endif %}
+    {% if metrics.strong_hit_win %}
+    <li class="cred-edge"><b>{{ '%.1f'|format(metrics.strong_hit_win * 100) }}%</b><span>추천경주 적중률</span></li>
+    {% endif %}
+  </ul>
+  {% endif %}
+</section>
+
+{% if featured %}
+<section class="featured">
+  <h2 class="featured-heading">
+    금주의 추천경주
+    <small>시뮬레이션 결과가 한 마리로 좁게 모인 경주</small>
+  </h2>
+  <div class="featured-grid">
+    {% for race in featured %}
+    {% set p = race.picks[0] if race.picks else None %}
+    <a class="featured-card" href="{{ race.url }}">
+      <div class="featured-top">
+        <span class="meet meet-{{ race.meet }}">{{ race.meet }}</span>
+        <b>{{ race.rc_no }}R</b>
+        <small>{{ race.rc_date[5:] }} {{ race.post_time or '' }}</small>
+        {{ conf_badge(race.conf_label, race.conf_score) }}
+      </div>
+      {% if p %}
+      <div class="featured-pick">
+        <span class="gate">{{ p.chul_no }}</span>
+        <strong>{{ p.hr_name }}</strong>
+        {% if p.style_label %}<span class="style style-{{ p.style_code }}">{{ p.style_label }}</span>{% endif %}
+      </div>
+      <div class="featured-meta">
+        예상 승률 <b>{{ p.p_win_pct }}%</b> · {{ race.distance }}m{% if race.grade %} · {{ race.grade }}{% endif %}
+      </div>
+      {% endif %}
+    </a>
+    {% endfor %}
+  </div>
+  <p class="featured-note">
+    신뢰도는 반복 시뮬레이션에서 1위 마필이 얼마나 일관되게 앞섰는지로 산출합니다.
+    배당은 산출에 쓰지 않으며, 마필 능력만으로 판정합니다.
+  </p>
+</section>
+{% endif %}
+
+{{ ad(adsense, 'slot_top') }}
+
+{% if upcoming_by_day %}
+{% for date, races in upcoming_by_day %}
+<section class="day-section">
+  <h2 class="day-heading">
+    {{ date }}
+    <span class="day-weekday">{{ races[0].weekday }}요일</span>
+    <span class="day-count">{{ races|length }}경주</span>
+  </h2>
+  <div class="table-scroll">
+    <table class="race-table">
+      <thead>
+        <tr>
+          <th class="rr-no">경주</th>
+          <th class="rr-time">발주</th>
+          <th class="rr-cond">조건</th>
+          <th class="rr-pick">◎ 본명</th>
+          <th class="rr-pick">○ 대항</th>
+          <th class="rr-pick">▲ 복병</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for race in races %}
+        {{ race_row(race) }}
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+{% endfor %}
+{% else %}
+<section class="empty-state">
+  <h2>게재 예정인 경주가 없습니다</h2>
+  <p>
+    경주는 주로 금 · 토 · 일에 시행됩니다. 출전표가 공개되면 예상이 이곳에 올라옵니다.
+    그동안 <a href="/accuracy/">지금까지의 적중률</a>을 확인해 보세요.
+  </p>
+</section>
+{% endif %}
+
+{{ ad(adsense, 'slot_in_article') }}
+
+{% if recent_past %}
+<section class="day-section">
+  <h2 class="day-heading">최근 경주 결과 <a class="see-all" href="/results/">전체 보기 →</a></h2>
+  <div class="table-scroll">
+    <table class="race-table">
+      <thead>
+        <tr>
+          <th class="rr-no">경주</th>
+          <th class="rr-cond">조건</th>
+          <th class="res-pick">본명 ◎</th>
+          <th class="c-num">착순</th>
+          <th class="res-actual">실제 1착</th>
+          <th class="c-num">단승</th>
+          <th class="c-num">판정</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for race in recent_past %}
+        {{ result_row(race) }}
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+{% endif %}
+
+<section class="panel method-panel">
+  <h2>예상 산출 기준</h2>
+  <p class="panel-lead">
+    한국마사회가 공개하는 출전표 · 경주성적 원자료를 사용합니다. 마필의 과거 전적,
+    S1F 통과순위에서 판정한 각질과 경주 전개, 기수 · 조교사 성적, 부담중량, 레이팅,
+    구간별 상대 속도지수 등 <b>{{ metrics.n_features }}개 지표</b>를 정량 분석해
+    출주마별 우승 확률을 산출합니다.
+  </p>
+  <ul>
+    <li><b>경주 후 정보는 쓰지 않습니다.</b> 착순 · 경주기록 · 당일 마체중은 산출에서 제외되며, 이 원칙은 자동 검사로 매 갱신마다 확인합니다.</li>
+    <li><b>배당률은 산출에 넣지 않습니다.</b> 배당률을 넣으면 인기 순위를 따라 읽게 됩니다. 대신 1인기(최저 단승배당)를 기준선으로 두고 매번 비교합니다.</li>
+    <li><b>검증은 시간순 교차검증(워크포워드)으로 합니다.</b> 과거 구간만으로 학습해 그 이후 구간을 맞히는 방식으로만 성능을 측정합니다. 무작위 분할은 같은 경주의 다른 말이 학습에 섞여 성능을 부풀립니다.</li>
+  </ul>
+  <p class="panel-more"><a href="/about/">산출 방식 자세히 보기 →</a></p>
+</section>
+
+{{ ad(adsense, 'slot_bottom') }}
+
+{% endblock %}

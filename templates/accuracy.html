@@ -1,0 +1,223 @@
+{% extends "base.html" %}
+{% from "_macros.html" import ad %}
+{% set o = accuracy.overall %}
+
+{% block title %}예상 적중률 — 전 경주 검증 결과 | {{ site.name }}{% endblock %}
+{% block description %}
+{% if o and o.n_races %}게재한 예상 {{ '{:,}'.format(o.n_races) }}경주를 실제 착순과 대조한 결과, 단승 적중률 {{ '%.1f'|format(o.hit_win * 100) }}%, 연승 적중률 {{ '%.1f'|format(o.hit_place * 100) }}%.{% else %}게재한 모든 예상을 실제 착순과 대조해 적중률을 그대로 공개합니다.{% endif %}
+
+{% endblock %}
+
+{% block content %}
+
+<header class="page-header">
+  <h1>예상 적중률</h1>
+  <p class="page-lead">
+    아래 수치는 <strong>발주 전에 이 사이트에 게재했던 예상</strong>만을 실제 착순과 대조한 결과입니다.
+    표본을 골라내지 않았고, 게재 후 예상을 수정하지도 않았습니다. 성적이 나빴던 구간도 그대로 남아 있습니다.
+    시중 예상지가 표본 크기와 빗나간 예상을 함께 공개하는 경우는 드뭅니다 — 그 차이가 이 페이지의 존재 이유입니다.
+  </p>
+</header>
+
+{{ ad(adsense, 'slot_top') }}
+
+{% if o and o.n_races %}
+
+<section class="stat-grid">
+  <div class="stat">
+    <span class="stat-label">단승 적중률</span>
+    <span class="stat-value">{{ '%.1f'|format(o.hit_win * 100) }}<small>%</small></span>
+    <span class="stat-note">1순위 추천마가 1착</span>
+  </div>
+  <div class="stat">
+    <span class="stat-label">연승 적중률</span>
+    <span class="stat-value">{{ '%.1f'|format(o.hit_place * 100) }}<small>%</small></span>
+    <span class="stat-note">1순위 추천마가 3착 이내</span>
+  </div>
+  <div class="stat">
+    <span class="stat-label">3순위 내 1착 포함</span>
+    <span class="stat-value">{{ '%.1f'|format(o.hit_top3_has_winner * 100) }}<small>%</small></span>
+    <span class="stat-note">상위 3두 안에 우승마</span>
+  </div>
+  <div class="stat">
+    <span class="stat-label">검증 경주</span>
+    <span class="stat-value">{{ '{:,}'.format(o.n_races) }}</span>
+    <span class="stat-note">{{ o.first_date }} ~ {{ o.last_date }}</span>
+  </div>
+</section>
+
+{% if accuracy.last_90d and accuracy.last_90d.n_races %}
+<section class="panel">
+  <h2>최근 90일</h2>
+  <p class="panel-lead">
+    전체 누적은 과거 성적에 희석됩니다. 지금 이 모델이 어느 정도인지는 최근 구간이 더 정확한 지표입니다.
+  </p>
+  <ul class="inline-stats">
+    <li><span>검증 경주</span><b>{{ '{:,}'.format(accuracy.last_90d.n_races) }}</b></li>
+    <li><span>단승 적중</span><b>{{ '%.1f'|format(accuracy.last_90d.hit_win * 100) }}%</b></li>
+    <li><span>연승 적중</span><b>{{ '%.1f'|format(accuracy.last_90d.hit_place * 100) }}%</b></li>
+  </ul>
+</section>
+{% endif %}
+
+{% if accuracy.monthly %}
+<section class="table-section">
+  <h2>월별 추이</h2>
+  <div class="table-scroll">
+    <table class="stats-table">
+      <thead>
+        <tr><th>월</th><th class="c-num">경주</th><th class="c-num">단승</th><th class="c-num">연승</th><th class="c-num">3순위 내</th></tr>
+      </thead>
+      <tbody>
+        {% for m in accuracy.monthly|reverse %}
+        <tr>
+          <td>{{ m.month }}</td>
+          <td class="c-num">{{ m.n_races }}</td>
+          <td class="c-num">{{ '%.1f'|format(m.hit_win * 100) }}%</td>
+          <td class="c-num">{{ '%.1f'|format(m.hit_place * 100) }}%</td>
+          <td class="c-num">{{ '%.1f'|format(m.hit_top3_has_winner * 100) }}%</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+{% endif %}
+
+{{ ad(adsense, 'slot_in_article') }}
+
+{% if accuracy.by_conf %}
+<section class="table-section">
+  <h2>신뢰도 등급별 실적</h2>
+  <p class="panel-lead">
+    게재한 예상을 등급별로 나눠 집계한 결과입니다. 등급이 올라갈수록 적중률이
+    함께 올라가야 지표로서 의미가 있습니다.
+  </p>
+  <div class="table-scroll">
+    <table class="stats-table">
+      <thead><tr><th>등급</th><th class="c-num">경주</th><th class="c-num">단승</th><th class="c-num">연승</th></tr></thead>
+      <tbody>
+        {% for m in accuracy.by_conf %}
+        <tr>
+          <td><span class="conf conf-{{ m.label }}">{{ m.label }}</span></td>
+          <td class="c-num">{{ m.n_races }}</td>
+          <td class="c-num">{{ '%.1f'|format(m.hit_win * 100) }}%</td>
+          <td class="c-num">{{ '%.1f'|format(m.hit_place * 100) }}%</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+{% endif %}
+
+{% if accuracy.by_meet %}
+<section class="table-section">
+  <h2>경마장별</h2>
+  <div class="table-scroll">
+    <table class="stats-table">
+      <thead><tr><th>경마장</th><th class="c-num">경주</th><th class="c-num">단승</th><th class="c-num">연승</th></tr></thead>
+      <tbody>
+        {% for m in accuracy.by_meet %}
+        <tr>
+          <td>{{ m.meet }}</td>
+          <td class="c-num">{{ m.n_races }}</td>
+          <td class="c-num">{{ '%.1f'|format(m.hit_win * 100) }}%</td>
+          <td class="c-num">{{ '%.1f'|format(m.hit_place * 100) }}%</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+{% endif %}
+
+{% if accuracy.recent %}
+<section class="table-section">
+  <h2>최근 예상 60건</h2>
+  <p class="panel-lead">적중과 실패를 모두 그대로 나열합니다.</p>
+  <div class="table-scroll">
+    <table class="stats-table">
+      <thead><tr><th>일자</th><th>경주</th><th>1순위 추천</th><th class="c-num">착순</th><th class="c-num">배당</th><th class="c-num">결과</th></tr></thead>
+      <tbody>
+        {% for r in accuracy.recent %}
+        <tr>
+          <td>{{ r.date }}</td>
+          <td>{{ r.meet }} {{ r.rc_no }}R</td>
+          <td>{{ r.pick or '-' }}</td>
+          <td class="c-num">{{ r.ord or '-' }}</td>
+          <td class="c-num">{{ r.odds or '-' }}</td>
+          <td class="c-num">
+            {% if r.hit_win %}<span class="ord ord-1">적중</span>
+            {% elif r.hit_place %}<span class="ord ord-3">연승</span>
+            {% else %}<span class="ord ord-none">실패</span>{% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+{% endif %}
+
+<section class="panel panel-caution">
+  <h2>이 숫자를 읽을 때</h2>
+  <ul>
+    <li>표본이 적은 구간(특히 월별 초기)은 우연의 영향이 큽니다. 최소 수백 경주 이상 쌓인 뒤에 판단하세요.</li>
+    <li>적중률이 높다고 해서 수익이 보장되지 않습니다. 인기마를 자주 맞히면 적중률은 높아도 배당이 낮아 회수율은 떨어집니다.</li>
+  </ul>
+</section>
+
+{% else %}
+
+<section class="empty-state">
+  <h2>아직 검증할 데이터가 쌓이지 않았습니다</h2>
+  <p>
+    예상을 공개한 경주가 시행되고 결과가 수집되면 이곳에 자동으로 집계됩니다.
+    수치는 사후 편집 없이 누적됩니다.
+  </p>
+</section>
+
+{% endif %}
+
+{% if metrics.conf_tiers %}
+<section class="panel">
+  <h2>신뢰도 등급은 어떻게 정하나</h2>
+  <p class="panel-lead">
+    한 경주를 수백 번 시뮬레이션해 <b>1순위 마필이 얼마나 일관되게 앞섰는지</b>,
+    <b>2순위와 얼마나 벌어졌는지</b>, <b>출주마들의 이력이 판단할 만큼 쌓였는지</b>
+    세 가지를 합산해 0~100 으로 지표화합니다. 등급 경계는 임의로 정하지 않고
+    과거 경주의 실제 점수 분포에서 백분위로 잡습니다.
+  </p>
+  <p class="panel-lead">
+    아래는 그 등급이 실제로 갈리는지를 <b>시간순 교차검증</b>으로 확인한 결과입니다.
+    과거 구간만으로 학습한 뒤 그 이후 {{ '{:,}'.format(metrics.conf_n_races) }}경주를
+    맞혀 본 수치이며, 이 사이트에 게재한 예상의 실적은 위쪽 표에 따로 누적됩니다.
+  </p>
+  <div class="table-scroll">
+    <table class="stats-table">
+      <thead><tr><th>등급</th><th class="c-num">비중</th><th class="c-num">경주</th><th class="c-num">단승</th><th class="c-num">연승</th></tr></thead>
+      <tbody>
+        {% for t in metrics.conf_tiers %}
+        <tr>
+          <td><span class="conf conf-{{ t.label }}">{{ t.label }}</span></td>
+          <td class="c-num">{{ '%.0f'|format(t.share * 100) }}%</td>
+          <td class="c-num">{{ '{:,}'.format(t.n_races) }}</td>
+          <td class="c-num">{{ '%.1f'|format(t.hit_win * 100) }}%</td>
+          <td class="c-num">{{ '%.1f'|format(t.hit_place * 100) }}%</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  <p class="panel-more">
+    '강승부'로 분류된 경주에서만 예상을 참고하면 적중률이 올라가지만, 그런 경주는
+    전체의 약 {{ '%.0f'|format(metrics.conf_tiers[0].share * 100) }}%뿐입니다.
+    맞히기 어려운 경주를 미리 알리는 것도 지표의 역할입니다.
+  </p>
+</section>
+{% endif %}
+
+{{ ad(adsense, 'slot_bottom') }}
+
+{% endblock %}

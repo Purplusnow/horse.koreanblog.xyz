@@ -1,0 +1,194 @@
+name: 예상 갱신 및 배포
+
+# 한국마사회 경주는 주로 금·토·일에 시행되고, 출전표는 그 며칠 전에 공개된다.
+# 6시간마다 돌면서 (1) 새 결과 수집 (2) 새 출전표 예측 (3) 사이트 재배포 를 한다.
+# 시각은 UTC 기준 — KST = UTC+9.
+on:
+  schedule:
+    - cron: "0 0,6,12,18 * * *"   # KST 09/15/21/03시
+  workflow_dispatch:
+    inputs:
+      retrain:
+        description: "모델 재학습 강제 실행"
+        type: boolean
+        default: false
+      backfill_years:
+        description: "DB가 비었을 때 백필할 기간(년)"
+        default: "5"
+
+concurrency:
+  group: horseai-update
+  cancel-in-progress: false      # DB를 쓰므로 동시 실행 금지. 중간에 죽이면 안 된다.
+
+permissions:
+  contents: write                # 릴리스 자산으로 DB 보관
+  pages: write
+  id-token: write
+
+env:
+  DB: data/horseai.sqlite
+  DB_RELEASE_TAG: db-state       # DB 스냅샷을 담아두는 릴리스 태그
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    # deploy-pages 액션은 github-pages 환경을 요구한다. 없으면 배포 단계에서 실패한다.
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: 의존성 설치
+        run: pip install -r requirements.txt
+
+      # --- 상태 복원 -------------------------------------------------------
+      # Actions 는 무상태다. 예측 동결 규칙과 적중률 이력이 DB에 있으므로,
+      # DB를 잃으면 사이트의 유일한 자산인 검증 기록이 사라진다.
+      # git 에 커밋하면 바이너리 diff 로 저장소가 급격히 비대해지므로
+      # 릴리스 자산으로 보관한다(압축 후 업로드, 매번 덮어쓰기).
+      - name: DB 복원
+        id: restore
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p data models
+          if gh release download "$DB_RELEASE_TAG" -p "horseai.sqlite.zst" -D /tmp 2>/dev/null; then
+            zstd -d /tmp/horseai.sqlite.zst -o "$DB"
+            echo "restored=true" >> "$GITHUB_OUTPUT"
+            echo "DB 복원 완료 ($(du -h "$DB" | cut -f1))"
+          else
+            echo "restored=false" >> "$GITHUB_OUTPUT"
+            echo "기존 DB 없음 — 최초 백필을 수행합니다."
+          fi
+          gh release download "$DB_RELEASE_TAG" -p "model.joblib" -D models 2>/dev/null || true
+          gh release download "$DB_RELEASE_TAG" -p "metrics.json" -D models 2>/dev/null || true
+
+      - name: 엔드포인트 확인
+        env:
+          KRA_SERVICE_KEY: ${{ secrets.KRA_SERVICE_KEY }}
+        run: PYTHONPATH=src python -m horseai.kra.probe
+
+      # --- 수집 ------------------------------------------------------------
+      - name: 과거 성적 백필 (최초 1회)
+        if: steps.restore.outputs.restored != 'true'
+        env:
+          KRA_SERVICE_KEY: ${{ secrets.KRA_SERVICE_KEY }}
+        run: |
+          PYTHONPATH=src python -m horseai.kra.collect backfill \
+            --years "${{ inputs.backfill_years || '5' }}" --db "$DB"
+
+      - name: 최근 성적 갱신
+        env:
+          KRA_SERVICE_KEY: ${{ secrets.KRA_SERVICE_KEY }}
+        run: PYTHONPATH=src python -m horseai.kra.collect results --days 21 --db "$DB"
+
+      - name: 출전표 수집
+        env:
+          KRA_SERVICE_KEY: ${{ secrets.KRA_SERVICE_KEY }}
+        run: PYTHONPATH=src python -m horseai.kra.collect entries --ahead 10 --db "$DB"
+
+      # 조교·마체중·출주취소는 '그 날에만' 값이 실리는 API 다. 하루를 놓치면
+      # 그 하루는 영구히 복구할 수 없으므로, 실패해도 배포를 막지 않되(continue-on-error)
+      # 매 실행마다 반드시 시도한다. 반년쯤 쌓이면 비공개 정보에 가장 가까운
+      # 자산이 되고, 지금 시장을 못 이기는 격차를 좁힐 유일한 후보다.
+      - name: 일일 데이터 축적 (조교·마체중·출주취소)
+        continue-on-error: true
+        env:
+          KRA_SERVICE_KEY: ${{ secrets.KRA_SERVICE_KEY }}
+        run: PYTHONPATH=src python -m horseai.kra.collect daily --db "$DB"
+
+      # --- 학습 (주 1회: 월요일 03시 UTC, 또는 모델이 없을 때) ---------------
+      - name: 재학습 필요 여부 판단
+        id: need
+        run: |
+          if [ ! -f models/model.joblib ]; then
+            echo "yes=true" >> "$GITHUB_OUTPUT"; echo "모델 없음 → 학습"
+          elif [ "${{ inputs.retrain }}" = "true" ]; then
+            echo "yes=true" >> "$GITHUB_OUTPUT"; echo "수동 요청 → 재학습"
+          elif [ "$(date -u +%u)" = "1" ] && [ "$(date -u +%H)" = "00" ]; then
+            echo "yes=true" >> "$GITHUB_OUTPUT"; echo "주간 일정 → 재학습"
+          else
+            echo "yes=false" >> "$GITHUB_OUTPUT"; echo "재학습 생략"
+          fi
+
+      - name: 모델 학습 및 검증
+        if: steps.need.outputs.yes == 'true'
+        run: |
+          PYTHONPATH=src python -m horseai.model train --db "$DB" | tee models/report.txt
+
+      - name: 누수 회귀 테스트
+        if: steps.need.outputs.yes == 'true'
+        run: |
+          # 합성 픽스처로 '미래 정보가 피처에 새지 않는지'를 매 학습마다 확인한다.
+          python tools/make_synth_db.py --db data/synth.sqlite --years 3
+          python tests/test_no_leakage.py
+          PYTHONPATH=src python tests/test_outcomes.py
+
+      # 신뢰도 등급 경계는 모델 승률 분포에 붙어 있다. 재학습으로 분포가 바뀌면
+      # 임계값도 같이 옮겨야 한 등급이 통째로 비는 일이 생기지 않는다.
+      - name: 신뢰도 등급 재보정
+        if: steps.need.outputs.yes == 'true'
+        continue-on-error: true
+        run: |
+          PYTHONPATH=src python tools/calibrate_confidence.py \
+            --db "$DB" --races 900 --sims 400 --save models/metrics.json
+
+      # --- 예측 · 코멘트 · 검증 ---------------------------------------------
+      - name: 예측 생성
+        run: PYTHONPATH=src python -m horseai.predict --db "$DB"
+
+      - name: AI 코멘트 생성
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: PYTHONPATH=src python -m horseai.comment --db "$DB" --limit 60
+
+      - name: 적중률 검증
+        run: PYTHONPATH=src python -m horseai.verify --db "$DB" --out data/accuracy.json
+
+      # --- 빌드 · 배포 -------------------------------------------------------
+      - name: 사이트 빌드
+        run: PYTHONPATH=src python -m horseai.site --db "$DB" --out dist
+
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+
+      - id: deployment
+        uses: actions/deploy-pages@v4
+
+      # --- 상태 저장 --------------------------------------------------------
+      # 반드시 마지막에. 앞 단계가 실패했어도 수집분은 보존해야 다음 실행이
+      # 처음부터 다시 긁지 않는다 (always()).
+      - name: DB 저장
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          [ -f "$DB" ] || exit 0
+          PYTHONPATH=src python -m horseai.kra.collect prune --db "$DB" --keep-days 180
+          zstd -19 -f "$DB" -o /tmp/horseai.sqlite.zst
+          gh release view "$DB_RELEASE_TAG" >/dev/null 2>&1 \
+            || gh release create "$DB_RELEASE_TAG" --title "DB 스냅샷" \
+                 --notes "자동 갱신되는 예측 DB. 수동으로 편집하지 마세요." --latest=false
+          gh release upload "$DB_RELEASE_TAG" /tmp/horseai.sqlite.zst --clobber
+          [ -f models/model.joblib ] && gh release upload "$DB_RELEASE_TAG" models/model.joblib --clobber || true
+          [ -f models/metrics.json ] && gh release upload "$DB_RELEASE_TAG" models/metrics.json --clobber || true
+          echo "저장 완료 ($(du -h /tmp/horseai.sqlite.zst | cut -f1) 압축)"
+
+      - name: 요약
+        if: always()
+        run: |
+          {
+            echo "### 갱신 결과"
+            echo '```'
+            PYTHONPATH=src python -m horseai.kra.collect stats --db "$DB" 2>/dev/null || true
+            echo '```'
+            [ -f models/report.txt ] && { echo "### 모델 검증"; echo '```'; cat models/report.txt; echo '```'; }
+          } >> "$GITHUB_STEP_SUMMARY"
