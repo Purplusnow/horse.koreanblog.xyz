@@ -86,20 +86,6 @@ a:hover { text-decoration: underline; }
 
 /* --------------------------------------------------------- 신뢰 배너 */
 
-.trustbar { background: var(--accent-soft); border-bottom: 1px solid var(--border); }
-.trustbar-inner {
-  display: flex; align-items: center; gap: 18px;
-  padding-top: 9px; padding-bottom: 9px;
-  font-size: 13.5px; flex-wrap: wrap;
-}
-.trustbar-label {
-  font-weight: 700; color: var(--accent-text);
-  font-size: 11.5px; letter-spacing: .06em; text-transform: uppercase;
-}
-.trustbar-stat { color: var(--text-soft); }
-.trustbar-stat b { color: var(--text); font-variant-numeric: tabular-nums; font-size: 15px; }
-.trustbar-muted { color: var(--text-faint); }
-.trustbar-link { margin-left: auto; font-weight: 600; font-size: 13px; }
 
 
 /* --------------------------------------------------------------- 본문 */

@@ -43,26 +43,6 @@
   </div>
 </header>
 
-{# 모든 페이지 머리에 붙는 상태 띠.
-
-   적중률은 표본이 충분할 때만 헤드라인으로 올린다. 첫 주말의 운 좋은 몇 경주가
-   사이트 전체의 주장이 되면 곤란하다 — 어차피 다음 주에 뒤집힐 숫자다. #}
-{% set acc = accuracy.overall %}
-<div class="trustbar">
-  <div class="wrap trustbar-inner">
-    {% if acc and acc.n_races >= 100 %}
-    <span class="trustbar-label">검증 실적</span>
-    <span class="trustbar-stat"><b>{{ '%.1f'|format(acc.hit_win * 100) }}%</b> 1순위 1착</span>
-    <span class="trustbar-stat"><b>{{ '%.1f'|format(acc.hit_place * 100) }}%</b> 1순위 3착 이내</span>
-    <span class="trustbar-stat trustbar-muted">{{ '{:,}'.format(acc.n_races) }}경주 검증</span>
-    <a class="trustbar-link" href="/accuracy/">전체 보기 →</a>
-    {% else %}
-    <span class="trustbar-label">발주 전 게재 · 결과로 검증</span>
-    <a class="trustbar-link" href="/accuracy/">검증 방식 →</a>
-    {% endif %}
-  </div>
-</div>
-
 <main class="wrap">
 {% block content %}{% endblock %}
 </main>
