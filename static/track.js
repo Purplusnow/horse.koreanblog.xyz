@@ -36,6 +36,8 @@
   ];
   function gateColor(g) { return GATE_COLOR[((g || 1) - 1) % GATE_COLOR.length]; }
 
+  // 화면은 무리를 따라가는 뷰 하나만 쓴다. 축소 뷰는 말이 작아져 마번이
+  // 읽히지 않았고, 두 뷰의 마커 간격 비율이 달라 보이는 문제도 있었다.
   var playing = false, t = 0, speed = 1, raf = null, last = 0, follow = true;
   var leadIdx = 0;
 
@@ -323,11 +325,6 @@
     ctx.textAlign = 'left';
     ctx.fillText((data.track && data.track.meet ? data.track.meet + ' · ' : '')
       + Math.round(distance) + 'm · ' + (spec.corners || 0) + '코너', 10, H - 10);
-    ctx.textAlign = 'right';
-    ctx.fillStyle = '#b4842a';
-    ctx.font = 'bold 11.5px system-ui, sans-serif';
-    ctx.fillText(follow ? '따라가기' : '전체 보기', W - 10, H - 10);
-
     renderOrder(order);
   }
 
@@ -448,7 +445,6 @@
   var btnPlay = document.getElementById('tk-play');
   var btnReplay = document.getElementById('tk-replay');
   var rateBtns = Array.prototype.slice.call(document.querySelectorAll('.tk-rate'));
-  var btnZoom = document.getElementById('tk-zoom');
   var seek = document.getElementById('tk-seek');
 
   /* 108.4초 보다 '1분 48.4초' 가 경마 기록으로 읽힌다. 중계도 기록지도 그렇게 적는다. */
@@ -481,11 +477,6 @@
   var saved = null;
   try { saved = parseFloat(localStorage.getItem(RATE_KEY)); } catch (e) {}
   setRate(RATES.indexOf(saved) >= 0 ? saved : RATES[0], false);
-  if (btnZoom) btnZoom.addEventListener('click', function () {
-    follow = !follow;
-    btnZoom.setAttribute('aria-pressed', String(follow));
-    btnZoom.textContent = follow ? '🔍 따라가기' : '⤢ 전체 보기';
-  });
   if (seek) seek.addEventListener('input', function () {
     stop(); t = (parseFloat(seek.value) / 1000) * duration; sync();
   });
