@@ -19,14 +19,15 @@
 {% block content %}
 
 <section class="hero">
-  <h1>발주 전에 공개하고, 결과로 검증합니다</h1>
+  <h1>경주가 쌓일수록 똑똑해지는 예측 엔진</h1>
   <p class="hero-sub">
     {% if metrics.trained_races %}과거 <b>{{ '{:,}'.format(metrics.trained_races) }}경주</b>를
     머신러닝으로 학습한{% else %}머신러닝으로 학습한{% endif %} 자체 예측 엔진이
     서울 · 부산경남 · 제주 전 경주의 출주마별 우승 확률을 산출하고, 그 확률대로
     경주를 시뮬레이션해 전개를 미리 보여 드립니다.
-    모든 예상은 발주 전에 게재하고 이후 수정하지 않으며,
-    적중과 실패를 함께 <a href="/accuracy/">적중률</a>에 공개합니다.
+    경주가 끝날 때마다 그 결과를 다시 학습해 예측이 스스로 정교해집니다.
+    모든 예상은 발주 전에 게재하고 이후 수정하지 않으며, 적중과 실패를 함께
+    <a href="/accuracy/">적중률</a>에 공개합니다.
   </p>
   {% if metrics.trained_races or metrics.verified_races %}
   <ul class="cred-strip">
