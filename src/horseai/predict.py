@@ -131,7 +131,7 @@ def build_simulations(pred: pd.DataFrame, n_sims: int = 2000) -> List[Dict]:
         target = race["p_win_norm"].tolist()
         # 경주마다 이변의 여지를 보정해 시뮬 승률을 게재 승률에 맞춘다
         noise = fit_noise(runners, distance, target)
-        # 대표 시나리오는 '본명마가 이긴 판' 중 가장 전형적인 전개로 고른다
+        # 대표 시나리오는 '축마가 이긴 판' 중 가장 전형적인 전개로 고른다
         sim = simulate(runners, distance, n_sims=n_sims,
                        noise_scale=noise, scenario_winner=0)
         conf = confidence(sim)

@@ -39,12 +39,12 @@
   <div class="stat">
     <span class="stat-label">단승 적중률</span>
     <span class="stat-value">{{ '%.1f'|format(o.hit_win * 100) }}<small>%</small></span>
-    <span class="stat-note">1순위 추천마가 1착</span>
+    <span class="stat-note">축마(◎)가 1착</span>
   </div>
   <div class="stat">
     <span class="stat-label">연승 적중률</span>
     <span class="stat-value">{{ '%.1f'|format(o.hit_place * 100) }}<small>%</small></span>
-    <span class="stat-note">1순위 추천마가 3착 이내</span>
+    <span class="stat-note">축마(◎)가 3착 이내 — 입상</span>
   </div>
   <div class="stat">
     <span class="stat-label">3순위 내 1착 포함</span>
@@ -150,7 +150,7 @@
   <p class="panel-lead">적중과 실패를 모두 그대로 나열합니다.</p>
   <div class="table-scroll">
     <table class="stats-table">
-      <thead><tr><th>일자</th><th>경주</th><th>1순위 추천</th><th class="c-num">착순</th><th class="c-num">배당</th><th class="c-num">결과</th></tr></thead>
+      <thead><tr><th>일자</th><th>경주</th><th>축마 ◎</th><th class="c-num">착순</th><th class="c-num">배당</th><th class="c-num">결과</th></tr></thead>
       <tbody>
         {% for r in accuracy.recent %}
         <tr>
@@ -196,8 +196,8 @@
 <section class="panel">
   <h2>신뢰도 등급은 어떻게 정하나</h2>
   <p class="panel-lead">
-    한 경주를 수백 번 시뮬레이션해 <b>1순위 마필이 얼마나 일관되게 앞섰는지</b>,
-    <b>2순위와 얼마나 벌어졌는지</b>, <b>출주마들의 이력이 판단할 만큼 쌓였는지</b>
+    한 경주를 수백 번 시뮬레이션해 <b>축마가 얼마나 일관되게 앞섰는지</b>,
+    <b>상대마와 얼마나 벌어졌는지</b>, <b>출주마들의 이력이 판단할 만큼 쌓였는지</b>
     세 가지를 합산해 0~100 으로 지표화합니다. 등급 경계는 임의로 정하지 않고
     과거 경주의 실제 점수 분포에서 백분위로 잡습니다.
   </p>

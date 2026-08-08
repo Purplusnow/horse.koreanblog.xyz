@@ -185,9 +185,9 @@ def report_text(rep: Dict) -> str:
     lines = [
         f"공개 예측 검증  {o['first_date']} ~ {o['last_date']}  총 {o['n_races']:,}경주",
         "-" * 52,
-        f"  단승 적중률 (1순위 → 1착)   {o['hit_win']:6.1%}",
-        f"  연승 적중률 (1순위 → 3착내) {o['hit_place']:6.1%}",
-        f"  3순위 내 1착 포함           {o['hit_top3_has_winner']:6.1%}",
+        f"  축마 적중률 (◎ → 1착)       {o['hit_win']:6.1%}",
+        f"  축마 입상률 (◎ → 3착내)     {o['hit_place']:6.1%}",
+        f"  ◎○▲ 중 우승마            {o['hit_top3_has_winner']:6.1%}",
         f"  복승 박스 (상위2두=1·2착)   {o['hit_exacta_box']:6.1%}",
     ]
     if o.get("roi_win") is not None:

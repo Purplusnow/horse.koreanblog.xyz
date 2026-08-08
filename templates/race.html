@@ -9,7 +9,7 @@
 {% block title %}{{ title_text }} | {{ site.name }}{% endblock %}
 {% block description %}
 {{ race.rc_date }} {{ race.meet }}경마장 제{{ race.rc_no }}경주({{ race.distance }}m{% if race.grade %}, {{ race.grade }}{% endif %}) 출주마별 승률과 전적 정리.
-{% if top %}본명 {{ top.chul_no }}번 {{ top.hr_name }} 예상 승률 {{ '%.0f'|format(top.p_win_pct) }}%.{% endif %}
+{% if top %}축마 {{ top.chul_no }}번 {{ top.hr_name }} 예상 승률 {{ '%.0f'|format(top.p_win_pct) }}%.{% endif %}
 출주마 전원의 승률과 연승률을 공개합니다.
 {% endblock %}
 
@@ -118,7 +118,7 @@
 </section>
 
 <p class="mark-legend">
-  <b>◎</b> 본명 &nbsp; <b>○</b> 대항 &nbsp; <b>▲</b> 복병 &nbsp; <b>△</b> 연복
+  <b>◎</b> 축마 &nbsp; <b>○</b> 상대마 &nbsp; <b>▲</b> 복병 &nbsp; <b>△</b> 주의마
   <span>· 예측 엔진이 산출한 승률 순서입니다. 조합은 구매 권유가 아닙니다.</span>
 </p>
 {% endif %}

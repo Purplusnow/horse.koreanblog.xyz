@@ -1,7 +1,7 @@
 """공개 예측 무결성 회귀 테스트 (출주 취소 처리 · 예측 동결).
 
 취소 처리는 조용히 틀리기 쉽다. 취소마를 그냥 두면 실제로는 달리지도 않은 말을
-'본명'으로 세어 적중률이 떨어지고, 통째로 경주를 버리면 표본이 줄어든다. 어느
+'축마'으로 세어 적중률이 떨어지고, 통째로 경주를 버리면 표본이 줄어든다. 어느
 쪽이든 화면에는 그럴듯한 숫자가 찍히므로 눈으로는 발견되지 않는다.
 
     python tests/test_no_leakage.py 와 같은 방식으로 단독 실행한다.
@@ -26,7 +26,7 @@ def build_db(path: str) -> None:
     """한 경주만 담은 최소 DB.
 
     예상 1순위(1번마)가 출주 취소되고, 2순위(2번마)가 실제로 1착을 한 상황.
-    올바른 처리라면 취소마를 뺀 뒤 2번마가 본명이 되고 '적중'으로 판정돼야 한다.
+    올바른 처리라면 취소마를 뺀 뒤 2번마가 축마가 되고 '적중'으로 판정돼야 한다.
     """
     with session(path) as conn:
         conn.execute(
@@ -66,9 +66,9 @@ def test_site_outcome_reranks(conn: sqlite3.Connection) -> None:
     o = out[KEY]
     assert len(o["cancelled"]) == 1, f"취소마 인식 실패: {o['cancelled']}"
     assert o["top1"]["hr_name"] == "실제우승", \
-        f"취소마를 빼고 재순위를 매기지 않았다 (본명={o['top1']['hr_name']})"
+        f"취소마를 빼고 재순위를 매기지 않았다 (축마={o['top1']['hr_name']})"
     assert o["top1"]["mark"] == "◎", "재순위 후 마크가 갱신되지 않았다"
-    assert o["hit_win"] is True, "재순위 본명이 1착인데 적중으로 판정되지 않았다"
+    assert o["hit_win"] is True, "재순위 축마가 1착인데 적중으로 판정되지 않았다"
     assert o["winner_pick"]["adj_rank"] == 1, "우승마의 표시 순위가 취소 전 값이다"
     print("  ✓ 화면용 결과: 취소마 제외 후 재순위 · 적중 판정")
 
