@@ -214,34 +214,47 @@
     });
 
     /* 마번은 지시선으로 밖에 뺀다. 원 안에 쓰면 원이 커져야 하고, 커지면
-       서로 겹쳐 결국 못 읽는다. 라벨은 세로로 밀어 겹침을 푼다. */
-    var labels = pts.map(function (pt, i) {
-      return { i: i, x: pt.x, y: pt.y, ly: pt.y, side: pt.x < W / 2 ? -1 : 1 };
-    }).sort(function (a, b) { return a.y - b.y; });
-    var GAP = 15;
-    for (var k = 1; k < labels.length; k++) {
-      if (labels[k].ly - labels[k - 1].ly < GAP) labels[k].ly = labels[k - 1].ly + GAP;
+       서로 겹쳐 결국 못 읽는다.
+
+       라벨은 **화면 아래 고정 높이에 한 줄로** 세운다. 말마다 다른 방향으로
+       빼면 선이 사방으로 뻗어 오히려 어수선하다. 한 줄로 두면 지시선이 모두
+       아래로 내려가고, 좌우 순서가 곧 선두 순서라 읽기도 쉽다. */
+    var LY = H - 24, R2 = 9.5, MINX = R2 * 2 + 3;
+    var labels = pts.map(function (pt, i) { return { i: i, x: pt.x, y: pt.y }; })
+      .sort(function (a, b) { return a.x - b.x; });
+
+    // 좌우로 밀어 겹침을 푼다 (왼쪽부터 최소 간격 확보 → 오른쪽 넘치면 되민다)
+    labels.forEach(function (l, k) {
+      if (k > 0) l.x = Math.max(l.x, labels[k - 1].x + MINX);
+    });
+    var over = labels.length ? labels[labels.length - 1].x - (W - R2 - 4) : 0;
+    if (over > 0) {
+      for (var k2 = labels.length - 1; k2 >= 0; k2--) {
+        labels[k2].x -= over;
+        if (k2 > 0 && labels[k2 - 1].x <= labels[k2].x - MINX) break;
+        over = k2 > 0 ? labels[k2 - 1].x - (labels[k2].x - MINX) : 0;
+      }
     }
-    var over = labels.length ? labels[labels.length - 1].ly - (H - 8) : 0;
-    if (over > 0) labels.forEach(function (l) { l.ly -= over; });
+    labels.forEach(function (l) { l.x = Math.max(R2 + 4, Math.min(W - R2 - 4, l.x)); });
 
     labels.forEach(function (l) {
       var r = runners[l.i], col = gateColor(r.gate);
-      var lx = l.x + l.side * 26;
-      ctx.strokeStyle = 'rgba(0,0,0,.25)'; ctx.lineWidth = 1;
+      ctx.strokeStyle = 'rgba(0,0,0,.18)'; ctx.lineWidth = 1;
       ctx.beginPath();
-      ctx.moveTo(l.x + l.side * (R + 1), l.y);
-      ctx.lineTo(lx - l.side * 9, l.ly);
+      ctx.moveTo(pts[l.i].x, l.y + R + 1);
+      ctx.lineTo(l.x, LY - R2 - 1);
       ctx.stroke();
       ctx.beginPath();
-      ctx.arc(lx, l.ly, 9, 0, Math.PI * 2);
+      ctx.arc(l.x, LY, R2, 0, Math.PI * 2);
       ctx.fillStyle = col[0]; ctx.fill();
-      ctx.strokeStyle = 'rgba(0,0,0,.3)'; ctx.lineWidth = 1; ctx.stroke();
+      ctx.strokeStyle = rankOf[l.i] === 1 ? '#b4842a' : 'rgba(0,0,0,.3)';
+      ctx.lineWidth = rankOf[l.i] === 1 ? 2 : 1;
+      ctx.stroke();
       var label = String(r.gate);
       ctx.fillStyle = col[1];
       ctx.font = 'bold ' + (label.length > 1 ? 9.5 : 11) + 'px system-ui, sans-serif';
       ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-      ctx.fillText(label, lx, l.ly + 0.5);
+      ctx.fillText(label, l.x, LY + 0.5);
     });
     ctx.textBaseline = 'alphabetic';
 
