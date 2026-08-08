@@ -907,7 +907,8 @@ tbody tr:hover { background: var(--bg-soft); }
   overflow: hidden; box-shadow: var(--shadow);
 }
 .race-item {
-  display: block; padding: 12px 14px 13px;
+  display: flow-root;              /* 안의 float 을 감싼다 */
+  padding: 12px 14px 13px;
   background: var(--surface); color: var(--text);
   transition: background .12s;
   position: relative; cursor: pointer;
@@ -920,7 +921,9 @@ tbody tr:hover { background: var(--bg-soft); }
 /* 카드가 눌린다는 표시. 버튼처럼 보이되 별도 링크는 아니다 — 터치 영역은
    카드 전체이고 이 상자는 그 사실을 알리는 역할만 한다. */
 .ri-go {
+  /* 오른쪽 아래에 둔다 — 엄지가 닿는 자리다 */
   display: inline-flex; align-items: center; gap: 5px;
+  float: right; clear: both;
   margin-top: 10px; padding: 6px 12px;
   border: 1px solid var(--accent); border-radius: 8px;
   font-size: 12.5px; font-weight: 700; color: var(--accent);
@@ -972,9 +975,6 @@ tbody tr:hover { background: var(--bg-soft); }
   font-size: 12px; font-weight: 700; font-variant-numeric: tabular-nums;
   color: var(--accent-text);
 }
-/* 첫 칸(축마)만 살짝 세운다 */
-.ri-pick:first-child { background: var(--accent-soft); }
-.ri-pick:first-child .mark { color: var(--accent-text); }
 /* 시행 후에는 착순이 확률 자리를 대신한다 */
 .ri-picks.is-done .rr-prob { display: none; }
 .ri-pick .ri-ord {
