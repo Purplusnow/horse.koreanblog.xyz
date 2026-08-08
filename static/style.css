@@ -983,3 +983,18 @@ tbody tr:hover { background: var(--bg-soft); }
 .roi-plus { color: var(--accent-text); font-weight: 700; }
 .race-bets { margin-bottom: 26px; }
 .bet-combo { font-variant-numeric: tabular-nums; color: var(--text-soft); }
+
+/* 재생 배속 — 콤보 대신 버튼. 현재 값이 눌린 상태로 보인다. */
+.tk-speed { display: inline-flex; gap: 2px; }
+.tk-rate {
+  border: 1px solid var(--border); background: var(--surface);
+  color: var(--text-soft); font-size: 12.5px; font-weight: 600;
+  padding: 5px 9px; cursor: pointer; font-variant-numeric: tabular-nums;
+}
+.tk-rate:first-child { border-radius: 6px 0 0 6px; }
+.tk-rate:last-child { border-radius: 0 6px 6px 0; }
+.tk-rate + .tk-rate { border-left: none; }
+.tk-rate:hover { background: var(--bg-sunken); color: var(--text); }
+.tk-rate.is-on {
+  background: var(--accent); border-color: var(--accent); color: var(--accent-on);
+}

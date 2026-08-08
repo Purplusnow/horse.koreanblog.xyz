@@ -197,7 +197,7 @@
 
   var btnPlay = document.getElementById('tk-play');
   var btnReplay = document.getElementById('tk-replay');
-  var selSpeed = document.getElementById('tk-speed');
+  var rateBtns = Array.prototype.slice.call(document.querySelectorAll('.tk-rate'));
   var seek = document.getElementById('tk-seek');
   var clock = document.getElementById('tk-clock');
 
@@ -220,7 +220,21 @@
     playing ? stop() : start();
   });
   if (btnReplay) btnReplay.addEventListener('click', function () { t = 0; sync(); start(); });
-  if (selSpeed) selSpeed.addEventListener('change', function () { speed = parseFloat(selSpeed.value) || 1; });
+  /* 배속은 브라우저에 저장한다. 경주마다 다시 고르게 하면 성가시다. */
+  var RATE_KEY = 'horseai.playRate';
+  function setRate(v, save) {
+    speed = parseFloat(v) || 1;
+    rateBtns.forEach(function (b) {
+      b.classList.toggle('is-on', parseFloat(b.dataset.rate) === speed);
+    });
+    if (save) { try { localStorage.setItem(RATE_KEY, String(speed)); } catch (e) {} }
+  }
+  rateBtns.forEach(function (b) {
+    b.addEventListener('click', function () { setRate(b.dataset.rate, true); });
+  });
+  var saved = null;
+  try { saved = localStorage.getItem(RATE_KEY); } catch (e) {}
+  setRate(saved || 1, false);
   if (seek) seek.addEventListener('input', function () {
     stop(); t = (parseFloat(seek.value) / 1000) * duration; sync();
   });
