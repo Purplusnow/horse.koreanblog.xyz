@@ -20,6 +20,7 @@ from typing import Dict, List, Optional
 import numpy as np
 import pandas as pd
 
+from .clock import now_kst
 from .features import build_prediction_frame
 from .kra.store import session, upsert
 from .model import MODEL_VERSION, load, predict_frame
@@ -32,8 +33,8 @@ log = logging.getLogger(__name__)
 
 def upcoming_race_keys(conn: sqlite3.Connection, days_ahead: int = 10) -> List[str]:
     """아직 결과가 없고 출전표가 있는 경주."""
-    today = dt.date.today().isoformat()
-    until = (dt.date.today() + dt.timedelta(days=days_ahead)).isoformat()
+    today = now_kst().date().isoformat()
+    until = (now_kst().date() + dt.timedelta(days=days_ahead)).isoformat()
     rows = conn.execute(
         "SELECT DISTINCT r.race_key FROM races r "
         "JOIN entries e ON e.race_key = r.race_key "
@@ -156,7 +157,7 @@ def frozen_race_keys(conn: sqlite3.Connection) -> set:
     발주 시각이 비어 있는 경주는 그 날의 마지막 경주가 끝났다고 볼 수 없으므로
     날짜만으로 판단한다(당일이면 열어 둔다).
     """
-    now = dt.datetime.now()
+    now = now_kst()
     today = now.date().isoformat()
     rows = conn.execute(
         "SELECT DISTINCT p.race_key, r.rc_date, r.post_time, "

@@ -105,9 +105,12 @@ def test_freeze_by_post_time(path: str) -> None:
     """
     import datetime as dt
 
+    from horseai.clock import now_kst
     from horseai.predict import frozen_race_keys
 
-    now = dt.datetime.now()
+    # 프로덕션과 같은 기준(KST)으로 픽스처를 만든다. 로컬 시각을 쓰면 UTC 러너에서
+    # 과거/미래가 뒤바뀌어, 정작 시간대 버그를 잡아야 할 곳에서 테스트가 통과한다.
+    now = now_kst()
     today = now.date().isoformat()
     past = (now - dt.timedelta(hours=1)).strftime("%H:%M")
     future = (now + dt.timedelta(hours=1)).strftime("%H:%M")

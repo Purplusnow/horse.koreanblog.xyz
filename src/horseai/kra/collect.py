@@ -31,6 +31,7 @@ from .normalize import (
     to_weight_delta,
     unmapped_keys,
 )
+from ..clock import today_kst
 from .store import DEFAULT_DB, dumps, already_fetched, log_fetch, session, upsert
 
 log = logging.getLogger(__name__)
@@ -201,7 +202,7 @@ def collect_daily(client: KraClient, conn: sqlite3.Connection) -> Dict[str, int]
     학습에 쓰려면 우리가 직접 매일 받아 축적하는 수밖에 없고, 하루를 거르면
     그 하루는 영구히 사라진다. 크론이 가장 먼저 돌아야 하는 이유다.
     """
-    today = dt.date.today().isoformat()
+    today = today_kst().isoformat()
     stats = {"training": 0, "weight": 0, "cancel": 0}
 
     # --- 조교 현황 (서울) --------------------------------------------------
@@ -327,7 +328,7 @@ def audit(client: KraClient, kind: str, meet: int = 1) -> None:
     fields = ENTRY_FIELDS if kind == "entries" else RESULT_FIELDS
     path = resolve(ep_key)
 
-    today = dt.date.today()
+    today = today_kst()
     for back in range(0, 30):
         day = today - dt.timedelta(days=back)
         if day.weekday() not in RACE_WEEKDAYS:
@@ -367,7 +368,7 @@ def main(argv: Optional[List[str]] = None) -> int:
     args = ap.parse_args(argv)
 
     logging.basicConfig(level=logging.INFO, format="%(message)s")
-    today = dt.date.today()
+    today = today_kst()
 
     with session(args.db) as conn:
         if args.command == "stats":

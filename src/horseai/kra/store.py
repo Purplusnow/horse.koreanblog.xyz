@@ -8,6 +8,8 @@
 from __future__ import annotations
 
 import datetime as dt
+
+from ..clock import today_kst
 import json
 import sqlite3
 from contextlib import contextmanager
@@ -322,7 +324,7 @@ def prune_raw_json(conn: sqlite3.Connection, keep_days: int = 180) -> int:
     보험이다. 그 가치는 수집 초기에 집중되는 반면 용량은 계속 늘어난다(5년치면
     100MB를 훌쩍 넘긴다). 최근 구간만 남기고 비워 DB를 운반 가능한 크기로 유지한다.
     """
-    cutoff = (dt.date.today() - dt.timedelta(days=keep_days)).isoformat()
+    cutoff = (today_kst() - dt.timedelta(days=keep_days)).isoformat()
     total = 0
     for table in ("entries", "results"):
         cur = conn.execute(

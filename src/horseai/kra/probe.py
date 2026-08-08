@@ -18,6 +18,7 @@ import sys
 from pathlib import Path
 from typing import Dict, List, Optional
 
+from ..clock import now_kst, today_kst
 from .client import KraApiError, KraClient, redact
 from .endpoints import ACTIVE_MEETS, REGISTRY, REQUIRED_KEYS, save_resolved
 
@@ -28,7 +29,7 @@ FIELD_DUMP = Path("config/api_fields.json")
 
 def recent_race_dates(n: int = 8, today: Optional[dt.date] = None) -> List[str]:
     """최근 경마 시행일 후보(금·토·일)를 최신순으로."""
-    today = today or dt.date.today()
+    today = today or today_kst()
     out: List[str] = []
     d = today
     while len(out) < n:
@@ -141,7 +142,7 @@ def main(argv: Optional[List[str]] = None) -> int:
     if resolved:
         p = save_resolved(
             resolved,
-            meta={"probed_at": dt.datetime.now().isoformat(timespec="seconds")},
+            meta={"probed_at": now_kst().isoformat(timespec="seconds")},
         )
         FIELD_DUMP.parent.mkdir(parents=True, exist_ok=True)
         FIELD_DUMP.write_text(

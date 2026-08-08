@@ -29,6 +29,7 @@ from urllib.parse import urlparse
 import yaml
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 
+from .clock import now_kst, today_kst
 from .kra.store import session
 from .style import STYLE_LABEL, STYLES, pace_map
 from .verify import build_report
@@ -511,7 +512,7 @@ def build(db: str, out_dir: Path, config: Dict, template_dir: Path,
         outcomes = load_outcomes(conn)
         metrics = load_metrics()
 
-        today = dt.date.today()
+        today = today_kst()
         upcoming = [r for r in races if not r["has_result"]
                     and r["date_obj"] and r["date_obj"] >= today]
         upcoming.sort(key=lambda r: (r["rc_date"], r["meet"], r["rc_no"]))
@@ -525,7 +526,7 @@ def build(db: str, out_dir: Path, config: Dict, template_dir: Path,
             "analytics": config["analytics"],
             "accuracy": accuracy,
             "metrics": metrics,
-            "build_time": dt.datetime.now().strftime("%Y-%m-%d %H:%M"),
+            "build_time": now_kst().strftime("%Y-%m-%d %H:%M"),
             "today": today.isoformat(),
         }
 
