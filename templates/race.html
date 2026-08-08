@@ -262,11 +262,11 @@
           <th class="c-name">마명</th>
           <th class="c-style">각질</th>
           <th class="c-prob">우승 확률</th>
-          <th class="c-num">입상 확률</th>
-          <th class="c-num">부담중량</th>
-          <th class="c-num">레이팅</th>
-          <th class="c-text">기수</th>
-          <th class="c-text">조교사</th>
+          <th class="c-num c-top2">입상 확률</th>
+          <th class="c-num c-burden">부담중량</th>
+          <th class="c-num c-rating">레이팅</th>
+          <th class="c-text c-jk">기수</th>
+          <th class="c-text c-tr">조교사</th>
           <th class="c-form">최근 전적</th>
           <th class="c-tags">특징</th>
           {% if race.has_result %}
@@ -288,11 +288,11 @@
             {% if r.style_label %}<span class="style style-{{ r.style_code }}">{{ r.style_label }}</span>{% else %}<span class="style style-unknown">-</span>{% endif %}
           </td>
           <td class="c-prob">{{ prob_bar(r.p_win_pct, r.pred_rank) }}</td>
-          <td class="c-num">{{ '%.0f'|format(r.p_place_pct) }}%</td>
-          <td class="c-num">{{ r.burden or '-' }}</td>
-          <td class="c-num">{{ r.rating|int if r.rating else '-' }}</td>
-          <td class="c-text">{{ r.jk_name or '-' }}</td>
-          <td class="c-text">{{ r.tr_name or '-' }}</td>
+          <td class="c-num c-top2">{{ '%.0f'|format(r.p_place_pct) }}%</td>
+          <td class="c-num c-burden">{{ r.burden or '-' }}</td>
+          <td class="c-num c-rating">{{ r.rating|int if r.rating else '-' }}</td>
+          <td class="c-text c-jk">{{ r.jk_name or '-' }}</td>
+          <td class="c-text c-tr">{{ r.tr_name or '-' }}</td>
           <td class="c-form"><span class="ordstr">{{ r.ord_string }}</span></td>
           <td class="c-tags">
             {% for t in r.tag_list %}<span class="tagchip">{{ t }}</span>{% endfor %}

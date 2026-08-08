@@ -113,20 +113,19 @@ def test_freeze_by_post_time(path: str) -> None:
 
     # 프로덕션과 같은 기준(KST)으로 픽스처를 만든다. 로컬 시각을 쓰면 UTC 러너에서
     # 과거/미래가 뒤바뀌어, 정작 시간대 버그를 잡아야 할 곳에서 테스트가 통과한다.
+    # 날짜로 과거·미래를 가른다. 같은 날 안에서 ±1시간을 잡으면 자정 근처에서
+    # 시각 문자열 비교가 뒤집혀("00:06" < "23:06") 밤에만 깨지는 테스트가 된다.
+    # 어제와 내일을 쓰면 몇 시에 돌리든 결과가 같다.
     now = now_kst()
-    today = now.date().isoformat()
-    past = (now - dt.timedelta(hours=1)).strftime("%H:%M")
-    # 한 시간 뒤가 자정을 넘으면 시각 문자열 비교가 뒤집힌다("00:06" < "23:06").
-    # 실제 경마는 자정을 넘지 않지만 테스트는 아무 때나 돌므로, 그럴 때는
-    # 미래 경주를 내일로 옮겨 같은 불변식을 검사한다.
-    nxt = now + dt.timedelta(hours=1)
-    future_day = nxt.date().isoformat()
-    future = nxt.strftime("%H:%M")
+    past_day = (now - dt.timedelta(days=1)).date().isoformat()
+    future_day = (now + dt.timedelta(days=1)).date().isoformat()
+    past = future = "12:00"
+    today = past_day
 
     # 취소 테스트와 같은 DB를 쓰면 외래키 때문에 경주를 지울 수 없다. 따로 만든다.
     Path(path).unlink(missing_ok=True)
     with session(path) as conn:
-        for no, day, post in ((1, today, past), (2, future_day, future)):
+        for no, day, post in ((1, past_day, past), (2, future_day, future)):
             key = f"서울-{day.replace('-', '')}-{no:02d}"
             conn.execute(
                 "INSERT INTO races (race_key, meet, rc_date, rc_no, distance, "
@@ -138,7 +137,7 @@ def test_freeze_by_post_time(path: str) -> None:
         conn.commit()
 
         frozen = frozen_race_keys(conn)
-        started = f"서울-{today.replace('-', '')}-01"
+        started = f"서울-{past_day.replace('-', '')}-01"
         upcoming = f"서울-{future_day.replace('-', '')}-02"
         assert started in frozen, "발주 시각이 지난 경주가 잠기지 않았다 — 예측 재작성 가능"
         assert upcoming not in frozen, "아직 발주 전인 경주가 잠겼다 — 예측 갱신이 막힌다"
