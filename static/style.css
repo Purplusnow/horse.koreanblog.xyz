@@ -1103,53 +1103,45 @@ tbody tr:hover { background: var(--bg-soft); }
 }
 
 /* ─────────────────────────────────── 결과 한 줄
-   한 행에 다섯 추천과 일곱 승식이 함께 놓인다. 저마다 테두리와 바탕을 가지면
-   행이 알약밭이 되어 정작 중요한 '누가 들어왔나' 가 안 보인다. 상자를 걷고
-   글자 굵기와 색으로만 층을 나눈다. */
+   바탕을 칠하지 않는다. 다섯 추천과 일곱 승식이 한 행에 놓이는데 저마다
+   색면을 가지면 그 자체가 소음이 된다. 굵기와 글자색만으로 층을 나눈다. */
 .res-picks { white-space: normal; line-height: 1.9; }
 .res-picks .rp {
-  display: inline-flex; align-items: baseline; gap: 3px;
-  margin-right: 13px; font-size: 13px; color: var(--text-faint);
+  display: inline-flex; align-items: baseline; gap: 4px;
+  margin-right: 14px; font-size: 13px;
 }
-.res-picks .rp-mark { font-style: normal; font-size: 11.5px; width: 11px; }
+.res-picks .rp-mark { font-style: normal; font-size: 11.5px; color: var(--text-faint); }
 .res-picks .rp-gate {
-  font-variant-numeric: tabular-nums; font-weight: 700; color: var(--text-soft);
+  font-variant-numeric: tabular-nums; font-weight: 700; color: var(--text-faint);
   min-width: 14px; text-align: right;
 }
-.res-picks .rp-name { color: var(--text-soft); }
+.res-picks .rp-name { color: var(--text-faint); }
 .res-picks .rp-ord {
-  font-style: normal; font-size: 11.5px; font-variant-numeric: tabular-nums;
-  color: var(--text-faint); min-width: 12px;
+  font-style: normal; font-size: 12px; font-variant-numeric: tabular-nums;
+  color: var(--text-faint); min-width: 13px;
 }
-/* 3착 이내만 살린다 — 나머지는 배경으로 물러난다 */
-.res-picks .rp-in .rp-mark,
-.res-picks .rp-in .rp-gate { color: var(--accent-text); }
+/* 3착 이내만 또렷하게. 나머지는 배경으로 물러난다. */
+.res-picks .rp-in .rp-mark { color: var(--text-soft); }
+.res-picks .rp-in .rp-gate,
 .res-picks .rp-in .rp-name { color: var(--text); font-weight: 600; }
-.res-picks .rp-in .rp-ord {
-  color: #fff; background: var(--accent-text); font-weight: 700;
-  padding: 0 5px; border-radius: 8px; font-size: 11px;
-}
+.res-picks .rp-in .rp-ord { color: var(--accent-text); font-weight: 700; }
 
-/* 적중 눈금 — 일곱 칸 중 몇 칸이 찼는지로 성적을 말한다 */
+/* 적중 눈금 */
 .hit-cell { white-space: nowrap; }
-.hit-meter { display: inline-flex; align-items: center; gap: 2px; cursor: default; }
-.hit-meter i {
-  width: 6px; height: 15px; border-radius: 2px; background: var(--border);
-}
+.hit-meter { display: inline-flex; align-items: center; gap: 3px; cursor: default; }
+.hit-meter i { width: 5px; height: 14px; border-radius: 1px; background: var(--border); }
 .hit-meter i.on { background: var(--accent); }
 .hit-meter b {
-  margin-left: 7px; font-size: 12.5px; font-variant-numeric: tabular-nums;
+  margin-left: 8px; font-size: 12.5px; font-variant-numeric: tabular-nums;
   color: var(--text-soft);
 }
 .hit-meter b span { color: var(--text-faint); font-weight: 500; }
 
 @media (prefers-color-scheme: dark) {
-  .res-picks .rp-in .rp-ord { background: #3f8a64; }
-  .res-picks .rp-in .rp-mark,
-  .res-picks .rp-in .rp-gate { color: #7fd3a6; }
+  .res-picks .rp-in .rp-ord { color: #7fd3a6; }
 }
 @media (max-width: 640px) {
-  .res-picks .rp { margin-right: 9px; font-size: 12.5px; }
+  .res-picks .rp { margin-right: 10px; font-size: 12.5px; }
   .res-picks .rp-name { max-width: 5.5em; overflow: hidden;
     text-overflow: ellipsis; white-space: nowrap; }
 }
