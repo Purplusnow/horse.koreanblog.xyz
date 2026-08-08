@@ -1099,8 +1099,32 @@ tbody tr:hover { background: var(--bg-soft); }
   font-variant-numeric: tabular-nums; color: var(--text-faint);
   font-size: 11.5px; margin-left: 1px;
 }
-/* 3착 이내는 티가 나야 한다 — 어느 추천이 실제로 들어왔는지가 핵심이다 */
-.res-picks .rp-place { border-color: var(--text-faint); }
-.res-picks .rp-place .rp-ord { color: var(--text-soft); font-weight: 600; }
-.res-picks .rp-win { border-color: var(--gold); background: var(--accent-soft); }
-.res-picks .rp-win .rp-ord { color: var(--gold); font-weight: 700; }
+/* 3착 이내는 티가 나야 한다 — 이 표에서 가장 먼저 찾는 정보가 그것이다.
+   테두리만으로는 한 줄에 다섯 칩이 늘어섰을 때 눈에 걸리지 않는다.
+   바탕을 채우고 착순 숫자를 배지로 세워 색으로 먼저 읽히게 한다. */
+.res-picks .rp-place {
+  border-color: #b9d6c8; background: var(--accent-soft);
+}
+.res-picks .rp-place .rr-name { color: var(--accent-text); font-weight: 600; }
+.res-picks .rp-place .rp-ord {
+  background: var(--accent-text); color: #fff; font-weight: 700;
+  padding: 1px 6px; border-radius: 9px; margin-left: 3px;
+}
+/* 1착은 그중에서도 따로 세운다 */
+.res-picks .rp-win {
+  border-color: var(--gold); background: #fbf3e2;
+  box-shadow: 0 0 0 1px var(--gold) inset;
+}
+.res-picks .rp-win .rr-name { color: #6b4d12; font-weight: 700; }
+.res-picks .rp-win .rp-ord {
+  background: var(--gold); color: #fff; font-weight: 700;
+  padding: 1px 6px; border-radius: 9px; margin-left: 3px;
+}
+/* 착순 밖은 뒤로 물린다 — 들어온 말이 상대적으로 더 드러난다 */
+.res-picks .rp:not(.rp-place):not(.rp-win) { opacity: .62; }
+
+@media (prefers-color-scheme: dark) {
+  .res-picks .rp-place { border-color: #2f6b4f; background: #16281f; }
+  .res-picks .rp-win { border-color: var(--gold); background: #2c2313; }
+  .res-picks .rp-win .rr-name { color: #e8c884; }
+}
