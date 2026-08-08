@@ -9,6 +9,10 @@
    빽빽해서 밝은 배경에서 훨씬 빨리 읽히고, 도박 사이트 특유의 어두운 화면과도
    거리를 둘 수 있다. 팔레트는 전부 토큰으로만 정의해 한 곳에서 조정한다. */
 :root {
+  /* 팔레트는 밝은 값 하나로만 정의한다. 그 사실을 브라우저에 알리지 않으면
+     다크 모드 브라우저가 강제 반전을 걸어 **배경만** 검게 뒤집고 우리가 지정한
+     글자색은 그대로 둔다. 그러면 검은 바탕에 어두운 글자가 얹힌다. */
+  color-scheme: light;
   --bg: #ffffff;
   --bg-soft: #f6f7f9;
   --bg-sunken: #eef0f3;
@@ -1125,11 +1129,6 @@ tbody tr:hover { background: var(--bg-soft); }
 }
 .hit-meter b span { color: var(--text-faint); font-weight: 500; }
 
-@media (prefers-color-scheme: dark) {
-  .res-picks .rp-1 .rp-ord { color: #e0b45a; }
-  .res-picks .rp-2 .rp-ord { color: #b3bcc5; }
-  .res-picks .rp-3 .rp-ord { color: #c9а08a; }
-}
 @media (max-width: 640px) {
   .res-picks .rp { margin-right: 10px; font-size: 12.5px; }
   .res-picks .rp-name { max-width: 5.5em; overflow: hidden;
