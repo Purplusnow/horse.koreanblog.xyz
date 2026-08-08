@@ -201,6 +201,12 @@ jobs:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
         run: PYTHONPATH=src python -m horseai.comment --db "$DB" --limit 60
 
+      # 자료가 있어야 할 자리에 있는지 센다. 성공한 파이프라인이 조용한 것은
+      # 신호가 아니다 — 배당 7경주가 통째로 빠졌는데 모든 단계가 초록이었고,
+      # 그 사이 공개 적중률이 실제의 3분의 1로 나가 있었다.
+      - name: 자료 결손 점검
+        run: PYTHONPATH=src python -m horseai.audit --db "$DB" --days 14 --strict
+
       - name: 적중률 검증
         run: PYTHONPATH=src python -m horseai.verify --db "$DB" --out data/accuracy.json
 

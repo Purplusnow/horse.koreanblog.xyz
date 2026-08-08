@@ -116,17 +116,22 @@ def test_freeze_by_post_time(path: str) -> None:
     now = now_kst()
     today = now.date().isoformat()
     past = (now - dt.timedelta(hours=1)).strftime("%H:%M")
-    future = (now + dt.timedelta(hours=1)).strftime("%H:%M")
+    # 한 시간 뒤가 자정을 넘으면 시각 문자열 비교가 뒤집힌다("00:06" < "23:06").
+    # 실제 경마는 자정을 넘지 않지만 테스트는 아무 때나 돌므로, 그럴 때는
+    # 미래 경주를 내일로 옮겨 같은 불변식을 검사한다.
+    nxt = now + dt.timedelta(hours=1)
+    future_day = nxt.date().isoformat()
+    future = nxt.strftime("%H:%M")
 
     # 취소 테스트와 같은 DB를 쓰면 외래키 때문에 경주를 지울 수 없다. 따로 만든다.
     Path(path).unlink(missing_ok=True)
     with session(path) as conn:
-        for no, post in ((1, past), (2, future)):
-            key = f"서울-{today.replace('-', '')}-{no:02d}"
+        for no, day, post in ((1, today, past), (2, future_day, future)):
+            key = f"서울-{day.replace('-', '')}-{no:02d}"
             conn.execute(
                 "INSERT INTO races (race_key, meet, rc_date, rc_no, distance, "
                 "post_time, has_result) VALUES (?,?,?,?,1200,?,0)",
-                (key, "서울", today, no, post))
+                (key, "서울", day, no, post))
             conn.execute(
                 "INSERT INTO predictions (race_key, hr_no, pred_rank, p_win, "
                 "p_place, model_version) VALUES (?,'H9',1,0.5,0.7,'test')", (key,))
@@ -134,7 +139,7 @@ def test_freeze_by_post_time(path: str) -> None:
 
         frozen = frozen_race_keys(conn)
         started = f"서울-{today.replace('-', '')}-01"
-        upcoming = f"서울-{today.replace('-', '')}-02"
+        upcoming = f"서울-{future_day.replace('-', '')}-02"
         assert started in frozen, "발주 시각이 지난 경주가 잠기지 않았다 — 예측 재작성 가능"
         assert upcoming not in frozen, "아직 발주 전인 경주가 잠겼다 — 예측 갱신이 막힌다"
     print("  ✓ 예측 동결: 발주 시각 기준으로 잠김")

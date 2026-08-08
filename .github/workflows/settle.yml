@@ -143,6 +143,12 @@ jobs:
         timeout-minutes: 20
         run: PYTHONPATH=src python -m horseai.predict --db "$DB" --rebuild-previews
 
+      # 정산 중에는 마사회가 1~3착만 낸 구간이 있어 결손이 정상일 수 있다.
+      # 여기서는 빨갛게 띄우지 않고 기록만 남긴다 — 저녁 파이프라인이 판정한다.
+      - name: 자료 결손 점검
+        continue-on-error: true
+        run: PYTHONPATH=src python -m horseai.audit --db "$DB" --days 3
+
       - name: 적중률 검증
         if: steps.prog.outputs.changed == 'true'
         run: PYTHONPATH=src python -m horseai.verify --db "$DB" --out data/accuracy.json
