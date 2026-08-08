@@ -247,27 +247,6 @@
       return { x: W / 2 + (p.x - cam.cx) * cam.z, y: H / 2 + (p.y - cam.cy) * cam.z };
     }
     var pts = raw.map(screenPt);
-    /* 마커 겹침 풀기.
-       모델은 시간 간격으로 자리를 다투지만, 화면 축척은 경마장마다 다르다
-       (서울 0.251 px/m, 제주 1.18 px/m). 같은 시간차가 전혀 다른 픽셀 거리가
-       되므로 물리 모델만으로는 원이 겹치지 않게 만들 수 없다. 그린 뒤 겹친
-       쌍만 서로 밀어 떼어 놓는다 — 위치의 근거는 그대로 두고 표시만 손본다. */
-    (function () {
-      var need = (2 * (cam.z * 8.5) + 1.5);      // 두 마커가 닿지 않을 최소 중심거리
-      for (var pass = 0; pass < 10; pass++) {
-        for (var i = 0; i < pts.length; i++) {
-          for (var k = i + 1; k < pts.length; k++) {
-            var dx = pts[k].x - pts[i].x, dy = pts[k].y - pts[i].y;
-            var d = Math.hypot(dx, dy);
-            if (d >= need) continue;
-            if (d < 0.01) { dx = 0; dy = 1; d = 1; }   // 완전히 겹치면 세로로 가른다
-            var push = (need - d) / 2 / d;
-            pts[i].x -= dx * push; pts[i].y -= dy * push;
-            pts[k].x += dx * push; pts[k].y += dy * push;
-          }
-        }
-      }
-    })();
 
     ctx.save();
     ctx.translate(W / 2, H / 2);
@@ -318,10 +297,7 @@
     for (var z = idxByRank.length - 1; z >= 0; z--) {
       var i = idxByRank[z], pt = pts[i], r = runners[i];
       var col = gateColor(r.gate), label = String(r.gate);
-      // 레인 간격은 카메라 배율만큼 벌어진다. 마커를 고정 크기로 그리면
-      // 따라가기(확대)에서만 말들이 뿔뿔이 떨어져 보이고, 전체보기와 그림이
-      // 달라진다. 배율을 그대로 태워 두 모드의 간격 비율을 같게 맞춘다.
-      var mz = cam.z;
+      var mz = 1;
       var rad = (label.length > 1 ? 8.5 : 7.5) * mz;
       ctx.beginPath();
       ctx.arc(pt.x, pt.y, rad, 0, Math.PI * 2);
