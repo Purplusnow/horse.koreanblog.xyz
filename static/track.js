@@ -96,6 +96,57 @@
     return L[k] + (L[k + 1] - L[k]) * g;
   }
 
+
+  /* 곡선에서 바깥 레인은 같은 각도를 도는 데 더 긴 호를 지난다.
+     모든 말을 같은 명목 거리 s 로 배치하면 곡선에서 각속도가 같아져, 화면에서는
+     바깥 말이 더 많이 이동한 것처럼 보이고 안쪽이 멈춘 듯 보인다. 모델은 반대로
+     바깥에 시간을 더 물리고 있으므로, 화면만 실제와 어긋나 있었다.
+
+     그래서 말마다 **자기 레인의 실제 경로 길이**로 진행률을 환산한다. 시간축의
+     진행률 p 는 그 말이 자기 경로를 얼마나 지났는가이므로, 누적 경로 길이가
+     p 가 되는 지점의 명목 거리를 찾아 그 자리에 그린다. */
+  var LANE_M = 1.6;                       // 레인 한 칸의 실제 폭(m)
+  var PATH_N = 160;                       // 경로 길이를 재는 표본 수
+  var pathCache = [];
+
+  function laneStretch(s, lane) {
+    /* 명목 거리 s 지점에서 레인 lane 이 겪는 길이 배율. 직선은 1, 곡선은
+       (R + lane·LANE_M) / R. 곡선 길이 CV 가 반지름 R 의 π 라디안이다. */
+    var pt = trackPoint(s);
+    if (pt.seg !== 'C') return 1;
+    var R = CV / Math.PI;
+    return (R + lane * LANE_M) / R;
+  }
+
+  function buildPaths() {
+    pathCache = runners.map(function (r) {
+      var cum = [0];
+      for (var i = 1; i <= PATH_N; i++) {
+        var p0 = (i - 1) / PATH_N, p1 = i / PATH_N;
+        var ds = distance / PATH_N;
+        var sMid = -distance + (p0 + p1) / 2 * distance;
+        cum.push(cum[i - 1] + ds * laneStretch(sMid, laneAt(r, (p0 + p1) / 2)));
+      }
+      return cum;
+    });
+  }
+
+  /* 진행률 p(자기 경로 기준) → 명목 거리 s. */
+  function sAt(idx, p) {
+    var cum = pathCache[idx];
+    if (!cum) return -distance + p * distance;
+    var target = p * cum[PATH_N];
+    var lo = 0, hi = PATH_N;
+    while (lo < hi) {                       // 이분 탐색
+      var mid = (lo + hi) >> 1;
+      if (cum[mid] < target) lo = mid + 1; else hi = mid;
+    }
+    var i = Math.max(1, lo);
+    var a = cum[i - 1], b = cum[i];
+    var f = b > a ? (target - a) / (b - a) : 0;
+    return -distance + ((i - 1) + f) / PATH_N * distance;
+  }
+
   /* 시각 t 에서의 진행률(0~1). 구간 통과 시각 사이를 선형 보간한다. */
   function progressAt(splits, time) {
     if (time <= 0) return 0;
@@ -169,9 +220,10 @@
        경주 중 말들은 실제로 뭉쳐 다니므로, 전체를 담으면 마번을 읽을 수 없다.
        다만 **트랙만 확대하고 마커는 화면 좌표에 고정 크기로 그린다**. 마커까지
        배율에 곱하면 원이 커져 서로 겹치고, 확대한 의미가 사라진다. */
-    var raw = runners.map(function (r) {
+    if (!pathCache.length) buildPaths();
+    var raw = runners.map(function (r, i) {
       var p = progressAt(r.splits, t);
-      return toPx(trackPoint(-distance + p * distance), box, laneAt(r, p) + 0.6);
+      return toPx(trackPoint(sAt(i, p)), box, laneAt(r, p) + 0.6);
     });
     var cam = { z: 1, cx: W / 2, cy: H / 2 };
     if (follow && raw.length) {
