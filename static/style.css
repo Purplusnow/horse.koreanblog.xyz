@@ -917,12 +917,20 @@ tbody tr:hover { background: var(--bg-soft); }
 .race-item:active { background: var(--bg-sunken); }
 
 /* 이 카드가 눌린다는 표시. 별도 링크가 아니라 카드 안의 안내다. */
+/* 카드가 눌린다는 표시. 버튼처럼 보이되 별도 링크는 아니다 — 터치 영역은
+   카드 전체이고 이 상자는 그 사실을 알리는 역할만 한다. */
 .ri-go {
-  display: block; margin-top: 8px; text-align: right;
-  font-size: 12.5px; font-weight: 600; color: var(--accent);
+  display: inline-flex; align-items: center; gap: 5px;
+  margin-top: 10px; padding: 6px 12px;
+  border: 1px solid var(--accent); border-radius: 8px;
+  font-size: 12.5px; font-weight: 700; color: var(--accent);
+  background: var(--surface); transition: background .12s, color .12s;
 }
 .ri-go b { font-weight: 700; display: inline-block; transition: transform .12s; }
-.race-item:hover .ri-go b { transform: translateX(3px); }
+.race-item:hover .ri-go {
+  background: var(--accent); color: var(--accent-on); border-color: var(--accent);
+}
+.race-item:hover .ri-go b { transform: translateX(2px); }
 
 .ri-head {
   display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
@@ -937,20 +945,51 @@ tbody tr:hover { background: var(--bg-soft); }
 /* 신뢰도 배지는 오른쪽 끝. 좁아지면 자연스럽게 다음 줄로 내려간다. */
 .ri-head .conf { margin-left: auto; }
 
-.ri-picks { display: flex; flex-wrap: wrap; gap: 5px 16px; }
-.ri-pick {
-  display: inline-flex; align-items: center; gap: 4px;
-  font-size: 13px; white-space: nowrap;
+/* 추천 5두는 칸으로 나눈다. 한 줄에 흘려 놓으면 어디까지가 한 마리인지
+   경계가 없어, 다섯을 세는 데 눈이 한 번 더 걸린다. */
+.ri-picks {
+  display: grid; grid-template-columns: repeat(5, 1fr);
+  border: 1px solid var(--border); border-radius: var(--radius);
+  overflow: hidden; background: var(--bg-soft);
 }
-.ri-pick .mark { font-size: 15px; }
+.ri-pick {
+  display: flex; flex-direction: column; align-items: center; gap: 1px;
+  padding: 7px 4px 8px; background: var(--surface);
+  border-right: 1px solid var(--border); min-width: 0;
+}
+.ri-pick:last-child { border-right: none; }
+.ri-pick .mark { font-size: 13px; line-height: 1.2; color: var(--text-faint); }
+.ri-pick .gate-sm {
+  font-size: 17px; font-weight: 800; line-height: 1.15;
+  font-variant-numeric: tabular-nums; letter-spacing: -.02em;
+  background: none; border: none; width: auto; height: auto;
+}
+.ri-pick .rr-name {
+  font-size: 11.5px; color: var(--text-soft); max-width: 100%;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.ri-pick .rr-prob {
+  font-size: 12px; font-weight: 700; font-variant-numeric: tabular-nums;
+  color: var(--accent-text);
+}
+/* 첫 칸(축마)만 살짝 세운다 */
+.ri-pick:first-child { background: var(--accent-soft); }
+.ri-pick:first-child .mark { color: var(--accent-text); }
+/* 시행 후에는 착순이 확률 자리를 대신한다 */
+.ri-picks.is-done .rr-prob { display: none; }
+.ri-pick .ri-ord {
+  font-size: 12px; font-weight: 700; font-variant-numeric: tabular-nums;
+  color: var(--text-soft);
+}
+.ri-pick.is-winner .ri-ord { color: var(--gold); }
 
 @media (max-width: 640px) {
   .race-item { padding: 11px 12px 12px; }
   .ri-head { gap: 6px; font-size: 12.5px; }
-  .ri-picks { gap: 4px 12px; }
-  .ri-pick { font-size: 12.5px; }
-  /* 좁은 화면에서는 마명이 잘리는 것보다 두 줄로 흐르는 편이 낫다 */
-  .ri-pick .rr-name { max-width: none; }
+  .ri-pick { padding: 6px 2px 7px; }
+  .ri-pick .gate-sm { font-size: 15px; }
+  .ri-pick .rr-name { font-size: 10.5px; }
+  .ri-pick .rr-prob, .ri-pick .ri-ord { font-size: 11px; }
 }
 
 
