@@ -46,9 +46,6 @@
 
 {# 모든 페이지 머리에 붙는 상태 띠.
 
-   갱신 시각은 항상 띄운다. 자동으로 하루 네 번 갱신되는 사이트에서 '언제 것인가'는
-   그 자체가 신뢰 신호이고, 경마 예상은 특히 하루만 지나도 쓸모가 없어진다.
-
    적중률은 표본이 충분할 때만 헤드라인으로 올린다. 첫 주말의 운 좋은 몇 경주가
    사이트 전체의 주장이 되면 곤란하다 — 어차피 다음 주에 뒤집힐 숫자다. #}
 {% set acc = accuracy.overall %}
@@ -71,9 +68,6 @@
     <span class="trustbar-label">발주 전 게재 · 결과로 검증</span>
     <a class="trustbar-link" href="/accuracy/">검증 방식 →</a>
     {% endif %}
-    <span class="trustbar-updated">
-      갱신 <time datetime="{{ build_iso }}">{{ build_time_short }}</time>
-    </span>
   </div>
 </div>
 

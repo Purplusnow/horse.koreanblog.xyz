@@ -101,13 +101,6 @@ a:hover { text-decoration: underline; }
 .trustbar-muted { color: var(--text-faint); }
 .trustbar-link { margin-left: auto; font-weight: 600; font-size: 13px; }
 
-/* 갱신 시각 — 띠의 맨 오른쪽 끝. 정보로서 필요하지만 적중률보다 앞설 이유는
-   없으므로 색을 낮춘다. 숫자가 흔들리지 않게 tabular-nums 를 쓴다. */
-.trustbar-updated {
-  color: var(--text-faint); font-size: 12.5px;
-  font-variant-numeric: tabular-nums; white-space: nowrap;
-}
-.trustbar-updated time { color: var(--text-soft); }
 
 /* --------------------------------------------------------------- 본문 */
 
@@ -405,8 +398,6 @@ tbody tr:hover { background: var(--bg-soft); }
   .nav a { padding: 6px 10px; font-size: 13.5px; white-space: nowrap; }
   .trustbar-inner { gap: 12px; font-size: 12.5px; }
   .trustbar-link { margin-left: 0; }
-  /* 좁은 화면에서는 갱신 시각을 한 줄 아래로 흘려보낸다 */
-  .trustbar-updated { margin-left: 0; font-size: 12px; }
   .race-grid { grid-template-columns: 1fr; }
   .race-header, .commentary, .pick-summary, .panel { padding: 16px 18px; }
   .race-facts { gap: 18px; }
