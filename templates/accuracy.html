@@ -4,7 +4,7 @@
 
 {% block title %}예상 적중률 — 전 경주 검증 결과 | {{ site.name }}{% endblock %}
 {% block description %}
-{% if o and o.n_races %}게재한 예상 {{ '{:,}'.format(o.n_races) }}경주를 실제 착순과 대조한 결과, 단승 적중률 {{ '%.1f'|format(o.hit_win * 100) }}%, 연승 적중률 {{ '%.1f'|format(o.hit_place * 100) }}%.{% else %}게재한 모든 예상을 실제 착순과 대조해 적중률을 그대로 공개합니다.{% endif %}
+{% if o and o.n_races %}게재한 예상 {{ '{:,}'.format(o.n_races) }}경주 집계 결과, ◎ 마필이 1착 {{ '%.1f'|format(o.hit_win * 100) }}%, 3착 이내 {{ '%.1f'|format(o.hit_place * 100) }}%.{% else %}게재한 모든 예상을 실제 착순과 대조해 적중률을 그대로 공개합니다.{% endif %}
 
 {% endblock %}
 
@@ -36,17 +36,17 @@
 
 <section class="stat-grid">
   <div class="stat">
-    <span class="stat-label">단승 적중률</span>
+    <span class="stat-label">◎ 1착</span>
     <span class="stat-value">{{ '%.1f'|format(o.hit_win * 100) }}<small>%</small></span>
     <span class="stat-note">◎ 가 1착</span>
   </div>
   <div class="stat">
-    <span class="stat-label">연승 적중률</span>
+    <span class="stat-label">◎ 3착 이내</span>
     <span class="stat-value">{{ '%.1f'|format(o.hit_place * 100) }}<small>%</small></span>
     <span class="stat-note">◎ 가 3착 이내</span>
   </div>
   <div class="stat">
-    <span class="stat-label">3순위 내 1착 포함</span>
+    <span class="stat-label">◎○△ 중 우승마</span>
     <span class="stat-value">{{ '%.1f'|format(o.hit_top3_has_winner * 100) }}<small>%</small></span>
     <span class="stat-note">상위 3두 안에 우승마</span>
   </div>
@@ -65,8 +65,8 @@
   </p>
   <ul class="inline-stats">
     <li><span>검증 경주</span><b>{{ '{:,}'.format(accuracy.last_90d.n_races) }}</b></li>
-    <li><span>단승 적중</span><b>{{ '%.1f'|format(accuracy.last_90d.hit_win * 100) }}%</b></li>
-    <li><span>연승 적중</span><b>{{ '%.1f'|format(accuracy.last_90d.hit_place * 100) }}%</b></li>
+    <li><span>◎ 1착</span><b>{{ '%.1f'|format(accuracy.last_90d.hit_win * 100) }}%</b></li>
+    <li><span>◎ 3착 이내</span><b>{{ '%.1f'|format(accuracy.last_90d.hit_place * 100) }}%</b></li>
   </ul>
 </section>
 {% endif %}
@@ -77,7 +77,7 @@
   <div class="table-scroll">
     <table class="stats-table">
       <thead>
-        <tr><th>월</th><th class="c-num">경주</th><th class="c-num">단승</th><th class="c-num">연승</th><th class="c-num">3순위 내</th></tr>
+        <tr><th>월</th><th class="c-num">경주</th><th class="c-num">◎ 1착</th><th class="c-num">◎ 3착 이내</th><th class="c-num">◎○△ 중 우승마</th></tr>
       </thead>
       <tbody>
         {% for m in accuracy.monthly|reverse %}
@@ -92,6 +92,10 @@
       </tbody>
     </table>
   </div>
+  <p class="panel-more">
+    <b>◎ 3착 이내</b>는 1순위로 지목한 마필이 입상했는지, <b>◎○△ 중 우승마</b>는
+    우승마가 상위 3두 안에 있었는지를 각각 나타냅니다.
+  </p>
 </section>
 {% endif %}
 
@@ -106,7 +110,7 @@
   </p>
   <div class="table-scroll">
     <table class="stats-table">
-      <thead><tr><th>등급</th><th class="c-num">경주</th><th class="c-num">단승</th><th class="c-num">연승</th></tr></thead>
+      <thead><tr><th>등급</th><th class="c-num">경주</th><th class="c-num">◎ 1착</th><th class="c-num">◎ 3착 이내</th></tr></thead>
       <tbody>
         {% for m in accuracy.by_conf %}
         <tr>
@@ -127,7 +131,7 @@
   <h2>경마장별</h2>
   <div class="table-scroll">
     <table class="stats-table">
-      <thead><tr><th>경마장</th><th class="c-num">경주</th><th class="c-num">단승</th><th class="c-num">연승</th></tr></thead>
+      <thead><tr><th>경마장</th><th class="c-num">경주</th><th class="c-num">◎ 1착</th><th class="c-num">◎ 3착 이내</th></tr></thead>
       <tbody>
         {% for m in accuracy.by_meet %}
         <tr>
@@ -160,7 +164,7 @@
           <td class="c-num">{{ r.odds or '-' }}</td>
           <td class="c-num">
             {% if r.hit_win %}<span class="ord ord-1">적중</span>
-            {% elif r.hit_place %}<span class="ord ord-3">연승</span>
+            {% elif r.hit_place %}<span class="ord ord-3">3착 이내</span>
             {% else %}<span class="ord ord-none">실패</span>{% endif %}
           </td>
         </tr>
@@ -247,7 +251,7 @@
   </p>
   <div class="table-scroll">
     <table class="stats-table">
-      <thead><tr><th>등급</th><th class="c-num">비중</th><th class="c-num">경주</th><th class="c-num">단승</th><th class="c-num">연승</th></tr></thead>
+      <thead><tr><th>등급</th><th class="c-num">비중</th><th class="c-num">경주</th><th class="c-num">◎ 1착</th><th class="c-num">◎ 3착 이내</th></tr></thead>
       <tbody>
         {% for t in metrics.conf_tiers %}
         <tr>
