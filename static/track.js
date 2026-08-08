@@ -195,7 +195,9 @@
     // 레인 간격은 **주로 폭**을 정하는 값이지 마커 간격이 아니다. 겹침은 그린
     // 뒤 완화 단계가 따로 푼다. 마커 지름에 맞춰 15px 로 잡았더니 열 레인이
     // 150px 이 되어, 반원 반지름(58px)보다 주로가 더 굵은 그림이 나왔다.
-    var laneStep = 5.5;
+    // 좁은 화면에서는 레인 폭이 주로 크기를 잡아먹는다. 캔버스가 좁으면
+    // 간격을 줄여 타원 자체를 키운다.
+    var laneStep = W < 560 ? 3.2 : 5.5;
     // 말은 가장 바깥 레인 + 마커 반지름까지 나간다. 그 몫을 다 빼야 잘리지 않는다.
     var outer = lanes * laneStep + 12;
     var pad = 10;
@@ -350,12 +352,14 @@
     if (key === lastOrder) return;
     lastOrder = key;
     /* 5등까지만. 전부 늘어놓으면 목록이 길어져 오히려 순위가 안 읽힌다. */
+    /* 마명까지 넣으면 줄이 길어져 미니맵을 가린다. 마번만 쓴다 — 아래
+       범례에서 마번으로 이름을 찾을 수 있고, 모자색이 한 번 더 거든다. */
     orderEl.innerHTML = order.slice(0, 5).map(function (o, idx) {
       var r = runners[o.i], c = gateColor(r.gate);
-      return '<li class="' + (idx === 0 ? 'is-lead' : '') + '">'
-        + '<span class="tk-pos">' + (idx + 1) + '위</span>'
-        + '<span class="tk-dot" style="background:' + c[0] + '"></span>'
-        + r.gate + ' ' + r.name + '</li>';
+      return '<li class="' + (idx === 0 ? 'is-lead' : '') + '" title="' + r.name + '">'
+        + '<span class="tk-pos">' + (idx + 1) + '</span>'
+        + '<span class="tk-cap" style="background:' + c[0] + ';color:' + c[1] + '">'
+        + r.gate + '</span></li>';
     }).join('');
   }
 

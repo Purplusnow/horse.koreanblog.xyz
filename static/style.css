@@ -772,7 +772,9 @@ tbody tr:hover { background: var(--bg-soft); }
   background: var(--bg-sunken); border-radius: var(--radius);
   padding: 8px 6px 4px; overflow: hidden;
 }
-.track { display: block; width: 100%; height: 300px; }
+/* 주로 기하(직선:곡선 비율)가 이 높이에서 계산된다. 낮으면 타원이
+   납작해지고 말이 작아진다. 460 기준으로 검증했다. */
+.track { display: block; width: 100%; height: 460px; }
 
 .track-controls {
   display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-top: 12px;
@@ -812,7 +814,7 @@ tbody tr:hover { background: var(--bg-soft); }
 @media (max-width: 640px) {
   .preview { padding: 16px 14px 12px; }
   .preview-note { margin-left: 0; width: 100%; }
-  .track { height: 260px; }
+  .track { height: 340px; }
   .tk-seek { flex-basis: 100%; }
 }
 
@@ -1064,8 +1066,8 @@ tbody tr:hover { background: var(--bg-soft); }
   pointer-events: none;
 }
 .tk-order li {
-  display: inline-flex; align-items: center; gap: 5px;
-  padding: 3px 9px 3px 6px; border: 1px solid var(--border);
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 3px 6px; border: 1px solid var(--border);
   border-radius: 20px; background: rgba(255,255,255,.92); color: var(--text-soft);
   box-shadow: 0 1px 4px rgba(0,0,0,.06);
 }
@@ -1173,4 +1175,43 @@ tbody tr:hover { background: var(--bg-soft); }
   .res-picks .rp { margin-right: 10px; font-size: 12.5px; }
   .res-picks .rp-name { max-width: 5.5em; overflow: hidden;
     text-overflow: ellipsis; white-space: nowrap; }
+}
+
+/* ─────────────────────────────────── 좁은 화면 가독성
+   휴대폰에서 12px 안팎의 글자가 여러 겹 쌓여 있었다. 정보 밀도를 줄이는 대신
+   글자를 키우고 여백을 넓혀, 스크롤이 늘더라도 한 번에 읽히게 한다. */
+@media (max-width: 640px) {
+  body { font-size: 15.5px; }
+  .wrap { padding-left: 14px; padding-right: 14px; }
+
+  h1 { font-size: 24px; line-height: 1.35; }
+  h2 { font-size: 18.5px; }
+  .panel-lead, .hero-sub { font-size: 14.5px; line-height: 1.75; }
+  .panel-more { font-size: 13.5px; line-height: 1.7; }
+
+  /* 표는 손가락으로 훑는다 — 줄 높이와 글자를 함께 올린다 */
+  .stats-table { font-size: 13.5px; }
+  .stats-table th, .stats-table td { padding: 10px 9px; }
+  .runners { font-size: 13.5px; }
+  .runners th, .runners td { padding: 10px 7px; }
+
+  /* 결과 목록의 추천 다섯은 두 줄로 흘러도 읽히게 */
+  .res-picks { line-height: 2.1; }
+  .res-picks .rp { font-size: 13px; margin-right: 12px; }
+
+  /* 경주일별·승식별 숫자는 표의 핵심이라 더 키운다 */
+  .stats-table .c-num { font-size: 14px; }
+}
+
+/* 아주 좁은 화면 — 여백을 먼저 줄이고 글자는 지킨다 */
+@media (max-width: 400px) {
+  .wrap { padding-left: 11px; padding-right: 11px; }
+  .stats-table th, .stats-table td { padding: 9px 6px; }
+}
+
+/* 순위 목록의 마번 배지 — 범례와 같은 모양이라 눈이 바로 잇는다 */
+.tk-order .tk-cap {
+  display: inline-grid; place-items: center; min-width: 19px; height: 19px;
+  padding: 0 4px; border-radius: 5px; font-size: 12px; font-weight: 700;
+  font-variant-numeric: tabular-nums; border: 1px solid rgba(0,0,0,.18);
 }
