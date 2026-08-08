@@ -456,7 +456,12 @@ def build_report(conn: sqlite3.Connection) -> Dict:
                     "hit_top3": float((g["_o"] <= 3).mean()),
                 })
 
-    recent = rl.tail(60).sort_values("rc_date", ascending=False)
+    # 최신 경주가 위로 온다. tail(60) 을 먼저 하면 날짜순이 아니라 표의 원래
+    # 순서(race_key 알파벳순)에서 뒤 60건을 집게 되어, 최근 것이 빠질 수 있다.
+    # 같은 날 안에서는 늦게 뛴 경주를 먼저 둔다 — 경마장은 그다음 기준이다.
+    recent = (rl.sort_values(["rc_date", "rc_no", "meet"],
+                             ascending=[False, False, True])
+                .head(60))
     recent_rows = [
         {
             "race_key": r.race_key,
