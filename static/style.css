@@ -924,9 +924,9 @@ tbody tr:hover { background: var(--bg-soft); }
   /* 오른쪽 아래에 둔다 — 엄지가 닿는 자리다 */
   display: inline-flex; align-items: center; gap: 5px;
   float: right; clear: both;
-  margin-top: 10px; padding: 6px 12px;
-  border: 1px solid var(--accent); border-radius: 8px;
-  font-size: 12.5px; font-weight: 700; color: var(--accent);
+  margin-top: 11px; padding: 8px 15px;
+  border: 1px solid var(--accent); border-radius: 9px;
+  font-size: 13.5px; font-weight: 700; color: var(--accent);
   background: var(--surface); transition: background .12s, color .12s;
 }
 .ri-go b { font-weight: 700; display: inline-block; transition: transform .12s; }
@@ -936,10 +936,10 @@ tbody tr:hover { background: var(--bg-soft); }
 .race-item:hover .ri-go b { transform: translateX(2px); }
 
 .ri-head {
-  display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
-  font-size: 13.5px; margin-bottom: 8px;
+  display: flex; align-items: center; gap: 9px; flex-wrap: wrap;
+  font-size: 14px; margin-bottom: 10px;
 }
-.ri-no { font-size: 15px; font-variant-numeric: tabular-nums; letter-spacing: -.02em; }
+.ri-no { font-size: 17px; font-variant-numeric: tabular-nums; letter-spacing: -.02em; }
 .ri-time {
   font-variant-numeric: tabular-nums; color: var(--text-soft); font-weight: 600;
 }
@@ -956,29 +956,29 @@ tbody tr:hover { background: var(--bg-soft); }
   overflow: hidden; background: var(--bg-soft);
 }
 .ri-pick {
-  display: flex; flex-direction: column; align-items: center; gap: 1px;
-  padding: 7px 4px 8px; background: var(--surface);
+  display: flex; flex-direction: column; align-items: center; gap: 3px;
+  padding: 12px 6px 13px; background: var(--surface);
   border-right: 1px solid var(--border); min-width: 0;
 }
 .ri-pick:last-child { border-right: none; }
-.ri-pick .mark { font-size: 13px; line-height: 1.2; color: var(--text-faint); }
+.ri-pick .mark { font-size: 15px; line-height: 1.1; color: var(--text-faint); }
 .ri-pick .gate-sm {
-  font-size: 17px; font-weight: 800; line-height: 1.15;
-  font-variant-numeric: tabular-nums; letter-spacing: -.02em;
+  font-size: 26px; font-weight: 800; line-height: 1.1;
+  font-variant-numeric: tabular-nums; letter-spacing: -.03em;
   background: none; border: none; width: auto; height: auto;
 }
 .ri-pick .rr-name {
-  font-size: 11.5px; color: var(--text-soft); max-width: 100%;
+  font-size: 13px; font-weight: 600; color: var(--text-soft); max-width: 100%;
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
 .ri-pick .rr-prob {
-  font-size: 12px; font-weight: 700; font-variant-numeric: tabular-nums;
+  font-size: 14px; font-weight: 700; font-variant-numeric: tabular-nums;
   color: var(--accent-text);
 }
 /* 시행 후에는 착순이 확률 자리를 대신한다 */
 .ri-picks.is-done .rr-prob { display: none; }
 .ri-pick .ri-ord {
-  font-size: 12px; font-weight: 700; font-variant-numeric: tabular-nums;
+  font-size: 14px; font-weight: 700; font-variant-numeric: tabular-nums;
   color: var(--text-soft);
 }
 .ri-pick.is-winner .ri-ord { color: var(--gold); }
@@ -986,10 +986,11 @@ tbody tr:hover { background: var(--bg-soft); }
 @media (max-width: 640px) {
   .race-item { padding: 11px 12px 12px; }
   .ri-head { gap: 6px; font-size: 12.5px; }
-  .ri-pick { padding: 6px 2px 7px; }
-  .ri-pick .gate-sm { font-size: 15px; }
-  .ri-pick .rr-name { font-size: 10.5px; }
-  .ri-pick .rr-prob, .ri-pick .ri-ord { font-size: 11px; }
+  .ri-pick { padding: 9px 3px 10px; gap: 2px; }
+  .ri-pick .mark { font-size: 13px; }
+  .ri-pick .gate-sm { font-size: 20px; }
+  .ri-pick .rr-name { font-size: 11px; }
+  .ri-pick .rr-prob, .ri-pick .ri-ord { font-size: 12px; }
 }
 
 
