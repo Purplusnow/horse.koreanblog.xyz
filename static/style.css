@@ -368,7 +368,16 @@ tbody tr:hover { background: var(--bg-soft); }
 
 /* -------------------------------------------------------------- 광고 */
 
-.ad-slot { margin: 26px 0; min-height: 90px; text-align: center; }
+/* 광고 자리.
+   min-height 로 자리를 미리 잡아 두면 광고가 안 채워졌을 때 그만큼이 빈칸으로
+   남는다. 새 사이트는 채워지지 않는 노출이 많으므로, **채워졌을 때만 자리를
+   차지하게** 둔다. 애드센스는 결과를 ins 의 data-ad-status 로 알려 준다. */
+.ad-slot { margin: 26px 0; text-align: center; }
+.ad-slot ins { display: block; }
+.ad-slot ins[data-ad-status="unfilled"] { display: none !important; }
+/* 라벨과 바깥 여백까지 걷어야 빈칸이 남지 않는다 */
+.ad-slot:has(ins[data-ad-status="unfilled"]) { margin: 0; }
+.ad-slot:has(ins[data-ad-status="unfilled"]) .ad-label { display: none; }
 .ad-label {
   display: block; font-size: 10.5px; color: var(--text-faint);
   letter-spacing: .08em; margin-bottom: 5px; text-transform: uppercase;
