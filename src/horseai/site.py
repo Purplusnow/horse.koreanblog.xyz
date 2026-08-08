@@ -573,7 +573,8 @@ def build(db: str, out_dir: Path, config: Dict, template_dir: Path,
     env = make_env(template_dir)
     # 이전 빌드의 잔여 페이지를 지운다. 남겨 두면 삭제된 경주가 사이트에 계속
     # 살아 있고, sitemap 과 실제 페이지가 어긋난다.
-    for stale in ("race", "horse"):
+    # about 은 페이지를 없앤 뒤에도 이전 빌드 산출물이 남아 있으면 계속 살아 있다
+    for stale in ("race", "horse", "about"):
         if (out_dir / stale).exists():
             shutil.rmtree(out_dir / stale)
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -672,8 +673,9 @@ def build(db: str, out_dir: Path, config: Dict, template_dir: Path,
         write(out_dir / "results" / "index.html",
               env.get_template("results.html").render(**ctx_base, past=past,
                                                       page_url="/results/"))
-        write(out_dir / "about" / "index.html",
-              env.get_template("about.html").render(**ctx_base, page_url="/about/"))
+        # 예측 방식 페이지는 내렸다. 어떤 지표를 어떻게 조합하는지가 그대로
+        # 적혀 있어 경쟁 예상지에 그대로 넘어간다. 산출 기준의 요지는 홈의
+        # '예상 산출 기준' 과 적중률 페이지의 검증 표에 남아 있다.
 
         # 마필 개별 페이지 — 전적 조회는 경마 팬의 기본 동선이고,
         # '마명 + 전적' 검색어는 롱테일 유입의 큰 축이다.
@@ -709,7 +711,7 @@ def build(db: str, out_dir: Path, config: Dict, template_dir: Path,
 
         # sitemap / robots
         base = config["site"]["url"].rstrip("/")
-        urls = (["/", "/accuracy/", "/results/", "/about/"]
+        urls = (["/", "/accuracy/", "/results/"]
                 + [r["url"] for r in detail_pages]
                 + [h["url"] for h in horse_pages])
         write(out_dir / "sitemap.xml", env.get_template("sitemap.xml").render(
