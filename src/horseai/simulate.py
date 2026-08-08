@@ -55,10 +55,13 @@ LANE_WIDTH = 1.6              # 한 두 폭(m). 바깥 레인 하나당 이만�
 #   부산경남  500m → 6/7   (1800m 만 어긋난다 — 별도 출발로로 보인다)
 #   제주      410m → 9/10  (1400m 만 어긋난다)
 # lap 은 직선·곡선에서 계산한다 — 따로 적으면 반드시 어긋난다.
+# turn 은 도는 방향이다. 서울·부산경남은 좌회전(반시계), 제주는 우회전이다.
+# 마사회 공개 자료에는 이 값이 없어 코드에 적어 둔다 — 자료로 확인할 수 없는
+# 것은 어디서 온 값인지 밝혀 두지 않으면 나중에 근거를 되짚을 수 없다.
 TRACK_SPEC = {
-    "서울":     {"straight": 500, "curve": 350},
-    "부산경남": {"straight": 500, "curve": 350},
-    "제주":     {"straight": 410, "curve": 306},   # 곡률반경 97.5m
+    "서울":     {"straight": 500, "curve": 350, "turn": "left"},
+    "부산경남": {"straight": 500, "curve": 350, "turn": "left"},
+    "제주":     {"straight": 410, "curve": 306, "turn": "right"},  # 곡률반경 97.5m
 }
 for _v in TRACK_SPEC.values():
     _v["lap"] = _v["straight"] * 2 + _v["curve"] * 2
@@ -477,7 +480,7 @@ SUB_STEPS = 4
 # 시행된 경주는 예측을 다시 만들지 않으므로 옛 대본이 DB 에 남는다. 형식이
 # 같아도 계산이 달라졌으면 다시 구워야 하는데, 'lanes 키가 있나' 로만 보면
 # 그걸 잡아내지 못한다 — 실제로 그래서 배포본만 옛 움직임으로 남았다.
-PAYLOAD_VERSION = 4
+PAYLOAD_VERSION = 5
 
 
 def lane_paths(runners: Sequence[Runner], seg_times: np.ndarray) -> np.ndarray:
