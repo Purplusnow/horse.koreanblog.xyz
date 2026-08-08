@@ -30,7 +30,7 @@
     unknown: '#7a8593'
   };
 
-  var playing = false, t = 0, speed = 1, raf = null, last = 0;
+  var playing = false, t = 0, speed = 1, raf = null, last = 0, follow = true;
 
   /* ── 주로 기하 ────────────────────────────────────────────────
      경주로를 '스타디움' 모양으로 본다: 직선 2개 + 반원 2개.
@@ -104,20 +104,55 @@
     ctx.closePath();
   }
 
+  /* 화면 배치.
+     반원은 안쪽 레일 반지름(ry)만큼 좌우로 더 나간다. 그 몫을 폭에서 빼지 않으면
+     코너가 캔버스 밖으로 잘린다 — 처음에 그렇게 그려졌다. */
+  function layout(W, H) {
+    var lanes = Math.max(5, Math.min(14, runners.length));
+    var laneStep = 4.0;
+    // 말은 가장 바깥 레인 + 마커 반지름까지 나간다. 그 몫을 다 빼야 잘리지 않는다.
+    var outer = lanes * laneStep + 12;
+    var pad = 10;
+    var ry = Math.max(26, (H - pad * 2) / 2 - outer);
+    var innerW = Math.max(60, W - pad * 2 - (ry + outer) * 2);
+    return {
+      left: pad + ry + outer, innerW: innerW,
+      innerH: ry * 2, cy: H / 2, laneStep: laneStep, lanes: lanes
+    };
+  }
+
   function draw() {
     var size = cssSize();
     var W = size.w, H = size.h;
-    var lanes = Math.max(5, Math.min(12, runners.length));
-    var box = {
-      left: 92, innerW: W - 92 - 34,
-      innerH: H - 74, cy: H / 2, laneStep: 3.0
-    };
+    var box = layout(W, H);
+    var lanes = box.lanes;
     var st = getComputedStyle(document.documentElement);
     var cFaint = st.getPropertyValue('--text-faint') || '#8b95a3';
     var cText = st.getPropertyValue('--text') || '#14181f';
     var cSunken = st.getPropertyValue('--bg-sunken') || '#eef0f3';
 
     ctx.clearRect(0, 0, W, H);
+
+    /* 카메라 — 무리를 따라가며 확대한다.
+       경주 중 말들은 실제로 뭉쳐 다니므로, 전체를 담으면 마번을 읽을 수 없다.
+       중계 화면이 줌인해서 따라가는 것과 같은 이유다. */
+    var pts = runners.map(function (r) {
+      var p = progressAt(r.splits, t);
+      return toPx(trackPoint(-distance + p * distance), box, (r.lane || 0) + 0.6);
+    });
+    ctx.save();
+    if (follow && pts.length) {
+      var xs = pts.map(function (p) { return p.x; }), ys = pts.map(function (p) { return p.y; });
+      var cx = (Math.min.apply(null, xs) + Math.max.apply(null, xs)) / 2;
+      var cy2 = (Math.min.apply(null, ys) + Math.max.apply(null, ys)) / 2;
+      var spread = Math.max(
+        Math.max.apply(null, xs) - Math.min.apply(null, xs),
+        Math.max.apply(null, ys) - Math.min.apply(null, ys)) + 90;
+      var z = Math.max(1.2, Math.min(3.4, Math.min(W, H * 1.6) / spread));
+      ctx.translate(W / 2, H / 2);
+      ctx.scale(z, z);
+      ctx.translate(-cx, -cy2);
+    }
 
     /* 주로 바닥 */
     ctx.strokeStyle = cSunken;
@@ -137,16 +172,12 @@
     var f1 = toPx(trackPoint(0), box, lanes);
     ctx.strokeStyle = '#b4842a'; ctx.lineWidth = 3;
     ctx.beginPath(); ctx.moveTo(f0.x, f0.y); ctx.lineTo(f1.x, f1.y); ctx.stroke();
-    ctx.fillStyle = '#b4842a';
-    ctx.font = 'bold 11px system-ui, sans-serif';
-    ctx.textAlign = 'center';
-    ctx.fillText('결승', f0.x, f0.y + 15);
-
-    /* 출발점 */
-    var s0 = toPx(trackPoint(-distance), box, lanes / 2);
-    ctx.fillStyle = cFaint;
-    ctx.font = '11px system-ui, sans-serif';
-    ctx.fillText('출발 ' + Math.round(distance) + 'm', s0.x, s0.y - 12);
+    /* 출발선 */
+    var s0 = toPx(trackPoint(-distance), box, 0);
+    var s1 = toPx(trackPoint(-distance), box, lanes);
+    ctx.strokeStyle = cFaint; ctx.lineWidth = 2; ctx.globalAlpha = 0.7;
+    ctx.beginPath(); ctx.moveTo(s0.x, s0.y); ctx.lineTo(s1.x, s1.y); ctx.stroke();
+    ctx.globalAlpha = 1;
 
     /* 현재 순위 */
     var order = runners.map(function (r, i) {
@@ -157,8 +188,7 @@
 
     /* 말 — 레인은 안쪽(0)부터 바깥으로 */
     runners.forEach(function (r, i) {
-      var p = progressAt(r.splits, t);
-      var pt = toPx(trackPoint(-distance + p * distance), box, (r.lane || 0) + 0.6);
+      var pt = pts[i];
       var color = STYLE_COLOR[r.style] || STYLE_COLOR.unknown;
       ctx.beginPath();
       ctx.arc(pt.x, pt.y, 9.5, 0, Math.PI * 2);
@@ -172,14 +202,39 @@
     });
     ctx.textBaseline = 'alphabetic';
 
-    /* 순위표 — 트랙 왼쪽 바깥 */
-    ctx.textAlign = 'left';
+    ctx.restore();
+
+    /* 표기는 배율 밖에 그린다 — 따라가기 중에 글자까지 커지면 읽기 어렵다. */
+    ctx.fillStyle = cFaint;
     ctx.font = '11.5px system-ui, sans-serif';
-    order.slice(0, 6).forEach(function (o, idx) {
+    ctx.textAlign = 'left';
+    ctx.fillText((data.track && data.track.meet ? data.track.meet + ' · ' : '')
+      + Math.round(distance) + 'm · ' + (spec.corners || 0) + '코너', 10, H - 10);
+    ctx.textAlign = 'right';
+    ctx.fillStyle = '#b4842a';
+    ctx.font = 'bold 11.5px system-ui, sans-serif';
+    ctx.fillText(follow ? '따라가기' : '전체 보기', W - 10, H - 10);
+
+    renderOrder(order);
+  }
+
+  /* 순위는 캔버스 밖 목록에 그린다. 안에 그리면 트랙과 겹치고, 카메라 배율을
+     따라 글자가 커졌다 작아졌다 해서 읽기 어렵다. */
+  var orderEl = document.getElementById('tk-order');
+  var lastOrder = '';
+  function renderOrder(order) {
+    if (!orderEl) return;
+    var key = order.map(function (o) { return o.i; }).join(',');
+    if (key === lastOrder) return;
+    lastOrder = key;
+    orderEl.innerHTML = order.map(function (o, idx) {
       var r = runners[o.i];
-      ctx.fillStyle = idx === 0 ? cText : cFaint;
-      ctx.fillText((idx + 1) + '. ' + r.gate + ' ' + r.name, 6, 16 + idx * 15);
-    });
+      var c = STYLE_COLOR[r.style] || STYLE_COLOR.unknown;
+      return '<li class="' + (idx === 0 ? 'is-lead' : '') + '">'
+        + '<span class="tk-pos">' + (idx + 1) + '</span>'
+        + '<span class="tk-dot" style="background:' + c + '"></span>'
+        + r.gate + ' ' + r.name + '</li>';
+    }).join('');
   }
 
   function tick(now) {
@@ -198,6 +253,7 @@
   var btnPlay = document.getElementById('tk-play');
   var btnReplay = document.getElementById('tk-replay');
   var rateBtns = Array.prototype.slice.call(document.querySelectorAll('.tk-rate'));
+  var btnZoom = document.getElementById('tk-zoom');
   var seek = document.getElementById('tk-seek');
   var clock = document.getElementById('tk-clock');
 
@@ -235,6 +291,11 @@
   var saved = null;
   try { saved = localStorage.getItem(RATE_KEY); } catch (e) {}
   setRate(saved || 1, false);
+  if (btnZoom) btnZoom.addEventListener('click', function () {
+    follow = !follow;
+    btnZoom.setAttribute('aria-pressed', String(follow));
+    btnZoom.textContent = follow ? '🔍 따라가기' : '⤢ 전체 보기';
+  });
   if (seek) seek.addEventListener('input', function () {
     stop(); t = (parseFloat(seek.value) / 1000) * duration; sync();
   });
