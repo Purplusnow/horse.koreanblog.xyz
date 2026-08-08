@@ -323,7 +323,9 @@
   </p>
   {% for r in runners %}
   {% if r.form %}
-  <details class="form-item"{% if r.pred_rank <= 3 %} open{% endif %}>
+  {# 전원 펼친 상태로 둔다. 상위 셋만 펼쳐 두면 어떤 말은 보이고 어떤 말은
+     안 보여, 접힌 쪽이 볼 것 없는 말처럼 읽힌다. 접고 싶으면 누르면 된다. #}
+  <details class="form-item" open>
     <summary>
       <span class="mark">{{ r.mark }}</span>
       <span class="gate">{{ r.chul_no }}</span>
