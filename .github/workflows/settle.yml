@@ -1,0 +1,76 @@
+name: 경주 결과 정산
+
+# 경주가 끝나는 대로 결과를 반영한다.
+#
+# update.yml 로 이걸 하면 안 된다 — 배당 수집이 경마장·날짜당 최대 40페이지라
+# 10분마다 돌리면 하루 수천 호출이 되고, 조교·출전표까지 매번 다시 받는다.
+# 여기서는 **오늘 성적만** 받는다(경마장 3곳 = 3호출). 그 값으로 적중률을 다시
+# 집계하고 사이트를 굽는다.
+#
+# **예측은 만들지 않는다.** 이미 게재한 예상을 건드릴 여지를 아예 두지 않는다.
+# DB 도 저장하지 않는다 — 수집분은 저녁 파이프라인이 정식으로 갈무리하고,
+# 여기서 쓰고 버리면 수집 파이프라인과 쓰기 충돌이 날 일이 없다.
+on:
+  schedule:
+    # 금·토·일 12:00~22:00 KST (UTC 03~13시) 10분마다.
+    # GitHub 예약 실행은 부하에 따라 늦어질 수 있어 실제로는 10~20분 간격이 된다.
+    - cron: "*/10 3-13 * * 5,6,0"
+  workflow_dispatch:
+
+concurrency:
+  group: horseai-update      # 수집 파이프라인과 같은 그룹 — 겹쳐 돌지 않는다
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+env:
+  DB: data/horseai.sqlite
+  DB_RELEASE_TAG: db-state
+
+jobs:
+  settle:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: 의존성 설치
+        run: pip install -r requirements.txt
+
+      - name: DB 복원
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p data models
+          gh release download "$DB_RELEASE_TAG" -p "horseai.sqlite.zst" -D /tmp
+          zstd -d /tmp/horseai.sqlite.zst -o "$DB"
+          gh release download "$DB_RELEASE_TAG" -p "metrics.json" -D models 2>/dev/null || true
+
+      - name: 오늘 성적 수집
+        timeout-minutes: 8
+        continue-on-error: true
+        env:
+          KRA_SERVICE_KEY: ${{ secrets.KRA_SERVICE_KEY }}
+        run: PYTHONPATH=src python -m horseai.kra.collect results --days 1 --db "$DB"
+
+      - name: 적중률 검증
+        run: PYTHONPATH=src python -m horseai.verify --db "$DB" --out data/accuracy.json
+
+      - name: 사이트 빌드
+        timeout-minutes: 15
+        run: PYTHONPATH=src python -m horseai.site --db "$DB" --out dist
+
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+      - id: deployment
+        uses: actions/deploy-pages@v4

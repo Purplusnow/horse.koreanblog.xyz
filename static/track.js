@@ -85,6 +85,17 @@
     };
   }
 
+  /* 시각 t 에서의 주행 레인. 구간별 값을 진행률로 보간한다.
+     실제 경주처럼 안쪽이 비면 들어가고 막히면 밖으로 나므로, 경주 내내
+     같은 자리를 도는 그림이 나오지 않는다. */
+  function laneAt(r, p) {
+    var L = r.lanes;
+    if (!L || !L.length) return r.lane || 0;
+    var f = p * (L.length - 1), k = Math.floor(f), g = f - k;
+    if (k >= L.length - 1) return L[L.length - 1];
+    return L[k] + (L[k + 1] - L[k]) * g;
+  }
+
   /* 시각 t 에서의 진행률(0~1). 구간 통과 시각 사이를 선형 보간한다. */
   function progressAt(splits, time) {
     if (time <= 0) return 0;
@@ -158,7 +169,7 @@
        배율에 곱하면 원이 커져 서로 겹치고, 확대한 의미가 사라진다. */
     var raw = runners.map(function (r) {
       var p = progressAt(r.splits, t);
-      return toPx(trackPoint(-distance + p * distance), box, (r.lane || 0) + 0.6);
+      return toPx(trackPoint(-distance + p * distance), box, laneAt(r, p) + 0.6);
     });
     var cam = { z: 1, cx: W / 2, cy: H / 2 };
     if (follow && raw.length) {

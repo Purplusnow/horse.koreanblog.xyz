@@ -25,12 +25,15 @@ from horseai import features as F  # noqa: E402
 from horseai import model as M  # noqa: E402
 from horseai.model import walk_forward  # noqa: E402
 
+# 무엇을 빼고 비교할지. 새 피처를 검증할 때 여기만 바꾼다.
+DROP_SET = ["exact_dist_starts", "is_new_distance", "dist_change"]
+
 
 def run(df: pd.DataFrame, drop: bool, from_date: str) -> dict:
     """drop=True 면 조교 피처를 빼고 학습한다."""
     keep = list(F.FEATURE_COLUMNS)
     if drop:
-        keep = [c for c in keep if c not in F.TRAINING_FEATURES]
+        keep = [c for c in keep if c not in DROP_SET]
     # model 은 임포트 시점에 목록을 복사해 둔다. features 쪽만 바꾸면 학습은
     # 그대로 전체 피처로 돌아가고, A/B 가 갈리지 않은 채 같은 수치가 나온다
     # (실제로 그렇게 나와서 이 주석이 있다).
@@ -68,8 +71,7 @@ def run(df: pd.DataFrame, drop: bool, from_date: str) -> dict:
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--db", default="data/horseai.sqlite")
-    ap.add_argument("--from-date", default="2024-09-01",
-                    help="조교 자료가 채워진 구간의 시작")
+    ap.add_argument("--from-date", default="2024-09-01")
     args = ap.parse_args()
 
     conn = sqlite3.connect(args.db)
@@ -86,7 +88,7 @@ def main() -> int:
 
     print(f"\n{'':<12}{'경주':>8}{'단승':>9}{'연승':>9}{'3순위내':>10}{'AUC':>9}")
     print("-" * 58)
-    for name, r in (("조교 제외", base), ("조교 포함", with_tr)):
+    for name, r in (("피처 제외", base), ("피처 포함", with_tr)):
         print(f"{name:<12}{r['n_races']:>8,}{r['win']:>9.1%}{r['place']:>9.1%}"
               f"{r['top3']:>10.1%}{r['auc']:>9.4f}")
     d_win = with_tr["win"] - base["win"]
@@ -97,11 +99,11 @@ def main() -> int:
 
     print()
     if d_auc > 0.004 or d_win > 0.01:
-        print("  → 조교 피처가 성능을 올린다")
+        print("  → 성능이 오른다 — 넣는다")
     elif d_auc < -0.004 or d_win < -0.01:
-        print("  → 조교 피처가 오히려 성능을 떨어뜨린다. 빼는 게 맞다")
+        print("  → 오히려 떨어진다. 빼는 게 맞다")
     else:
-        print("  → 유의미한 차이가 없다. 지금 형태로는 도움이 되지 않는다")
+        print("  → 유의미한 차이가 없다")
     return 0
 
 

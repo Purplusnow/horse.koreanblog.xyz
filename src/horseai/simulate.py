@@ -451,6 +451,64 @@ def lane_offsets(runners: Sequence[Runner], field_size: int) -> np.ndarray:
     return np.asarray(out, dtype=float)
 
 
+# 나란히 달린다고 볼 시간차(초). 이 안에 있으면 옆에 있는 것이고, 그러면 레인이
+# 겹칠 수 없다. 16m/s 에서 0.18초는 약 3m — 말 한 마리 길이쯤이다.
+# 이 값을 크게 잡으면 무리 전체가 '나란히' 로 판정돼 10마리가 10레인으로 퍼진다.
+# 실제 경주는 대개 2~4마리 폭으로 달린다.
+SIDE_BY_SIDE = 0.18
+LANE_MIN_GAP = 1.0      # 나란히 있을 때 필요한 최소 레인 간격 (말 폭)
+LANE_SLEW = 1.2         # 한 구간에서 옆으로 움직일 수 있는 최대 레인 수
+
+
+def lane_paths(runners: Sequence[Runner], seg_times: np.ndarray) -> np.ndarray:
+    """구간마다 각 말이 **몇 레인에서 달리는가**.
+
+    지금까지는 말마다 레인이 경주 내내 고정이었다. 그래서 앞이 뻥 뚫리고 인코스가
+    비어도 계속 바깥으로 도는 그림이 나왔다. 실제 기수는 거리가 짧은 안쪽을
+    잡으려 하고, 앞이 막히면 그때 밖으로 낸다.
+
+    두 가지 제약으로 재현한다.
+      * **안쪽 우선** — 비어 있으면 레일 쪽으로 들어간다
+      * **겹치지 않음** — 나란히 달리는(시간차 SIDE_BY_SIDE 이내) 말끼리는
+        레인이 한 마리 폭 이상 벌어져야 한다. 실제로도 겹쳐 달릴 수 없다.
+
+    옆으로 움직이는 속도에도 한계를 둔다(LANE_SLEW). 한 구간 만에 트랙을 가로질러
+    순간이동하면 그것대로 어색하다.
+    """
+    n, n_seg = seg_times.shape
+    if n == 0:
+        return np.zeros((0, 0))
+    cum = np.cumsum(seg_times, axis=1)
+    # 출발 직후에는 게이트에서 나온 자리 그대로다
+    start = np.array([max(0.0, ((r.chul_no or 1) - 1) * 0.9) for r in runners])
+    out = np.zeros((n, n_seg))
+    prev = start.copy()
+
+    for j in range(n_seg):
+        t = cum[:, j]
+        placed: List[tuple] = []            # (시각, 레인)
+        for i in np.argsort(t):             # 앞선 말부터 자리를 잡는다
+            lo = max(0.0, prev[i] - LANE_SLEW)
+            hi = prev[i] + LANE_SLEW
+            lane = None
+            # 안쪽부터 훑어 비어 있는 첫 자리를 잡는다
+            cand = np.arange(lo, hi + 0.001, 0.25)
+            for c in cand:
+                if all(abs(t[i] - tk) >= SIDE_BY_SIDE or abs(c - lk) >= LANE_MIN_GAP
+                       for tk, lk in placed):
+                    lane = c
+                    break
+            if lane is None:                # 안쪽이 다 막히면 밖으로 낸다
+                lane = hi
+                while any(abs(t[i] - tk) < SIDE_BY_SIDE and abs(lane - lk) < LANE_MIN_GAP
+                          for tk, lk in placed):
+                    lane += 0.25
+            out[i, j] = lane
+            placed.append((t[i], lane))
+        prev = out[:, j]
+    return out
+
+
 def pace_factors(conn, before: str) -> Dict[str, float]:
     """마필별 '기준 기록 대비 비율'.
 
@@ -580,7 +638,9 @@ def animation_payload(sim: RaceSim, distance: float, top_k: int = 99,
     # 레인은 **마번 순**으로 낸다. 도착순으로 늘어놓으면 위 레인부터 차례로
     # 들어오는 그림이 되어 경주로 보이지 않는다. 실제 경마 중계도 마번 순이다.
     lane = sorted(range(n), key=lambda i: sim.runners[i].chul_no or 99)
-    lanes = lane_offsets(sim.runners, n)
+    # 구간마다 어느 레인에서 달리는지. 고정값을 쓰면 인코스가 비어도 계속
+    # 바깥으로 도는 그림이 된다.
+    lanes = lane_paths(sim.runners, sim.seg_times)
     spec = TRACK_SPEC.get(meet or "", TRACK_SPEC["서울"])
     return {
         "distance": float(distance),
@@ -598,8 +658,8 @@ def animation_payload(sim: RaceSim, distance: float, top_k: int = 99,
                 # 각 구간을 통과한 시각(초). 앞설수록 값이 작다.
                 "splits": [round(float(t), 2) for t in sim.positions[i]],
                 "sim_rank": int(np.where(order == i)[0][0]) + 1,
-                # 안쪽에서 몇 레인 밖으로 도는가 — 캔버스가 이만큼 바깥에 그린다
-                "lane": round(float(lanes[i]), 2),
+                # 구간별 주행 레인. 안쪽이 비면 들어가고, 막히면 밖으로 낸다.
+                "lanes": [round(float(v), 2) for v in lanes[i]],
             }
             for i in lane
         ],

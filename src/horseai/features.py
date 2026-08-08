@@ -80,6 +80,19 @@ FEATURE_COLUMNS: List[str] = [
     "late_speed_avg3", "late_speed_best",
     "finish_speed_avg3", "finish_speed_best",
     "dist_starts", "dist_top3_rate", "meet_starts",
+    # exact_dist_starts · is_new_distance · dist_change 는 계산은 하되 넣지 않는다.
+    #
+    # 원자료에는 분명한 차이가 있다 — 거리 첫 도전이 승률 11.8% 대 8.8% 로 오히려
+    # 높고, 250m 넘게 단축하면 6.9% 까지 떨어진다. 그런데 모델에 넣어도 성능이
+    # 움직이지 않는다(단승 -0.3%p, AUC +0.0006). '1순위가 거리 첫 도전' 인 경주만
+    # 골라 봐도 +0.3%p 로 잡음 수준이다.
+    #
+    # 이미 있는 피처(통산 출주 수·승률·class_move)가 같은 정보를 담고 있어서다.
+    # 거리를 바꿔 나오는 말은 대개 올라가는 중이고, 그 사실은 승률과 승급 이력에
+    # 이미 들어 있다.
+    #
+    # 계산은 남겨 둔다 — 화면에서 '이 거리 첫 도전' 을 알려 주는 데는 쓸 수 있고,
+    # 되살리려면 여기에 이어 붙이면 된다.
     "last_weight", "weight_change",
     "class_move",
     # 기수 / 조교사
@@ -407,6 +420,22 @@ def build_history_index(hist: pd.DataFrame) -> pd.DataFrame:
     hr_dist = df["hr_no"].astype(str) + "|" + df["dist_bucket"].astype(str)
     df["dist_starts"] = _expanding_prior(hr_dist, df["is_top3"].notna().astype(float), "sum").fillna(0)
     df["dist_top3_rate"] = _expanding_prior(hr_dist, df["is_top3"], "mean")
+    # 구간이 아니라 **정확히 그 거리**를 뛴 적이 있는가.
+    # 구간(1300-1400)으로 묶으면 1300m 7전이 1400m 경험으로 읽혀, '이 거리
+    # 첫 도전' 이라는 사실이 통째로 가려진다. 시장이 조심하는 조건이므로
+    # 모델도 볼 수 있어야 한다.
+    #
+    # 참고로 데이터상 첫 도전이 불리하지는 않다 — 승률 11.8% 대 8.8% 로 오히려
+    # 높다. 거리를 바꾸는 말이 대개 올라가는 중이기 때문으로 보인다.
+    hr_exact = df["hr_no"].astype(str) + "|" + df["distance"].astype(str)
+    df["exact_dist_starts"] = _expanding_prior(
+        hr_exact, df["is_top3"].notna().astype(float), "sum").fillna(0)
+    df["is_new_distance"] = (df["exact_dist_starts"] == 0).astype(float)
+    # 직전 경주 대비 거리 변화. 크게 단축하면 승률이 떨어진다(250m+ 단축 6.9%,
+    # 연장 10.2%). 거리를 줄여 나오는 말은 제 거리를 못 찾은 경우가 많다.
+    _prev_dist = df.groupby(hr)["distance"].shift(1)
+    df["dist_change"] = pd.to_numeric(df["distance"], errors="coerce") - _prev_dist
+
     hr_meet = df["hr_no"].astype(str) + "|" + df["meet"].astype(str)
     df["meet_starts"] = _expanding_prior(hr_meet, df["is_top3"].notna().astype(float), "sum").fillna(0)
 
