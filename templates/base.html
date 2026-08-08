@@ -53,8 +53,8 @@
   <div class="wrap trustbar-inner">
     {% if acc and acc.n_races >= 100 %}
     <span class="trustbar-label">검증 실적</span>
-    <span class="trustbar-stat"><b>{{ '%.1f'|format(acc.hit_win * 100) }}%</b> ◎ 1착</span>
-    <span class="trustbar-stat"><b>{{ '%.1f'|format(acc.hit_place * 100) }}%</b> ◎ 3착 이내</span>
+    <span class="trustbar-stat"><b>{{ '%.1f'|format(acc.hit_win * 100) }}%</b> 1순위 1착</span>
+    <span class="trustbar-stat"><b>{{ '%.1f'|format(acc.hit_place * 100) }}%</b> 1순위 3착 이내</span>
     <span class="trustbar-stat trustbar-muted">{{ '{:,}'.format(acc.n_races) }}경주 검증</span>
     <a class="trustbar-link" href="/accuracy/">전체 보기 →</a>
     {% elif acc and acc.n_races %}

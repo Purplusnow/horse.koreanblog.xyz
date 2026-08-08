@@ -444,9 +444,10 @@ def form_summary(form: List[Dict]) -> Dict:
 
 PICKS_SQL = """
 SELECT p.race_key, p.pred_rank, p.p_win, p.p_place, p.p_top2, p.style_code,
-       e.chul_no, e.hr_name
+       e.chul_no, e.hr_name, res.ord
 FROM predictions p
 JOIN entries e ON e.race_key = p.race_key AND e.hr_no = p.hr_no
+LEFT JOIN results res ON res.race_key = p.race_key AND res.hr_no = p.hr_no
 WHERE p.pred_rank <= 5
 """
 
@@ -465,6 +466,11 @@ def load_picks(conn: sqlite3.Connection) -> Dict[str, List[Dict]]:
         d = _row_to_dict(r)
         d["p_win_pct"] = round((d.get("p_win") or 0) * 100)
         d["style_label"] = STYLE_LABEL.get(d.get("style_code") or "", "")
+        # 시행이 끝난 경주는 승률 대신 실제 착순을 보여 준다.
+        # 91~99 는 착순이 아니라 상태 코드(출전취소 등)다.
+        o = d.get("ord")
+        d["ord_text"] = (ORD_STATUS.get(o) or f"{o}착") if o else ""
+        d["is_win"] = o == 1
         out.setdefault(d["race_key"], []).append(d)
     # 기호는 경주 단위로 정해진다 — 한 마리만 보고는 붙일 수 없다
     for picks in out.values():
@@ -604,14 +610,18 @@ def build(db: str, out_dir: Path, config: Dict, template_dir: Path,
         metrics = load_metrics()
 
         today = today_kst()
-        upcoming = [r for r in races if not r["has_result"]
-                    and r["date_obj"] and r["date_obj"] >= today]
+        # 오늘 이후 경주는 이미 시행된 것도 그날 목록에 함께 싣는다.
+        # 끝난 경주를 아래로 빼면 그날 카드가 앞뒤로 갈려, 방문자가 시간표를
+        # 이어서 볼 수 없다. 시행된 경주는 승률 대신 착순이 찍힌다.
+        upcoming = [r for r in races if r["date_obj"] and r["date_obj"] >= today]
         upcoming.sort(key=_post_order)
         upcoming = upcoming[: config["build"]["upcoming_limit"]]
 
         # 지난 경주는 최근 것이 위로 — 같은 날 안에서도 늦게 뛴 경주가 먼저다
         past = sorted((r for r in races if r["has_result"]),
                       key=_post_order, reverse=True)[: config["build"]["past_races"]]
+        # 홈 하단에는 '어제 이전' 만 남긴다 (오늘 것은 위 목록에 이미 있다)
+        recent_past = [r for r in past if r["date_obj"] and r["date_obj"] < today]
 
         ctx_base = {
             "site": config["site"],
@@ -676,7 +686,7 @@ def build(db: str, out_dir: Path, config: Dict, template_dir: Path,
         write(out_dir / "index.html", env.get_template("index.html").render(
             **ctx_base, upcoming_by_day=sorted(by_day.items()),
             featured=featured[:4],
-            recent_past=past[:12], page_url="/",
+            recent_past=recent_past[:12], page_url="/",
         ))
         write(out_dir / "accuracy" / "index.html",
               env.get_template("accuracy.html").render(**ctx_base, page_url="/accuracy/"))

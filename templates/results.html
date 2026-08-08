@@ -19,15 +19,15 @@
 <section class="res-summary">
   <div class="res-stat">
     <b>{{ '%.1f'|format(accuracy.overall.hit_win * 100) }}%</b>
-    <span>◎ 1착<small>1순위 마필이 우승</small></span>
+    <span>1순위 1착<small>가장 유력한 마필이 우승</small></span>
   </div>
   <div class="res-stat">
     <b>{{ '%.1f'|format(accuracy.overall.hit_place * 100) }}%</b>
-    <span>◎ 3착 이내<small>1순위 마필이 입상</small></span>
+    <span>1순위 3착 이내<small>가장 유력한 마필이 입상</small></span>
   </div>
   <div class="res-stat">
     <b>{{ '%.1f'|format(accuracy.overall.hit_top3_has_winner * 100) }}%</b>
-    <span>◎○△ 중 우승마<small>상위 3두 안에 우승마</small></span>
+    <span>상위 3두 중 우승마<small>추천 3두 안에 우승마</small></span>
   </div>
   <div class="res-stat res-stat-muted">
     <b>{{ '{:,}'.format(accuracy.overall.n_races) }}</b>

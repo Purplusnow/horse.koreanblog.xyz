@@ -75,15 +75,25 @@
       {% if race.grade %}<span class="rr-grade">{{ race.grade }}</span>{% endif %}
       {% if race.field_size %}<small>{{ race.field_size }}두</small>{% endif %}
     </span>
-    {{ conf_badge(race.conf_label, race.conf_score) }}
+    {% if race.has_result %}{{ hit_badge(race.outcome) }}
+    {% else %}{{ conf_badge(race.conf_label, race.conf_score) }}{% endif %}
   </div>
-  <div class="ri-picks">
+  {# 시행 전에는 예상 승률을, 시행 후에는 실제 착순을 같은 자리에 보여 준다.
+     끝난 경주를 목록 아래로 빼면 그날 카드가 앞뒤로 갈려 시간표를 이어서
+     볼 수 없다. 자리를 그대로 두고 값만 바꾼다. #}
+  <div class="ri-picks{% if race.has_result %} is-done{% endif %}">
     {% for p in race.picks[:5] %}
-    <span class="ri-pick">
+    <span class="ri-pick{% if p.is_win %} is-winner{% endif %}">
       <span class="mark{% if p.mark == "★" %} is-star{% endif %}">{{ p.mark }}</span>
       <span class="gate gate-sm">{{ p.chul_no }}</span>
       <span class="rr-name" title="{{ p.hr_name }}">{{ p.hr_name }}</span>
+      {% if race.has_result %}
+      {# 경주 직후에는 1~3착만 먼저 공시된다. 나머지를 '-' 로 찍으면 고장처럼
+         보이므로, 착순이 아직 없으면 아무것도 쓰지 않는다. #}
+      {% if p.ord_text %}<span class="ri-ord">{{ p.ord_text }}</span>{% endif %}
+      {% else %}
       <span class="rr-prob">{{ p.p_win_pct }}%</span>
+      {% endif %}
     </span>
     {% else %}
     <span class="rr-empty">예상 준비 중</span>
