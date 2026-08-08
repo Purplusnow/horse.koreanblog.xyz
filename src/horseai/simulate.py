@@ -22,6 +22,8 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Dict, List, Optional, Sequence
 
+import math
+
 import numpy as np
 import pandas as pd
 
@@ -30,6 +32,29 @@ N_SIMS = 2000          # 반복 횟수. 12두 경주에서 승률 표준오차�
 
 # 각질별 에너지 배분 곡선의 기울기.
 # 양수면 초반에 힘을 쓰고 후반에 떨어진다(선행), 음수면 그 반대(추입).
+# ── 주로 기하 ──────────────────────────────────────────────────────
+# 코너에서 바깥으로 돌면 실제로 더 뛴다. 반경 r 만큼 밖으로 돌면 코너 하나(90°)당
+# r×π/2 만큼 거리가 늘어난다. 데이터에도 이 효과가 그대로 보인다 —
+# 서울·부경 10~12두 경주에서 마번 1~4 승률 10.3% vs 6~12번 8.3%.
+#
+# 코너 수는 추측하지 않고 **코너 통과기록이 몇 개 찍히는지**로 정한다
+# (corner_counts). 서울 1200m 은 2코너, 1700m 은 4코너다.
+LANE_WIDTH = 1.6              # 한 두 폭(m). 바깥 레인 하나당 이만큼 더 돈다.
+
+# 경마장별 주로 제원. 서울 내주로는 일주 1,600m 에 직선 450m·곡선 350m 다
+# (한국마사회 경주로 구조). 화면에 타원을 그리고 '어디가 코너인지'를 맞추는 데
+# 쓴다. 세 곳 모두 반시계 방향으로 시행한다.
+TRACK_SPEC = {
+    "서울":     {"lap": 1600, "straight": 450, "curve": 350},
+    "부산경남": {"lap": 1600, "straight": 450, "curve": 350},
+    "제주":     {"lap": 1600, "straight": 494, "curve": 306},   # 곡률반경 97.5m
+}
+CORNER_RAD = math.pi / 2      # 코너 하나 = 90°
+
+# 각질에 따라 자리를 잡는 정도. 선행마는 일찍 안쪽을 차지하고, 추입마는 바깥으로
+# 돌아 나가는 대가를 치른다. 값은 '레인 수' 단위다.
+STYLE_LANE = {"front": -0.6, "stalk": 0.0, "close": 0.7, "unknown": 0.2}
+
 STYLE_SLOPE = {"front": 0.55, "stalk": 0.05, "close": -0.50, "unknown": 0.0}
 
 
@@ -111,7 +136,7 @@ def anchor_to(runners: Sequence[Runner], target_prob: Sequence[float],
 
 
 def fit_noise(runners: Sequence[Runner], distance: float,
-              target_prob: Sequence[float], iters: int = 9) -> float:
+              target_prob: Sequence[float], iters: int = 9, corners: int = 0) -> float:
     """'결과가 갈리는 정도'를 경주마다 보정한다.
 
     능력 격차를 줄여서 맞추려 하면, 격차가 작아진 만큼 각질·구간 특성이 능력을
@@ -128,7 +153,7 @@ def fit_noise(runners: Sequence[Runner], distance: float,
     for _ in range(iters):
         mid = (lo + hi) / 2
         got = float(np.max(simulate(runners, distance, n_sims=400,
-                                    noise_scale=mid).win_prob))
+                                    noise_scale=mid, corners=corners).win_prob))
         best = mid
         if got > target:
             lo = mid          # 너무 결정적 → 변동폭을 키운다
@@ -146,6 +171,7 @@ def simulate(
     seed: int = 20260808,
     noise_scale: float = 1.0,
     scenario_winner: Optional[int] = None,
+    corners: int = 0,
 ) -> RaceSim:
     """경주를 n_sims 번 달려 본다.
 
@@ -166,6 +192,8 @@ def simulate(
 
     rng = np.random.default_rng(seed)
     n_seg = max(3, int(round(distance / SEG_M)))
+    # 마필별 추가 주행거리(m). 안쪽을 도는 말은 0 에 가깝다.
+    lane_extra = lane_offsets(runners, len(runners)) * LANE_WIDTH * CORNER_RAD * max(0, corners)
     # 구간 진행도 0(출발) ~ 1(결승)
     prog = (np.arange(n_seg) + 0.5) / n_seg
 
@@ -224,6 +252,12 @@ def simulate(
         # 능력 z → 구간 소요시간. 200m 를 대략 12초로 두고 z 1당 약 2% 변동.
         seg_time = (SEG_M / 16.7) * (1.0 - 0.02 * ability)
         seg_time = np.clip(seg_time, 6.0, 30.0)
+
+        # 코너에서 바깥으로 도는 대가. 레인 하나당 코너마다 LANE_WIDTH×π/2 만큼
+        # 더 뛴다. 그 거리를 구간에 고르게 나눠 시간으로 환산한다.
+        if corners and lane_extra.any():
+            per_seg = lane_extra[None, :, None] / max(1, n_seg)
+            seg_time = seg_time * (1.0 + per_seg / SEG_M)
         total = seg_time.sum(axis=2)                       # (m, n)
 
         order = np.argsort(np.argsort(total, axis=1), axis=1)  # 0=1착
@@ -356,6 +390,54 @@ def par_times(conn) -> Dict[tuple, float]:
     return out
 
 
+def corner_counts(conn) -> Dict[tuple, int]:
+    """(경마장, 거리) → 그 경주가 도는 코너 수.
+
+    주로 제원을 외부에서 가져오지 않는다. 경주성적에 코너 통과기록이 몇 개
+    찍히는지가 곧 코너 수다 — 서울 1200m 은 c3·c4 만, 1700m 은 c1~c4 가 있다.
+    """
+    rows = conn.execute(
+        "SELECT r.meet, r.distance, "
+        "  SUM(res.c1_rank IS NOT NULL), SUM(res.c2_rank IS NOT NULL), "
+        "  SUM(res.c3_rank IS NOT NULL), SUM(res.c4_rank IS NOT NULL), COUNT(*) "
+        "FROM results res JOIN races r ON r.race_key = res.race_key "
+        "WHERE r.distance BETWEEN 500 AND 3000 GROUP BY 1, 2").fetchall()
+    out: Dict[tuple, int] = {}
+    for meet, dist, c1, c2, c3, c4, n in rows:
+        if not (meet and dist and n and n >= 30):
+            continue
+        # 절반 이상의 행에 기록이 있으면 그 코너를 실제로 돈 것으로 본다
+        k = sum(1 for c in (c1, c2, c3, c4) if c and c / n >= 0.5)
+        out[(meet, int(dist))] = max(2, k)
+    return out
+
+
+def corner_count(counts: Dict[tuple, int], meet: str, distance: float) -> int:
+    """표에 없으면 거리로 어림한다 — 대략 한 코너에 400m 쯤이다."""
+    if counts and (meet, int(distance or 0)) in counts:
+        return counts[(meet, int(distance))]
+    return int(np.clip(round((distance or 1200) / 450), 2, 4))
+
+
+def lane_offsets(runners: Sequence[Runner], field_size: int) -> np.ndarray:
+    """마필별 '안쪽에서 몇 레인 밖으로 도는가'.
+
+    마번이 바깥일수록, 각질이 추입일수록 밖으로 돈다. 두수가 많으면 안으로
+    파고들기 어려워 그 차이가 커진다. 실제 마번별 승률 곡선(1~4번이 뚜렷이
+    유리하고 6번 이후로는 완만)에 맞춰 제곱근으로 눌렀다.
+    """
+    n = max(1, field_size)
+    out = []
+    for r in runners:
+        gate = r.chul_no or n
+        # 실제 마번별 승률은 1~4번이 거의 같고(10.3~10.6%) 6번부터 떨어진다
+        # (8.1~8.6%). 안쪽 몇 두는 모두 레일을 잡을 수 있고, 그 밖부터 밀린다는
+        # 뜻이다. 그래서 앞쪽은 평평하게 두고 그 뒤부터 벌린다.
+        g = math.sqrt(max(0.0, gate - 3)) * 1.3
+        out.append(max(0.0, g + STYLE_LANE.get(r.style, 0.2)))
+    return np.asarray(out, dtype=float)
+
+
 def pace_factors(conn, before: str) -> Dict[str, float]:
     """마필별 '기준 기록 대비 비율'.
 
@@ -407,7 +489,7 @@ def par_time(pars: Dict[tuple, float], meet: str, distance: float) -> Optional[f
 
 def expected_run(runners: Sequence[Runner], distance: float,
                  n_sims: int = 800, noise_scale: float = 1.0,
-                 seed: int = 20260808) -> np.ndarray:
+                 seed: int = 20260808, corners: int = 0) -> np.ndarray:
     """**예상대로 전개될 경우**의 구간 소요시간을 만든다.
 
     화면의 미리보기가 답해야 할 질문은 '이번엔 어떻게 될까'가 아니라
@@ -431,7 +513,8 @@ def expected_run(runners: Sequence[Runner], distance: float,
     n = len(runners)
     if n == 0:
         return np.zeros((0, 0))
-    sim = simulate(runners, distance, n_sims=n_sims, noise_scale=noise_scale, seed=seed)
+    sim = simulate(runners, distance, n_sims=n_sims, noise_scale=noise_scale,
+                   seed=seed, corners=corners)
     seg = sim.seg_times.copy()
     if seg.size == 0:
         return seg
@@ -470,7 +553,8 @@ def scale_to_par(seg: np.ndarray, target: Optional[float]) -> np.ndarray:
     return seg * (target / winner)
 
 
-def animation_payload(sim: RaceSim, distance: float, top_k: int = 99) -> Dict:
+def animation_payload(sim: RaceSim, distance: float, top_k: int = 99,
+                      meet: str = "", corners: int = 0) -> Dict:
     """웹 애니메이션이 그대로 먹을 수 있는 형태로 압축한다.
 
     구간별 '통과 시각'을 주면 프런트에서 시간축을 따라 위치를 보간할 수 있다.
@@ -483,10 +567,14 @@ def animation_payload(sim: RaceSim, distance: float, top_k: int = 99) -> Dict:
     # 레인은 **마번 순**으로 낸다. 도착순으로 늘어놓으면 위 레인부터 차례로
     # 들어오는 그림이 되어 경주로 보이지 않는다. 실제 경마 중계도 마번 순이다.
     lane = sorted(range(n), key=lambda i: sim.runners[i].chul_no or 99)
+    lanes = lane_offsets(sim.runners, n)
+    spec = TRACK_SPEC.get(meet or "", TRACK_SPEC["서울"])
     return {
         "distance": float(distance),
         "segment_m": SEG_M,
         "n_segments": int(n_seg),
+        # 주로 모양과 코너 수. 캔버스가 타원을 그리고 어디가 곡선인지 정한다.
+        "track": {**spec, "corners": int(corners), "meet": meet or ""},
         "duration": float(finish_time.max()),
         "runners": [
             {
@@ -497,6 +585,8 @@ def animation_payload(sim: RaceSim, distance: float, top_k: int = 99) -> Dict:
                 # 각 구간을 통과한 시각(초). 앞설수록 값이 작다.
                 "splits": [round(float(t), 2) for t in sim.positions[i]],
                 "sim_rank": int(np.where(order == i)[0][0]) + 1,
+                # 안쪽에서 몇 레인 밖으로 도는가 — 캔버스가 이만큼 바깥에 그린다
+                "lane": round(float(lanes[i]), 2),
             }
             for i in lane
         ],

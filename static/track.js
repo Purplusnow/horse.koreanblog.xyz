@@ -1,8 +1,11 @@
-/* 경주 미리보기 플레이어.
+/* 경주 미리보기 플레이어 — 원형(타원) 주로.
  *
- * 시뮬레이션이 만든 '구간별 통과 시각'을 시간축으로 보간해 각 마필의 위치를
- * 그린다. 서버가 넘겨주는 건 마리당 숫자 몇 개뿐이고, 나머지는 전부 여기서
- * 계산하므로 정적 사이트에서도 그대로 돈다.
+ * 직선 막대로 그리면 '누가 앞서 있나'는 보이지만 경마로 읽히지 않는다. 실제
+ * 주로는 직선과 곡선이 번갈아 나오고, 곡선에서 바깥으로 도는 말은 그만큼 더
+ * 뛴다 — 마번 1~4번이 6번 이후보다 승률이 2%p 높은 이유가 그것이다.
+ *
+ * 서버가 주는 것은 마리당 '구간 통과 시각'과 '레인(안쪽에서 몇 두 밖)' 뿐이고,
+ * 트랙 좌표 계산은 전부 여기서 한다. 정적 사이트에서 그대로 돈다.
  */
 (function () {
   var el = document.getElementById('sim-data');
@@ -15,9 +18,10 @@
 
   var ctx = canvas.getContext('2d');
   var runners = data.runners;
-  var nSeg = data.n_segments;
   var duration = data.duration;
   var distance = data.distance;
+  var spec = data.track || { lap: 1600, straight: 450, curve: 350 };
+  var LAP = spec.lap, ST = spec.straight, CV = spec.curve;
 
   var STYLE_COLOR = {
     front: '#c8621f',   // 선행 — 따뜻한 쪽
@@ -27,7 +31,40 @@
   };
 
   var playing = false, t = 0, speed = 1, raf = null, last = 0;
-  var PAD_L = 54, PAD_R = 96, PAD_T = 34, PAD_B = 20;
+
+  /* ── 주로 기하 ────────────────────────────────────────────────
+     경주로를 '스타디움' 모양으로 본다: 직선 2개 + 반원 2개.
+     결승선을 진행거리 0 으로 두고, 거꾸로 distance 만큼 물러난 곳이 출발점이다.
+
+     s(m) → 정규화 좌표. seg 는 어느 구간인지(straight/curve), a 는 반원에서의 각도.
+     반시계 방향(한국마사회 세 경마장 모두)으로 돈다. */
+  function trackPoint(s) {
+    var u = ((s % LAP) + LAP) % LAP;
+    if (u < ST) return { seg: 'S', side: 1, k: u / ST };           // 홈스트레치
+    u -= ST;
+    if (u < CV) return { seg: 'C', side: 1, a: Math.PI * (u / CV) }; // 1·2코너
+    u -= CV;
+    if (u < ST) return { seg: 'S', side: -1, k: 1 - u / ST };      // 백스트레치
+    u -= ST;
+    return { seg: 'C', side: -1, a: Math.PI * (u / CV) };          // 3·4코너
+  }
+
+  /* 정규화 좌표 + 레인 → 화면 픽셀 */
+  function toPx(p, box, lane) {
+    var off = (lane || 0) * box.laneStep;
+    var ry = box.innerH / 2;
+    if (p.seg === 'S') {
+      var x = box.left + (p.side === 1 ? p.k : p.k) * box.innerW;
+      return { x: x, y: box.cy + p.side * (ry + off) };
+    }
+    var cx = box.left + (p.side === 1 ? box.innerW : 0);
+    var rr = ry + off;
+    var dir = p.side === 1 ? 1 : -1;
+    return {
+      x: cx + dir * Math.sin(p.a) * rr,
+      y: box.cy + dir * Math.cos(p.a) * rr
+    };
+  }
 
   /* 시각 t 에서의 진행률(0~1). 구간 통과 시각 사이를 선형 보간한다. */
   function progressAt(splits, time) {
@@ -47,7 +84,7 @@
   function cssSize() {
     var w = canvas.clientWidth || canvas.parentNode.clientWidth || 900;
     var dpr = window.devicePixelRatio || 1;
-    var h = Math.max(210, Math.min(430, 54 + runners.length * 26));
+    var h = Math.max(250, Math.min(400, w * 0.5));
     if (canvas.width !== Math.round(w * dpr) || canvas.height !== Math.round(h * dpr)) {
       canvas.width = Math.round(w * dpr);
       canvas.height = Math.round(h * dpr);
@@ -57,88 +94,92 @@
     return { w: w, h: h };
   }
 
+  function pathAt(box, lane) {
+    ctx.beginPath();
+    var n = 200;
+    for (var k = 0; k <= n; k++) {
+      var pt = toPx(trackPoint(k / n * LAP), box, lane);
+      if (k === 0) ctx.moveTo(pt.x, pt.y); else ctx.lineTo(pt.x, pt.y);
+    }
+    ctx.closePath();
+  }
+
   function draw() {
     var size = cssSize();
     var W = size.w, H = size.h;
-    var laneH = (H - PAD_T - PAD_B) / runners.length;
-    var x0 = PAD_L, x1 = W - PAD_R;
-    var style = getComputedStyle(document.documentElement);
-    var cText = style.getPropertyValue('--text') || '#14181f';
-    var cFaint = style.getPropertyValue('--text-faint') || '#8b95a3';
-    var cBorder = style.getPropertyValue('--border') || '#e3e6ea';
-    var cSunken = style.getPropertyValue('--bg-sunken') || '#eef0f3';
+    var lanes = Math.max(5, Math.min(12, runners.length));
+    var box = {
+      left: 92, innerW: W - 92 - 34,
+      innerH: H - 74, cy: H / 2, laneStep: 3.0
+    };
+    var st = getComputedStyle(document.documentElement);
+    var cFaint = st.getPropertyValue('--text-faint') || '#8b95a3';
+    var cText = st.getPropertyValue('--text') || '#14181f';
+    var cSunken = st.getPropertyValue('--bg-sunken') || '#eef0f3';
 
     ctx.clearRect(0, 0, W, H);
 
-    /* 구간 눈금 — 200m 마다 */
-    ctx.font = '11px system-ui, sans-serif';
-    ctx.textAlign = 'center';
-    for (var k = 0; k <= nSeg; k++) {
-      var gx = x0 + (x1 - x0) * (k / nSeg);
-      ctx.strokeStyle = (k === nSeg) ? '#b4842a' : cBorder;
-      ctx.lineWidth = (k === nSeg) ? 2 : 1;
-      ctx.beginPath(); ctx.moveTo(gx, PAD_T - 12); ctx.lineTo(gx, H - PAD_B + 2); ctx.stroke();
-      ctx.fillStyle = cFaint;
-      var remain = Math.round(distance - (distance * k / nSeg));
-      ctx.fillText(k === nSeg ? '결승' : (remain + 'm'), gx, PAD_T - 18);
-    }
+    /* 주로 바닥 */
+    ctx.strokeStyle = cSunken;
+    ctx.lineWidth = lanes * box.laneStep + 14;
+    ctx.lineJoin = 'round';
+    pathAt(box, lanes / 2);
+    ctx.stroke();
 
-    /* 각 마필의 레인 */
+    /* 안쪽·바깥 레일 */
+    ctx.strokeStyle = cFaint; ctx.lineWidth = 1.2; ctx.globalAlpha = 0.4;
+    pathAt(box, 0); ctx.stroke();
+    pathAt(box, lanes); ctx.stroke();
+    ctx.globalAlpha = 1;
+
+    /* 결승선 */
+    var f0 = toPx(trackPoint(0), box, 0);
+    var f1 = toPx(trackPoint(0), box, lanes);
+    ctx.strokeStyle = '#b4842a'; ctx.lineWidth = 3;
+    ctx.beginPath(); ctx.moveTo(f0.x, f0.y); ctx.lineTo(f1.x, f1.y); ctx.stroke();
+    ctx.fillStyle = '#b4842a';
+    ctx.font = 'bold 11px system-ui, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('결승', f0.x, f0.y + 15);
+
+    /* 출발점 */
+    var s0 = toPx(trackPoint(-distance), box, lanes / 2);
+    ctx.fillStyle = cFaint;
+    ctx.font = '11px system-ui, sans-serif';
+    ctx.fillText('출발 ' + Math.round(distance) + 'm', s0.x, s0.y - 12);
+
+    /* 현재 순위 */
     var order = runners.map(function (r, i) {
       return { i: i, p: progressAt(r.splits, t) };
     }).sort(function (a, b) { return b.p - a.p; });
-
     var rankOf = {};
     order.forEach(function (o, idx) { rankOf[o.i] = idx + 1; });
 
+    /* 말 — 레인은 안쪽(0)부터 바깥으로 */
     runners.forEach(function (r, i) {
-      var y = PAD_T + laneH * i + laneH / 2;
-      ctx.strokeStyle = cSunken;
-      ctx.lineWidth = Math.max(9, laneH - 8);
-      ctx.lineCap = 'round';
-      ctx.beginPath(); ctx.moveTo(x0, y); ctx.lineTo(x1, y); ctx.stroke();
-
       var p = progressAt(r.splits, t);
+      var pt = toPx(trackPoint(-distance + p * distance), box, (r.lane || 0) + 0.6);
       var color = STYLE_COLOR[r.style] || STYLE_COLOR.unknown;
-
-      /* 지나온 궤적 */
-      if (p > 0) {
-        ctx.strokeStyle = color;
-        ctx.globalAlpha = 0.22;
-        ctx.lineWidth = Math.max(9, laneH - 8);
-        ctx.beginPath(); ctx.moveTo(x0, y); ctx.lineTo(x0 + (x1 - x0) * p, y); ctx.stroke();
-        ctx.globalAlpha = 1;
-      }
-
-      /* 마번 마커 */
-      var mx = x0 + (x1 - x0) * p;
-      var rad = Math.max(8, Math.min(12, laneH / 2 - 1));
-      ctx.beginPath(); ctx.arc(mx, y, rad, 0, Math.PI * 2);
+      ctx.beginPath();
+      ctx.arc(pt.x, pt.y, 9.5, 0, Math.PI * 2);
       ctx.fillStyle = color; ctx.fill();
-      if (rankOf[i] === 1) {           /* 현재 선두는 테두리로 표시 */
-        ctx.strokeStyle = '#b4842a'; ctx.lineWidth = 2.5; ctx.stroke();
-      }
-      /* 두 자리 마번은 글자를 줄여 원 밖으로 넘치지 않게 한다 */
+      if (rankOf[i] === 1) { ctx.strokeStyle = '#b4842a'; ctx.lineWidth = 2.5; ctx.stroke(); }
       var label = String(r.gate);
       ctx.fillStyle = '#fff';
-      ctx.font = 'bold ' + Math.round(rad * (label.length > 1 ? 0.82 : 1.05)) + 'px system-ui, sans-serif';
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.fillText(label, mx, y + 0.5);
-
-      /* 왼쪽: 순위 · 오른쪽: 마명 */
-      ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
-      ctx.fillStyle = cFaint;
-      ctx.font = '12px system-ui, sans-serif';
-      ctx.fillText(rankOf[i] + '위', x0 - 10, y);
-
-      ctx.textAlign = 'left';
-      ctx.fillStyle = (p >= 1) ? cText : cFaint;
-      ctx.font = (rankOf[i] === 1 ? 'bold ' : '') + '12.5px system-ui, sans-serif';
-      ctx.fillText(r.name, x1 + 10, y);
+      ctx.font = 'bold ' + (label.length > 1 ? 9 : 11) + 'px system-ui, sans-serif';
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillText(label, pt.x, pt.y + 0.5);
     });
-
     ctx.textBaseline = 'alphabetic';
+
+    /* 순위표 — 트랙 왼쪽 바깥 */
+    ctx.textAlign = 'left';
+    ctx.font = '11.5px system-ui, sans-serif';
+    order.slice(0, 6).forEach(function (o, idx) {
+      var r = runners[o.i];
+      ctx.fillStyle = idx === 0 ? cText : cFaint;
+      ctx.fillText((idx + 1) + '. ' + r.gate + ' ' + r.name, 6, 16 + idx * 15);
+    });
   }
 
   function tick(now) {
@@ -160,8 +201,7 @@
   var seek = document.getElementById('tk-seek');
   var clock = document.getElementById('tk-clock');
 
-  /* 108.4초 보다 '1분 48.4초' 가 경마 기록으로 읽힌다. 실제 중계·기록지도
-     분 단위로 적는다. 1분 미만은 초만 쓴다. */
+  /* 108.4초 보다 '1분 48.4초' 가 경마 기록으로 읽힌다. 중계도 기록지도 그렇게 적는다. */
   function fmtTime(sec) {
     var m = Math.floor(sec / 60);
     var s = sec - m * 60;
