@@ -134,6 +134,11 @@ def _as_list(items: Any) -> List[dict]:
 @dataclass
 class KraClient:
     service_key: str
+    # 연결과 응답을 따로 잡는다. 포털이 응답하지 않을 때 연결 단계에서 20초씩
+    # 붙들리면, 재시도까지 겹쳐 한 날짜에 1분 반이 날아가고 배치가 통째로
+    # 타임아웃된다(실제로 CI 에서 그렇게 죽었다). 연결은 못 하면 빨리 포기하고,
+    # 연결된 뒤 계산이 오래 걸리는 응답만 넉넉히 기다린다.
+    connect_timeout: float = 6.0
     timeout: float = 20.0
     max_retries: int = 4
     pause: float = 0.12          # 연속 호출 사이 간격(포털 초당 호출 보호)
@@ -166,7 +171,8 @@ class KraClient:
         for attempt in range(self.max_retries):
             self._throttle()
             try:
-                r = self.session.get(url, params=q, timeout=self.timeout)
+                r = self.session.get(url, params=q,
+                                     timeout=(self.connect_timeout, self.timeout))
             except requests.RequestException as e:
                 last_exc = e
                 time.sleep(1.5 * (attempt + 1))

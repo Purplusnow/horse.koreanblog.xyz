@@ -89,14 +89,19 @@ jobs:
           PYTHONPATH=src python -m horseai.kra.collect backfill \
             --years "${{ inputs.backfill_years || '5' }}" --db "$DB"
 
+      # 수집 실패가 배포를 막아서는 안 된다. 외부 API 가 잠깐 죽었다고 이미
+      # 만들어 둔 예상까지 못 올리면, 정작 방문자가 필요할 때 사이트가 낡는다.
+      # DB 는 그대로 보존되므로 다음 실행이 이어서 받는다.
       - name: 최근 성적 갱신
-        timeout-minutes: 20
+        continue-on-error: true
+        timeout-minutes: 12
         env:
           KRA_SERVICE_KEY: ${{ secrets.KRA_SERVICE_KEY }}
         run: PYTHONPATH=src python -m horseai.kra.collect results --days 21 --db "$DB"
 
       - name: 출전표 수집
-        timeout-minutes: 15
+        continue-on-error: true
+        timeout-minutes: 12
         env:
           KRA_SERVICE_KEY: ${{ secrets.KRA_SERVICE_KEY }}
         run: PYTHONPATH=src python -m horseai.kra.collect entries --ahead 10 --db "$DB"
