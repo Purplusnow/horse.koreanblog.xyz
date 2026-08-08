@@ -71,21 +71,16 @@
   }
 
   /* 정규화 좌표 + 레인 → 화면 픽셀 */
-  /* 도는 방향. 서울·부산경남은 좌회전, 제주는 우회전이다. 화면에서는 위아래를
-     뒤집으면 그대로 반대 방향이 된다 — 안쪽 레일이 바깥으로 가면 안 되므로
-     레인 오프셋의 부호까지 함께 뒤집는다. */
-  var FLIP = (spec.turn === 'right') ? -1 : 1;
-
   function toPx(p, box, lane) {
     var off = (lane || 0) * box.laneStep;
     var ry = box.innerH / 2;
     if (p.seg === 'S') {
       var x = box.left + (p.side === 1 ? p.k : p.k) * box.innerW;
-      return { x: x, y: box.cy + FLIP * p.side * (ry + off) };
+      return { x: x, y: box.cy + p.side * (ry + off) };
     }
     var cx = box.left + (p.side === 1 ? box.innerW : 0);
     var rr = ry + off;
-    var dir = (p.side === 1 ? 1 : -1) * FLIP;
+    var dir = p.side === 1 ? 1 : -1;
     return {
       x: cx + dir * Math.sin(p.a) * rr,
       y: box.cy + dir * Math.cos(p.a) * rr
