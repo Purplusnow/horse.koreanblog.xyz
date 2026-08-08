@@ -17,8 +17,28 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🐎</text></svg>">
 {% block head_extra %}{% endblock %}
 {% if analytics.ga4_id %}
-<script async src="https://www.googletagmanager.com/gtag/js?id={{ analytics.ga4_id }}"></script>
-<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','{{ analytics.ga4_id }}');</script>
+{# 만드는 사람의 접속은 세지 않는다. IP 필터는 주소가 바뀌면 새므로, 브라우저에
+   표식을 남기는 쪽이 확실하다. 기기마다 한 번씩 ?noga=1 로 들어오면 그 뒤로는
+   계속 빠지고, ?noga=0 으로 되돌린다. 표식이 있으면 스크립트를 아예 싣지 않아
+   네트워크 요청도 나가지 않는다. #}
+<script>
+  (function () {
+    try {
+      var q = new URLSearchParams(location.search).get('noga');
+      if (q === '1') localStorage.setItem('horseai.noga', '1');
+      if (q === '0') localStorage.removeItem('horseai.noga');
+      if (localStorage.getItem('horseai.noga')) return;
+    } catch (e) { /* 저장소를 못 쓰면 그냥 집계한다 */ }
+    var s = document.createElement('script');
+    s.async = true;
+    s.src = 'https://www.googletagmanager.com/gtag/js?id={{ analytics.ga4_id }}';
+    document.head.appendChild(s);
+    window.dataLayer = window.dataLayer || [];
+    window.gtag = function () { dataLayer.push(arguments); };
+    gtag('js', new Date());
+    gtag('config', '{{ analytics.ga4_id }}');
+  })();
+</script>
 {% endif %}
 {% if adsense.client %}
 <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client={{ adsense.client }}" crossorigin="anonymous"></script>

@@ -12,13 +12,13 @@ site:
 
 # 애드센스. client 가 비어 있으면 광고 영역 자체가 렌더링되지 않습니다.
 adsense:
-  client: ""          # 예: ca-pub-0000000000000000
-  slot_top: ""
-  slot_in_article: ""
-  slot_bottom: ""
+  client: "ca-pub-4640178123605595"
+  slot_top: "8186876073"
+  slot_in_article: "5173699929"
+  slot_bottom: "1855723286"
 
 analytics:
-  ga4_id: ""          # 예: G-XXXXXXXXXX
+  ga4_id: "G-2D35J53WMX"
 
 build:
   # 개발 중에는 표본이 적어도 전부 보여 준다. 실제 방문자가 생기기 전이라
