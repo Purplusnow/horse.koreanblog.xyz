@@ -153,51 +153,6 @@
 </section>
 {% endif %}
 
-<section class="preview">
-  <div class="preview-head">
-    <h2>경주 미리보기</h2>
-    <span class="conf conf-{{ sim.label }}">{{ sim.label }}</span>
-    <span class="conf-score">신뢰도 {{ sim.score }}</span>
-    <span class="preview-note">{{ sim.desc }}</span>
-  </div>
-
-  <div class="track-wrap">
-    <canvas id="track" class="track" width="1100" height="460"
-            aria-label="경주 전개 미리보기"></canvas>
-    {# 순위는 캔버스 위에 겹쳐 가운데 띄운다(CSS absolute). 캔버스에 직접 그리면
-       글자가 카메라 배율을 따라 흔들리고, 아래 범례 옆에 나란히 두면 둘이
-       비슷해 보여 어느 쪽이 순위인지 헷갈린다. #}
-    <ol id="tk-order" class="tk-order" aria-live="off"></ol>
-    {# 마번·모자색 범례. 겹쳐서 숫자가 가린 말은 색으로 찾는다. #}
-    <ul id="tk-legend" class="tk-legend"></ul>
-  </div>
-
-  <div class="track-controls">
-    <button id="tk-play" class="tk-btn" type="button">▶ 재생</button>
-    <button id="tk-replay" class="tk-btn tk-ghost" type="button">↻ 다시</button>
-    <button id="tk-zoom" class="tk-btn tk-ghost" type="button" aria-pressed="true">🔍 따라가기</button>
-    {# 배속은 콤보보다 버튼이 빠르다 — 한 번에 고를 수 있고 지금 값이 눈에 보인다.
-       고른 값은 브라우저에 저장돼 다음 경주에서도 그대로 쓰인다. #}
-    <span class="tk-speed" role="group" aria-label="재생 속도">
-      {% for v in ['1', '2', '4', '8', '16'] %}
-      <button type="button" class="tk-rate" data-rate="{{ v }}">{{ v }}×</button>
-      {% endfor %}
-    </span>
-    <span id="tk-clock" class="tk-clock">0.0초</span>
-    <input id="tk-seek" class="tk-seek" type="range" min="0" max="1000" value="0" aria-label="구간 이동">
-  </div>
-
-  <p class="preview-foot">
-    <strong>과거 경주로 학습한 예측 엔진</strong>이 산출한 우승 확률을 바탕으로, 출주마의
-    <strong>구간기록</strong>과 <strong>각질</strong>, 선두권 경쟁에 따른 <strong>체력 소모</strong>,
-    코너에서 바깥으로 도는 <strong>주행거리 손실</strong>까지 반영해 경주를
-    {{ '{:,}'.format(sim.n_sims) }}회 시뮬레이션했습니다. 위 화면은 그중
-    <strong>예상대로 흘러갔을 때의 전개</strong>이며, 실제 경주는 다르게 흘러갈 수 있습니다.
-  </p>
-
-  <script id="sim-data" type="application/json">{{ sim.payload_json | safe }}</script>
-  <script src="/static/track.js?v={{ assets['track.js'] }}" defer></script>
-</section>
 {% endif %}
 
 {% if has_pace %}
