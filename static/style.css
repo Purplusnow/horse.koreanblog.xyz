@@ -1081,14 +1081,13 @@ tbody tr:hover { background: var(--bg-soft); }
   pointer-events: none;
 }
 .tk-order li {
-  display: inline-flex; align-items: center; gap: 4px;
-  padding: 3px 6px; border: 1px solid var(--border);
+  display: inline-flex; align-items: center;
+  padding: 3px; border: 1px solid var(--border);
   border-radius: 20px; background: rgba(255,255,255,.92); color: var(--text-soft);
   box-shadow: 0 1px 4px rgba(0,0,0,.06);
 }
 .tk-order li.is-lead { border-color: var(--gold); color: var(--text); font-weight: 600; }
-.tk-order .tk-pos { color: var(--text-faint); font-size: 11.5px; font-weight: 600; }
-.tk-order li.is-lead .tk-pos { color: var(--gold); }
+.tk-order li.is-lead { border-color: var(--gold); border-width: 2px; padding: 2px; }
 .tk-order .tk-dot { width: 9px; height: 9px; border-radius: 50%; display: inline-block; }
 
 /* 마번·모자색 범례 — 겹쳐서 숫자가 가린 말은 색으로 찾는다 */

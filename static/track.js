@@ -356,8 +356,9 @@
        범례에서 마번으로 이름을 찾을 수 있고, 모자색이 한 번 더 거든다. */
     orderEl.innerHTML = order.slice(0, 5).map(function (o, idx) {
       var r = runners[o.i], c = gateColor(r.gate);
-      return '<li class="' + (idx === 0 ? 'is-lead' : '') + '" title="' + r.name + '">'
-        + '<span class="tk-pos">' + (idx + 1) + '</span>'
+      /* 등수 숫자는 쓰지 않는다. 왼쪽부터 순서대로 놓으면 그 자체가 순위다. */
+      return '<li class="' + (idx === 0 ? 'is-lead' : '') + '" title="'
+        + (idx + 1) + '위 ' + r.name + '">'
         + '<span class="tk-cap" style="background:' + c[0] + ';color:' + c[1] + '">'
         + r.gate + '</span></li>';
     }).join('');
