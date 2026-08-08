@@ -160,9 +160,17 @@
   var seek = document.getElementById('tk-seek');
   var clock = document.getElementById('tk-clock');
 
+  /* 108.4초 보다 '1분 48.4초' 가 경마 기록으로 읽힌다. 실제 중계·기록지도
+     분 단위로 적는다. 1분 미만은 초만 쓴다. */
+  function fmtTime(sec) {
+    var m = Math.floor(sec / 60);
+    var s = sec - m * 60;
+    return m > 0 ? m + '분 ' + s.toFixed(1) + '초' : s.toFixed(1) + '초';
+  }
+
   function sync() {
     if (seek) seek.value = String(Math.round((t / duration) * 1000));
-    if (clock) clock.textContent = t.toFixed(1) + '초';
+    if (clock) clock.textContent = fmtTime(t);
   }
   function start() { playing = true; if (btnPlay) btnPlay.textContent = '❚❚ 정지'; }
   function stop() { playing = false; if (btnPlay) btnPlay.textContent = '▶ 재생'; }

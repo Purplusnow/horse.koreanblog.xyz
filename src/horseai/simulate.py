@@ -330,6 +330,81 @@ def confidence(sim: RaceSim) -> Dict:
     }
 
 
+def par_times(conn) -> Dict[tuple, float]:
+    """(경마장, 거리)별 우승 기록의 중앙값.
+
+    시뮬레이션의 절대 시간을 여기에 맞춘다. 기준 속도를 상수로 두면 경마장을
+    구분하지 못한다 — 제주는 한라마라 11.9m/s 로 달리고 서울·부산경남은
+    15~16m/s 다. 같은 1200m 인데 27초가 차이 난다.
+    """
+    rows = conn.execute(
+        "SELECT r.meet, r.distance, res.record_sec FROM results res "
+        "JOIN races r ON r.race_key = res.race_key "
+        "WHERE res.ord = 1 AND res.record_sec BETWEEN 40 AND 300 "
+        "  AND r.distance BETWEEN 700 AND 3000").fetchall()
+    buckets: Dict[tuple, list] = {}
+    speeds: Dict[str, list] = {}
+    for meet, dist, sec in rows:
+        if not (meet and dist and sec):
+            continue
+        buckets.setdefault((meet, int(dist)), []).append(float(sec))
+        speeds.setdefault(meet, []).append(float(dist) / float(sec))
+    out = {k: float(np.median(v)) for k, v in buckets.items() if len(v) >= 10}
+    # 표본이 없는 (경마장, 거리) 조합은 그 경마장의 평균 속도로 메운다
+    for meet, sp in speeds.items():
+        out[(meet, 0)] = float(np.median(sp))
+    return out
+
+
+def pace_factors(conn, before: str) -> Dict[str, float]:
+    """마필별 '기준 기록 대비 비율'.
+
+    1.0 이면 그 경마장·거리의 평균 우승 기록 수준, 낮을수록 빠르다. 경마장
+    평균만 쓰면 국1군이든 국6군이든 같은 시간이 나오므로, 실제로 그 말이
+    어떤 기록으로 달려 왔는지를 곱해 개별화한다.
+
+    거리에 따른 속도 저하는 기준표(par)가 이미 담고 있으므로, 말에게서는
+    **상대적인 빠르기만** 가져온다. 그래야 1200m 만 뛰던 말을 1800m 경주에
+    올려도 말이 되는 시간이 나온다.
+    """
+    rows = conn.execute(
+        "SELECT res.hr_no, r.meet, r.distance, res.record_sec "
+        "FROM results res JOIN races r ON r.race_key = res.race_key "
+        "WHERE res.record_sec BETWEEN 40 AND 300 AND r.rc_date < ? "
+        "  AND r.distance BETWEEN 700 AND 3000 "
+        "ORDER BY r.rc_date DESC", (before,)).fetchall()
+    pars = par_times_from(rows)
+    acc: Dict[str, list] = {}
+    for hr_no, meet, dist, sec in rows:
+        base = pars.get((meet, int(dist)))
+        if not (hr_no and base):
+            continue
+        lst = acc.setdefault(hr_no, [])
+        if len(lst) < 6:                      # 최근 6전이면 충분하다
+            lst.append(float(sec) / base)
+    return {h: float(np.median(v)) for h, v in acc.items() if v}
+
+
+def par_times_from(rows) -> Dict[tuple, float]:
+    """(경마장, 거리) → 그 조건의 평균 완주 기록. 개별화의 기준선이 된다."""
+    buckets: Dict[tuple, list] = {}
+    for _hr, meet, dist, sec in rows:
+        if meet and dist and sec:
+            buckets.setdefault((meet, int(dist)), []).append(float(sec))
+    return {k: float(np.median(v)) for k, v in buckets.items() if len(v) >= 8}
+
+
+def par_time(pars: Dict[tuple, float], meet: str, distance: float) -> Optional[float]:
+    """그 경주에서 기대되는 우승 기록(초)."""
+    if not pars or not distance:
+        return None
+    exact = pars.get((meet, int(distance)))
+    if exact:
+        return exact
+    speed = pars.get((meet, 0))
+    return float(distance) / speed if speed else None
+
+
 def expected_run(runners: Sequence[Runner], distance: float,
                  n_sims: int = 800, noise_scale: float = 1.0,
                  seed: int = 20260808) -> np.ndarray:
@@ -379,6 +454,22 @@ def expected_run(runners: Sequence[Runner], distance: float,
     return seg
 
 
+def scale_to_par(seg: np.ndarray, target: Optional[float]) -> np.ndarray:
+    """구간 시간을 실제 기록 수준으로 맞춘다.
+
+    시뮬레이션이 정하는 것은 **말들 사이의 차이**이지 절대 시간이 아니다.
+    절대 시간까지 물리에서 끌어내려 하면 기준 속도를 상수로 박게 되고,
+    1700m 를 102초에 뛰는(실제 112초) 화면이 나온다. 착차의 비율은 그대로
+    두고 전체만 실제 기록에 맞춘다.
+    """
+    if seg.size == 0 or not target:
+        return seg
+    winner = seg.sum(axis=1).min()
+    if winner <= 0:
+        return seg
+    return seg * (target / winner)
+
+
 def animation_payload(sim: RaceSim, distance: float, top_k: int = 99) -> Dict:
     """웹 애니메이션이 그대로 먹을 수 있는 형태로 압축한다.
 
@@ -389,6 +480,9 @@ def animation_payload(sim: RaceSim, distance: float, top_k: int = 99) -> Dict:
     n, n_seg = sim.positions.shape
     finish_time = sim.positions[:, -1]
     order = np.argsort(finish_time)
+    # 레인은 **마번 순**으로 낸다. 도착순으로 늘어놓으면 위 레인부터 차례로
+    # 들어오는 그림이 되어 경주로 보이지 않는다. 실제 경마 중계도 마번 순이다.
+    lane = sorted(range(n), key=lambda i: sim.runners[i].chul_no or 99)
     return {
         "distance": float(distance),
         "segment_m": SEG_M,
@@ -404,6 +498,6 @@ def animation_payload(sim: RaceSim, distance: float, top_k: int = 99) -> Dict:
                 "splits": [round(float(t), 2) for t in sim.positions[i]],
                 "sim_rank": int(np.where(order == i)[0][0]) + 1,
             }
-            for i in range(n)
+            for i in lane
         ],
     }

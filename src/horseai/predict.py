@@ -20,14 +20,15 @@ from typing import Dict, List, Optional
 import numpy as np
 import pandas as pd
 
-from .clock import now_kst
+from .clock import now_kst, today_kst
 from .features import build_prediction_frame
 from .kra.store import session, upsert
 from .model import MODEL_VERSION, load, predict_frame
 from dataclasses import replace
 
 from .simulate import (
-    animation_payload, build_runners, confidence, expected_run, fit_noise, simulate,
+    animation_payload, build_runners, confidence, expected_run, fit_noise,
+    pace_factors, par_time, par_times, scale_to_par, simulate,
 )
 
 log = logging.getLogger(__name__)
@@ -127,7 +128,9 @@ def build_rows(pred: pd.DataFrame) -> List[Dict]:
     return rows
 
 
-def build_simulations(pred: pd.DataFrame, n_sims: int = 2000) -> List[Dict]:
+def build_simulations(pred: pd.DataFrame, n_sims: int = 2000,
+                      pars: Optional[Dict] = None,
+                      paces: Optional[Dict] = None) -> List[Dict]:
     """경주별 시뮬레이션을 돌려 미리보기 대본과 신뢰도를 만든다."""
     out: List[Dict] = []
     for key, race in pred.groupby("race_key"):
@@ -145,6 +148,17 @@ def build_simulations(pred: pd.DataFrame, n_sims: int = 2000) -> List[Dict]:
         # 승률은 위 시행(분포)에서, 미리보기는 '예상대로 전개될 경우'에서 나온다.
         # 둘을 섞으면 추천 순서와 화면이 어긋난다.
         seg = expected_run(runners, distance)
+        # 절대 시간은 실제 우승 기록 수준에 맞춘다. 시뮬레이션이 정하는 것은
+        # 말들 사이의 차이이지 절대 속도가 아니다.
+        # 기준 기록에 **출주마들의 실제 빠르기**를 곱한다. 경마장 평균만 쓰면
+        # 국1군이든 국6군이든 같은 시간이 나온다. 우승 기록은 그 경주에서 가장
+        # 빠른 말의 수준을 따라간다.
+        base = par_time(pars or {}, str(race["meet"].iloc[0]), distance)
+        if base and paces:
+            fs = [paces.get(h) for h in race["hr_no"] if paces.get(h)]
+            if fs:
+                base *= min(fs)
+        seg = scale_to_par(seg, base)
         sim = replace(sim, seg_times=seg, positions=np.cumsum(seg, axis=1))
         out.append({
             "race_key": key,
@@ -218,7 +232,10 @@ def generate(conn: sqlite3.Connection, race_keys: Optional[List[str]] = None,
 
     rows = build_rows(pred)
     upsert(conn, "predictions", rows, ["race_key", "hr_no", "model_version"])
-    upsert(conn, "simulations", build_simulations(pred), ["race_key"])
+    upsert(conn, "simulations",
+           build_simulations(pred, pars=par_times(conn),
+                             paces=pace_factors(conn, today_kst().isoformat())),
+           ["race_key"])
     conn.commit()
     log.info("예측 생성: %d경주 / %d두", pred["race_key"].nunique(), len(rows))
     return pred
