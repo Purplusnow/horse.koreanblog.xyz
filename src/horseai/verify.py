@@ -46,14 +46,8 @@ def _combos(gates: List[int]) -> Dict[str, List[tuple]]:
         out["쌍승"] = ("EXA", [j(g[0], g[1])])
         out["복연승"] = ("QPL", [srt(g[:2])])
     if len(g) >= 3:
-        out["복승 3두박스"] = ("QNL", [srt(c) for c in combinations(g[:3], 2)])
         out["삼복승"] = ("TLA", [srt(g[:3])])
         out["삼쌍승"] = ("TRI", [j(*g[:3])])
-    if len(g) >= 4:
-        out["삼복승 4두박스"] = ("TLA", [srt(c) for c in combinations(g[:4], 3)])
-    if len(g) >= 5:
-        out["복승 5두박스"] = ("QNL", [srt(c) for c in combinations(g[:5], 2)])
-        out["삼복승 5두박스"] = ("TLA", [srt(c) for c in combinations(g[:5], 3)])
     return out
 
 
@@ -287,8 +281,14 @@ def summarize(rl: pd.DataFrame) -> Dict:
     }
 
 
-BET_ORDER = ["단승", "연승", "복승", "복승 3두박스", "복승 5두박스", "쌍승",
-             "복연승", "삼복승", "삼복승 4두박스", "삼복승 5두박스", "삼쌍승"]
+# 마사회가 파는 일곱 가지 승식만 센다.
+#
+# 박스는 승식이 아니라 '몇 통을 사느냐'는 구매 방식이다. 표에 섞어 두니 통합
+# 환수율에서 박스만 빼야 했고, 그 예외가 표를 읽는 사람에게 설명되지 않았다.
+# 게다가 순위에 신호가 있다면 박스는 아래 순위 조합을 덧사는 것이라 환수율이
+# 낮아지는 게 정상이다 — 표에 두면 '박스가 불리하다'는 결론으로 읽히지만
+# 실제로는 적중률과 환수율을 맞바꾼 것뿐이라, 오해만 남는다.
+BET_ORDER = ["단승", "연승", "복승", "쌍승", "복연승", "삼복승", "삼쌍승"]
 
 
 def bet_summary(rl: pd.DataFrame) -> List[Dict]:
@@ -309,7 +309,7 @@ def bet_summary(rl: pd.DataFrame) -> List[Dict]:
             a["cost"] += b["cost"]
             a["payout"] += b["payout"]
     out = []
-    # 승식을 모두 합친 값. 각 방식을 매 경주 한 세트씩 산 포트폴리오의 성적이다.
+    # 일곱 승식을 합친 값. 각 승식을 매 경주 한 통씩 산 포트폴리오의 성적이다.
     # 개별 환수율만 늘어놓으면 좋은 것만 눈에 들어오는데, 실제로 예상을 그대로
     # 따라 산 사람의 손익은 이 한 줄이다.
     tot = {"n": 0, "hit": 0, "cost": 0.0, "payout": 0.0}
@@ -317,9 +317,8 @@ def bet_summary(rl: pd.DataFrame) -> List[Dict]:
         a = agg.get(name)
         if not a or not a["n"]:
             continue
-        if "박스" not in name:      # 박스는 기본 매수와 겹쳐 사는 것이라 이중 계산이 된다
-            for k in tot:
-                tot[k] += a[k]
+        for k in tot:
+            tot[k] += a[k]
         out.append({
             "name": name,
             "n_races": int(a["n"]),

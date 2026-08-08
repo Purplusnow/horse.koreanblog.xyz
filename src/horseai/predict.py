@@ -251,14 +251,78 @@ def generate(conn: sqlite3.Connection, race_keys: Optional[List[str]] = None,
     return pred
 
 
+def stale_preview_keys(conn: sqlite3.Connection) -> List[str]:
+    """미리보기 대본이 옛 형식인 경주.
+
+    대본 형식이 바뀌어도(주로 제원·구간별 레인 추가) 이미 시행된 경주는 예측을
+    다시 만들지 않으므로 옛 대본이 그대로 남는다. 그러면 새 화면 코드가 읽을
+    값이 없어 말이 전부 0레인에 겹쳐 그려진다 — 실제로 그렇게 나왔다.
+    """
+    rows = conn.execute(
+        "SELECT race_key FROM simulations "
+        "WHERE payload NOT LIKE '%\"lanes\"%' OR payload NOT LIKE '%\"track\"%'"
+    ).fetchall()
+    return [r[0] for r in rows]
+
+
+def rebuild_previews(conn: sqlite3.Connection, keys: Optional[List[str]] = None) -> int:
+    """옛 대본을 새 형식으로 다시 굽는다.
+
+    **게재한 예측은 건드리지 않는다.** 저장된 승률(p_win_norm)과 순위를 그대로
+    가져와 시뮬레이션 입력으로 쓰므로, 화면의 전개만 새 형식이 되고 추천 순서와
+    확률은 그대로다.
+    """
+    keys = keys or stale_preview_keys(conn)
+    if not keys:
+        return 0
+    stored = pd.read_sql(
+        "SELECT race_key, hr_no, pred_rank, p_win AS p_win_norm FROM predictions "
+        "WHERE race_key IN (%s)" % ",".join("?" * len(keys)), conn, params=keys)
+    if stored.empty:
+        return 0
+    frame, _ = build_prediction_frame(conn, keys)
+    if frame.empty:
+        return 0
+    # 게재 승률은 경주 안에서 합이 1이 되도록 정규화해 쓴다(저장은 원값).
+    stored["p_win_norm"] = stored.groupby("race_key")["p_win_norm"].transform(
+        lambda v: v / v.sum() if v.sum() else v)
+    frame = frame.drop(columns=[c for c in ("pred_rank", "p_win_norm") if c in frame])
+    pred = frame.merge(stored, on=["race_key", "hr_no"], how="inner")
+    pred = pred[pred["p_win_norm"].notna()]
+    if pred.empty:
+        return 0
+    # 빠르기 계수는 경주일 **이전** 기록만으로 낸다. 대본은 화면용이지만
+    # 여기서 미래 기록을 섞으면 지난 경주의 미리보기가 결과를 알고 그린 것이
+    # 된다. 날짜별로 나눠 굽는 이유다.
+    pars, corners = par_times(conn), corner_counts(conn)
+    dates = pd.read_sql(
+        "SELECT race_key, rc_date FROM races WHERE race_key IN (%s)"
+        % ",".join("?" * len(keys)), conn, params=keys).set_index("race_key")["rc_date"]
+    n = 0
+    for day, grp in pred.groupby(pred["race_key"].map(dates)):
+        rows = build_simulations(grp, pars=pars, corners=corners,
+                                 paces=pace_factors(conn, str(day)))
+        if rows:
+            upsert(conn, "simulations", rows, ["race_key"])
+            n += len(rows)
+    return n
+
+
 def main(argv: Optional[List[str]] = None) -> int:
     ap = argparse.ArgumentParser(description="출전표 기반 예측 생성")
     ap.add_argument("--db", default="data/horseai.sqlite")
     ap.add_argument("--days-ahead", type=int, default=10)
     ap.add_argument("--race", nargs="*", help="특정 race_key 만")
+    ap.add_argument("--rebuild-previews", action="store_true",
+                    help="옛 형식 미리보기 대본만 다시 굽는다 (예측은 그대로)")
     args = ap.parse_args(argv)
 
     logging.basicConfig(level=logging.INFO, format="%(message)s")
+    if args.rebuild_previews:
+        with session(args.db) as conn:
+            n = rebuild_previews(conn, args.race)
+        print(f"미리보기 대본 {n}경주 재생성")
+        return 0
     with session(args.db) as conn:
         try:
             pred = generate(conn, args.race, args.days_ahead)

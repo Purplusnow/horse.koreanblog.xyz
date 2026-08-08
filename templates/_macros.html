@@ -17,7 +17,7 @@
 
 {# 승률 막대. 숫자만 나열하면 비교가 안 되므로 길이로 즉시 읽히게 한다. #}
 {% macro prob_bar(pct, rank) %}
-<div class="bar" role="img" aria-label="예상 승률 {{ pct }}%">
+<div class="bar" role="img" aria-label="우승 확률 {{ pct }}%">
   <div class="bar-track">
     <div class="bar-fill{% if rank == 1 %} bar-top{% endif %}"
          style="width: {{ [pct * 1.8, 100]|min|round|int }}%"></div>
@@ -80,7 +80,7 @@
     {{ conf_badge(race.conf_label, race.conf_score) }}
     {% if race.has_result %}{{ hit_badge(race.outcome) }}{% endif %}
   </div>
-  {# 시행 전에는 예상 승률을, 시행 후에는 실제 착순을 같은 자리에 보여 준다.
+  {# 시행 전에는 우승 확률을, 시행 후에는 실제 착순을 같은 자리에 보여 준다.
      끝난 경주를 목록 아래로 빼면 그날 카드가 앞뒤로 갈려 시간표를 이어서
      볼 수 없다. 자리를 그대로 두고 값만 바꾼다. #}
   <div class="ri-picks{% if race.has_result %} is-done{% endif %}">

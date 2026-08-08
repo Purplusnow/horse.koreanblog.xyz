@@ -189,6 +189,13 @@ jobs:
         timeout-minutes: 20
         run: PYTHONPATH=src python -m horseai.predict --db "$DB"
 
+      # 대본 형식이 바뀌어도 이미 시행된 경주는 예측을 다시 만들지 않으므로 옛
+      # 대본이 남는다. 그러면 새 화면 코드가 읽을 값이 없어 미리보기가 깨진다.
+      # 없으면 아무 일도 하지 않는 단계다. 게재한 예측은 건드리지 않는다.
+      - name: 옛 미리보기 대본 재생성
+        timeout-minutes: 20
+        run: PYTHONPATH=src python -m horseai.predict --db "$DB" --rebuild-previews
+
       - name: AI 코멘트 생성
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
