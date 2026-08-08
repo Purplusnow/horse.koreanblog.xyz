@@ -1215,3 +1215,44 @@ tbody tr:hover { background: var(--bg-soft); }
   padding: 0 4px; border-radius: 5px; font-size: 12px; font-weight: 700;
   font-variant-numeric: tabular-nums; border: 1px solid rgba(0,0,0,.18);
 }
+
+/* ─────────────────────────────────── 최근 적중 카드
+   숫자를 크게 세워 배당이 먼저 읽히게 한다. 이 사이트가 무엇을 맞혔는지
+   한 줄로 말하는 자리다. */
+.wins { margin-bottom: 30px; }
+.wins-heading {
+  display: flex; align-items: baseline; gap: 10px;
+  font-size: 19px; margin: 0 0 12px;
+}
+.wins-row {
+  display: grid; gap: 10px;
+  grid-template-columns: repeat(auto-fill, minmax(148px, 1fr));
+}
+.win-card {
+  display: flex; flex-direction: column; gap: 3px;
+  padding: 14px 14px 13px; border: 1px solid var(--border);
+  border-radius: var(--radius-lg); background: var(--surface);
+  box-shadow: var(--shadow); transition: transform .12s, box-shadow .12s;
+}
+.win-card:hover {
+  transform: translateY(-2px); box-shadow: 0 6px 18px rgba(0,0,0,.09);
+  text-decoration: none;
+}
+.win-odds {
+  font-size: 30px; font-weight: 800; line-height: 1.05; letter-spacing: -.03em;
+  font-variant-numeric: tabular-nums; color: var(--gold);
+}
+.win-odds i { font-size: 15px; font-weight: 700; font-style: normal; margin-left: 2px; }
+.win-bet { font-size: 14px; font-weight: 700; color: var(--text); }
+.win-race {
+  display: flex; align-items: center; gap: 5px; margin-top: 3px;
+  font-size: 12.5px; color: var(--text-soft); font-variant-numeric: tabular-nums;
+}
+.win-race small { color: var(--text-faint); }
+.win-also { font-size: 11.5px; color: var(--accent-text); font-weight: 600; }
+
+@media (max-width: 640px) {
+  .wins-row { grid-template-columns: repeat(auto-fill, minmax(132px, 1fr)); gap: 8px; }
+  .win-card { padding: 12px 12px 11px; }
+  .win-odds { font-size: 26px; }
+}

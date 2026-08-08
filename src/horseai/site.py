@@ -597,6 +597,10 @@ def build(db: str, out_dir: Path, config: Dict, template_dir: Path,
     with session(db) as conn:
         races = load_races(conn)
         accuracy = build_report(conn)
+        # 성과 카드는 경주 상세로 이어져야 한다. 슬러그 규칙은 한 곳에 두고
+        # 템플릿에는 완성된 주소만 넘긴다.
+        for h in accuracy.get("highlights", []):
+            h["url"] = f"/race/{race_slug(h['race_key'])}/"
         picks = load_picks(conn)
         dividends = load_dividends(conn)
         outcomes = load_outcomes(conn, dividends)

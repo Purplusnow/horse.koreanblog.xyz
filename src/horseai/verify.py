@@ -385,12 +385,57 @@ def daily_summary(rl: pd.DataFrame, limit: int = 60) -> List[Dict]:
     return out[:limit]
 
 
+# 성과 카드에 올릴 최소 배당. 이보다 낮으면 '터졌다' 고 말하기 어렵다.
+HIGHLIGHT_MIN_ODDS = 10.0
+
+
+def highlights(rl: pd.DataFrame, limit: int = 6) -> List[Dict]:
+    """최근 고배당 적중.
+
+    적중률·환수율 표는 성실하지만 눈에 걸리지 않는다. 처음 온 사람이 이 사이트를
+    한 번 더 볼 이유는 '어제 삼쌍승 350배가 터졌다' 같은 구체적인 장면이다.
+    표에 이미 들어 있는 사실을 앞으로 꺼내는 것이므로 없는 말을 지어내지 않는다.
+    """
+    if rl.empty or "bets" not in rl:
+        return []
+    out = []
+    for r in rl.itertuples():
+        for name in BET_ORDER:
+            b = (r.bets or {}).get(name)
+            if not b or not b["hit"]:
+                continue
+            odds = b["payout"] / max(1, b["cost"])
+            if odds < HIGHLIGHT_MIN_ODDS:
+                continue
+            out.append({
+                "race_key": r.race_key,
+                "date": str(r.rc_date)[:10],
+                "meet": r.meet,
+                "rc_no": int(r.rc_no) if pd.notna(r.rc_no) else None,
+                "bet": name,
+                "odds": round(odds, 1),
+            })
+    # 한 경주에서 여러 승식이 터지면 가장 큰 것 하나만 남긴다. 같은 경주가
+    # 카드로 세 번 나오면 성과가 여럿인 것처럼 보여 오히려 신뢰를 깎는다.
+    best = {}
+    for h in out:
+        cur = best.get(h["race_key"])
+        if not cur or h["odds"] > cur["odds"]:
+            h["also"] = (cur or {}).get("also", 0) + (1 if cur else 0)
+            best[h["race_key"]] = h
+        else:
+            best[h["race_key"]]["also"] = best[h["race_key"]].get("also", 0) + 1
+    # 최근 경주를 먼저, 같은 날이면 배당이 큰 것을 먼저
+    return sorted(best.values(), key=lambda h: (h["date"], h["odds"]),
+                  reverse=True)[:limit]
+
+
 def build_report(conn: sqlite3.Connection) -> Dict:
     df = load_verified(conn)
     rl = race_level(df, load_dividends(conn))
     if rl.empty:
         empty = {"overall": {"n_races": 0}, "monthly": [], "recent": [],
-                 "daily": []}
+                 "daily": [], "highlights": []}
         for k in ("by_bet", "by_meet", "by_conf", "by_mark", "by_distance", "by_field",
                   "by_grade", "by_weekday", "by_track"):
             empty[k] = []
@@ -495,6 +540,7 @@ def build_report(conn: sqlite3.Connection) -> Dict:
         "last_90d": summarize(last90),
         "monthly": monthly,
         "by_bet": bet_summary(rl),
+        "highlights": highlights(rl),
         "daily": daily_summary(rl),
         "by_meet": by_meet,
         "by_conf": by_conf,
