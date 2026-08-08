@@ -467,12 +467,17 @@ LANE_SLEW = 4.0         # 한 구간(200m)에서 옆으로 옮길 수 있는 최
 # 않는다. 안쪽이 전부 막혔을 때만 이 상한을 넘어선다.
 LANE_CAP = 4.0
 
+# 한 구간(200m)을 몇 조각으로 쪼개 자리를 다시 정할지. 촘촘할수록 추월 순간의
+# 겹침을 잘 잡아내지만 대본이 그만큼 커진다. 50m 마다면 16m/s 에서 3초에 한 번,
+# 말 길이 하나가 채 지나기 전이다.
+SUB_STEPS = 4
+
 # 미리보기 대본의 판(版). 레인 계산이나 payload 구조를 바꾸면 올린다.
 #
 # 시행된 경주는 예측을 다시 만들지 않으므로 옛 대본이 DB 에 남는다. 형식이
 # 같아도 계산이 달라졌으면 다시 구워야 하는데, 'lanes 키가 있나' 로만 보면
 # 그걸 잡아내지 못한다 — 실제로 그래서 배포본만 옛 움직임으로 남았다.
-PAYLOAD_VERSION = 3
+PAYLOAD_VERSION = 4
 
 
 def lane_paths(runners: Sequence[Runner], seg_times: np.ndarray) -> np.ndarray:
@@ -493,7 +498,19 @@ def lane_paths(runners: Sequence[Runner], seg_times: np.ndarray) -> np.ndarray:
     n, n_seg = seg_times.shape
     if n == 0:
         return np.zeros((0, 0))
-    cum = np.cumsum(seg_times, axis=1)
+    # 200m 마다만 자리를 정하면 그 사이에서 일어나는 추월을 아무도 막지 않는다.
+    # 구간 경계 두 곳 모두에서 시간차가 벌어져 있어도, 중간에 앞뒤가 바뀌는
+    # 순간에는 같은 레인에서 서로를 통과해 버린다. 그래서 잘게 나눠 잡는다.
+    step = np.cumsum(seg_times, axis=1)
+    edges = np.concatenate([np.zeros((n, 1)), step], axis=1)      # 0 포함 경계
+    cum = np.empty((n, n_seg * SUB_STEPS))
+    for j in range(n_seg):
+        a, b = edges[:, j], edges[:, j + 1]
+        for u in range(SUB_STEPS):
+            f = (u + 1) / SUB_STEPS
+            cum[:, j * SUB_STEPS + u] = a + (b - a) * f
+    n_seg = cum.shape[1]
+    slew = LANE_SLEW / SUB_STEPS
     # 출발선에서는 게이트에 **한 마리 폭씩** 벌려 일렬로 선다. 1번이 레일,
     # 바깥 게이트일수록 그만큼 밖이다. 여기서부터 안쪽으로 모여든다.
     start = np.array([max(0.0, float((r.chul_no or 1) - 1)) for r in runners])
@@ -509,10 +526,10 @@ def lane_paths(runners: Sequence[Runner], seg_times: np.ndarray) -> np.ndarray:
         t = cum[:, j]
         placed: List[tuple] = []            # (시각, 레인)
         for i in np.argsort(t):             # 앞선 말부터 자리를 잡는다
-            lo = max(0.0, prev[i] - LANE_SLEW)
+            lo = max(0.0, prev[i] - slew)
             # 게이트에서 출발한 직후에는 자기 자리에서 시작하되, 이후로는
             # 안쪽 무리 폭 안으로 들어오려 한다.
-            hi = min(prev[i] + LANE_SLEW, max(LANE_CAP, lo))
+            hi = min(prev[i] + slew, max(LANE_CAP, lo))
             lane = None
             # 안쪽부터 훑어 비어 있는 첫 자리를 잡는다
             cand = np.arange(lo, hi + 0.001, 0.25)
@@ -566,6 +583,10 @@ def apply_lane_cost(seg_times: np.ndarray, lanes: np.ndarray, distance: float,
     n, n_seg = seg_times.shape
     if n == 0 or n_seg == 0:
         return seg_times
+    # lanes 는 구간을 더 잘게 쪼갠 격자로 온다(SUB_STEPS). 거리 손해는 구간
+    # 단위로 물리므로 조각들을 구간별 평균으로 되돌린다.
+    if lanes.shape[1] != n_seg:
+        lanes = lanes.reshape(n, n_seg, -1).mean(axis=2)
     frac = curve_fraction(distance, n_seg, straight, curve)
     seg_len = distance / n_seg
     theta = frac * seg_len * math.pi / max(1e-6, curve)      # 구간별 회전 각도

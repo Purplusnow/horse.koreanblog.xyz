@@ -237,16 +237,20 @@
     for (var z = idxByRank.length - 1; z >= 0; z--) {
       var i = idxByRank[z], pt = pts[i], r = runners[i];
       var col = gateColor(r.gate), label = String(r.gate);
-      // 겹쳐도 반지름 이상은 겹치지 않도록, 레인 간격(10px)에 맞춰 잡는다
-      var rad = label.length > 1 ? 8.5 : 7.5;
+      // 레인 간격은 카메라 배율만큼 벌어진다. 마커를 고정 크기로 그리면
+      // 따라가기(확대)에서만 말들이 뿔뿔이 떨어져 보이고, 전체보기와 그림이
+      // 달라진다. 배율을 그대로 태워 두 모드의 간격 비율을 같게 맞춘다.
+      var mz = cam.z;
+      var rad = (label.length > 1 ? 8.5 : 7.5) * mz;
       ctx.beginPath();
       ctx.arc(pt.x, pt.y, rad, 0, Math.PI * 2);
       ctx.fillStyle = col[0]; ctx.fill();
       ctx.strokeStyle = z === 0 ? '#b4842a' : 'rgba(0,0,0,.4)';
-      ctx.lineWidth = z === 0 ? 2.2 : 1.2;
+      ctx.lineWidth = (z === 0 ? 2.2 : 1.2) * Math.max(1, mz * 0.7);
       ctx.stroke();
       ctx.fillStyle = col[1];
-      ctx.font = 'bold ' + (label.length > 1 ? 11 : 13) + 'px system-ui, sans-serif';
+      ctx.font = 'bold ' + Math.round((label.length > 1 ? 11 : 13) * mz)
+                 + 'px system-ui, sans-serif';
       ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
       ctx.fillText(label, pt.x, pt.y + 0.5);
     }

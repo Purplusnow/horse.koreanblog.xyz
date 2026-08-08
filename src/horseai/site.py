@@ -668,7 +668,9 @@ def build(db: str, out_dir: Path, config: Dict, template_dir: Path,
 
         # 추천경주 — 시뮬레이션이 결과를 좁게 몰아준 경주만 따로 세운다.
         # 매 경주를 똑같은 자신감으로 내미는 예상지는 신뢰를 얻지 못한다.
-        featured = [r for r in upcoming if r.get("conf_label") == "강승부"]
+        # 이미 뛴 경주는 뺀다. '추천'인데 결과가 나와 있으면 볼 이유가 없다.
+        featured = [r for r in upcoming
+                    if r.get("conf_label") == "강승부" and not r.get("has_result")]
         featured.sort(key=lambda r: -(r.get("conf_score") or 0))
 
         by_day: Dict[str, List[Dict]] = {}
