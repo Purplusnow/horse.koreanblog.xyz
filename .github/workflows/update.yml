@@ -211,6 +211,23 @@ jobs:
         run: PYTHONPATH=src python -m horseai.verify --db "$DB" --out data/accuracy.json
 
       # --- 빌드 · 배포 -------------------------------------------------------
+      # 집계 결과를 저장소에 남긴다. 매 갱신의 diff 가 곧 '어제와 오늘 사이에
+      # 무엇이 달라졌나' 의 기록이다. 배당이 늦게 들어와 숫자가 뛰는 것과
+      # 모델이 무너져 내려앉는 것을 구분하려면 이 이력이 있어야 한다.
+      - name: 집계 결과 기록
+        continue-on-error: true
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -f data/accuracy.json
+          if git diff --cached --quiet; then
+            echo "달라진 집계 없음"
+          else
+            git commit -q -m "집계 갱신 $(TZ=Asia/Seoul date '+%Y-%m-%d %H:%M') KST"
+            git pull --rebase --autostash -q origin main
+            git push -q origin HEAD:main && echo "기록 완료"
+          fi
+
       - name: 사이트 빌드
         timeout-minutes: 15
         run: PYTHONPATH=src python -m horseai.site --db "$DB" --out dist

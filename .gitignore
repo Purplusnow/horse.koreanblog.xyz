@@ -6,6 +6,11 @@ __pycache__/
 # 데이터·산출물은 저장소에 넣지 않는다.
 # DB는 릴리스 자산(db-state)으로, 사이트는 GitHub Pages로 배포된다.
 data/
+# 다만 집계 결과는 추적한다. 숫자가 언제 왜 바뀌었는지 되짚을 수 없으면
+# 이번 배당 결손처럼 조용히 틀린 값이 나가도 알아채지 못한다.
+!data/
+data/*
+!data/accuracy.json
 dist/
 models/
 config/endpoints.resolved.json
