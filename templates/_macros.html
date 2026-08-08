@@ -75,8 +75,10 @@
       {% if race.grade %}<span class="rr-grade">{{ race.grade }}</span>{% endif %}
       {% if race.field_size %}<small>{{ race.field_size }}두</small>{% endif %}
     </span>
-    {% if race.has_result %}{{ hit_badge(race.outcome) }}
-    {% else %}{{ conf_badge(race.conf_label, race.conf_score) }}{% endif %}
+    {# 시행 후에도 신뢰도 등급을 남긴다. '약승부라고 했는데 불발' 이 나란히
+       보여야 그 지표가 검증되고, 등급만 지우면 사후에 유리한 것만 남기는 셈이다. #}
+    {{ conf_badge(race.conf_label, race.conf_score) }}
+    {% if race.has_result %}{{ hit_badge(race.outcome) }}{% endif %}
   </div>
   {# 시행 전에는 예상 승률을, 시행 후에는 실제 착순을 같은 자리에 보여 준다.
      끝난 경주를 목록 아래로 빼면 그날 카드가 앞뒤로 갈려 시간표를 이어서

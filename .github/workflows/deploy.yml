@@ -1,0 +1,67 @@
+name: 사이트만 재배포
+
+# 화면(템플릿·CSS·JS·문구)만 고쳤을 때 쓴다.
+#
+# update.yml 은 수집부터 배포까지 한 번에 도는 파이프라인이라, 외부 API 응답이
+# 느리면 CSS 한 줄 고치는 데도 한 시간을 기다려야 한다. 실제로 그렇게 됐다.
+# 여기서는 보관된 DB 를 복원해 **빌드와 배포만** 한다 — 3분이면 끝난다.
+#
+# 데이터는 건드리지 않는다. DB 를 저장하지도 않으므로 update.yml 과 부딪히지
+# 않고, 예측을 다시 만들지도 않아 공개한 예상이 흔들릴 일이 없다.
+on:
+  workflow_dispatch:
+
+concurrency:
+  group: horseai-update      # 수집 파이프라인과 같은 그룹 — DB 를 동시에 읽지 않는다
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+env:
+  DB: data/horseai.sqlite
+  DB_RELEASE_TAG: db-state
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: 의존성 설치
+        run: pip install -r requirements.txt
+
+      - name: DB 복원
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p data models
+          gh release download "$DB_RELEASE_TAG" -p "horseai.sqlite.zst" -D /tmp
+          zstd -d /tmp/horseai.sqlite.zst -o "$DB"
+          gh release download "$DB_RELEASE_TAG" -p "metrics.json" -D models 2>/dev/null || true
+          echo "복원 완료 ($(du -h "$DB" | cut -f1))"
+
+      - name: 적중률 검증
+        run: PYTHONPATH=src python -m horseai.verify --db "$DB" --out data/accuracy.json
+
+      - name: 사이트 빌드
+        timeout-minutes: 15
+        run: PYTHONPATH=src python -m horseai.site --db "$DB" --out dist
+
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+
+      - id: deployment
+        uses: actions/deploy-pages@v4
