@@ -337,6 +337,7 @@ def build_history_index(hist: pd.DataFrame) -> pd.DataFrame:
     df["field_size"] = fs
     df["ord_pct"] = ((ordn - 1) / (fs - 1).replace(0, np.nan)).clip(0, 1)
     df["is_win"] = (ordn == 1).astype(float).where(ordn.notna())
+    df["is_top2"] = (ordn <= 2).astype(float).where(ordn.notna())
     df["is_top3"] = (ordn <= 3).astype(float).where(ordn.notna())
     df["is_place"] = (ordn <= 2).astype(float).where(ordn.notna())
     df["grade_rank"] = df["grade"].map(grade_rank)
@@ -544,6 +545,9 @@ def build_frame(conn: sqlite3.Connection,
     built = finalize(built)
     built = built.copy()  # 컬럼을 많이 붙여 조각난 프레임을 한 번 정리
     built["y_win"] = built["is_win"]
+    # 예상 기호가 '2착 이내 수준 / 3착 이내 수준'을 뜻하므로, 그 수준을 직접
+    # 추정할 헤드가 필요하다. 승률에서 유추하면 접전 경주에서 특히 어긋난다.
+    built["y_top2"] = built["is_top2"]
     built["y_top3"] = built["is_top3"]
     return built
 

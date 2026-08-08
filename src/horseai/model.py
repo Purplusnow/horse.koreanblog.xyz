@@ -182,7 +182,7 @@ def evaluate(pred: pd.DataFrame) -> Eval:
 def fit(df: pd.DataFrame, seed: int = 42) -> Dict[str, HistGradientBoostingClassifier]:
     X = _matrix(df)
     models: Dict[str, HistGradientBoostingClassifier] = {}
-    for target, col in (("win", "y_win"), ("top3", "y_top3")):
+    for target, col in (("win", "y_win"), ("top2", "y_top2"), ("top3", "y_top3")):
         y = pd.to_numeric(df[col], errors="coerce")
         mask = y.notna()
         if mask.sum() < 500 or y[mask].nunique() < 2:
@@ -198,13 +198,19 @@ def predict_frame(models: Dict, df: pd.DataFrame) -> pd.DataFrame:
     X = _matrix(df)
     out = df.copy()
     out["p_win_raw"] = models["win"].predict_proba(X)[:, 1] if "win" in models else np.nan
+    out["p_top2_raw"] = models["top2"].predict_proba(X)[:, 1] if "top2" in models else np.nan
     out["p_top3_raw"] = models["top3"].predict_proba(X)[:, 1] if "top3" in models else np.nan
     out = normalize_within_race(out, "p_win_raw", "p_win_norm")
-    # 연승(3착 이내)은 경주당 기대 3두이므로 합이 3이 되도록 맞춘다.
-    p3 = pd.to_numeric(out["p_top3_raw"], errors="coerce").clip(1e-6, 1 - 1e-6)
+    # 착순 확률은 경주당 자리 수가 정해져 있다 — 2착 이내는 두 자리, 3착 이내는
+    # 세 자리. 개별 예측의 합이 그 자리 수가 되도록 경주 안에서 맞춰야 확률로
+    # 읽을 수 있다. 기호 부여가 이 값의 절대 수준에 의존하므로 특히 중요하다.
     n = out.groupby("race_key")["hr_no"].transform("count")
-    scale = (np.minimum(3, n) / p3.groupby(out["race_key"]).transform("sum")).replace([np.inf, -np.inf], 1)
-    out["p_top3_norm"] = (p3 * scale).clip(0, 1)
+    for raw, norm, slots in (("p_top2_raw", "p_top2_norm", 2),
+                             ("p_top3_raw", "p_top3_norm", 3)):
+        p = pd.to_numeric(out[raw], errors="coerce").clip(1e-6, 1 - 1e-6)
+        total = p.groupby(out["race_key"]).transform("sum")
+        scale = (np.minimum(slots, n) / total).replace([np.inf, -np.inf], 1)
+        out[norm] = (p * scale).clip(0, 1)
     out["pred_rank"] = out.groupby("race_key")["p_win_norm"].rank(ascending=False, method="first").astype(int)
     return out
 
@@ -272,7 +278,18 @@ def save(models: Dict, metrics: Dict, path: Path = MODEL_PATH) -> None:
 
     path.parent.mkdir(parents=True, exist_ok=True)
     joblib.dump({"models": models, "features": FEATURE_COLUMNS, "version": MODEL_VERSION}, path)
-    METRICS_PATH.write_text(json.dumps(metrics, ensure_ascii=False, indent=2), encoding="utf-8")
+
+    # metrics.json 은 학습 지표만의 파일이 아니다. 보정 도구들이 각자의 블록을
+    # 여기에 남기고 사이트가 그 값을 읽는다. 통째로 덮어쓰면 화면에서 수치가
+    # 조용히 사라지므로(실제로 신뢰도 블록이 그렇게 날아갔다), 기존 내용을
+    # 읽어 병합한다. 재보정이 돌기 전까지는 직전 값이 유지된다.
+    blob: Dict = {}
+    try:
+        blob = json.loads(METRICS_PATH.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        pass
+    blob.update(metrics)
+    METRICS_PATH.write_text(json.dumps(blob, ensure_ascii=False, indent=2), encoding="utf-8")
 
 
 def load(path: Path = MODEL_PATH) -> Dict:

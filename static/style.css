@@ -879,3 +879,7 @@ tbody tr:hover { background: var(--bg-soft); }
   cursor: help;
 }
 .res-note { margin-top: 14px; font-size: 13px; color: var(--text-faint); }
+
+/* 적중률 페이지의 기호 표 — 기호가 본문 글자에 묻히지 않게 조금 키운다 */
+.stats-table .c-mark { text-align: center; }
+.stats-table .c-mark .mark { font-size: 17px; font-weight: 700; }

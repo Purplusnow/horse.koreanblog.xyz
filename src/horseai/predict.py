@@ -110,6 +110,7 @@ def build_rows(pred: pd.DataFrame) -> List[Dict]:
                 "chul_no": int(r.chul_no) if pd.notna(r.chul_no) else None,
                 "p_win": float(r.p_win_norm),
                 "p_place": float(r.p_top3_norm) if pd.notna(r.p_top3_norm) else None,
+                "p_top2": float(r.p_top2_norm) if pd.notna(getattr(r, "p_top2_norm", None)) else None,
                 "pred_rank": int(r.pred_rank),
                 "model_version": MODEL_VERSION,
                 "style_code": getattr(r, "style_code", None) or "unknown",

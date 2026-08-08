@@ -67,7 +67,7 @@ DETAIL_SQL = """
 SELECT e.chul_no, e.hr_name, e.hr_no, e.sex, e.age, e.origin, e.burden, e.rating,
        e.jk_no, e.jk_name, e.tr_no, e.tr_name, e.ow_name,
        e.career_1st, e.career_2nd, e.career_3rd, e.career_starts,
-       p.p_win, p.p_place, p.pred_rank, p.style_code, p.tags,
+       p.p_win, p.p_place, p.p_top2, p.pred_rank, p.style_code, p.tags,
        res.ord, res.win_odds, res.place_odds
 FROM predictions p
 JOIN entries e ON e.race_key = p.race_key AND e.hr_no = p.hr_no
@@ -77,14 +77,74 @@ ORDER BY p.pred_rank
 """
 
 
-# 시중 예상지가 쓰는 예상 기호. 한국 경마 팬에게는 등급표보다 빠르게 읽힌다.
+# 예상 기호.
 #
-# 국내 예상지 표기인 축마 계열을 쓴다. 본명·대항은 일본 예상지(本命·対抗)에서
-# 건너온 표기라 국내 독자에게 한 박자 늦게 읽힌다. 엄밀히는 축마가 '마권을 짤 때
-# 축으로 고정할 말'이라는 베팅 구조 용어이고 우리 ◎ 는 승률 1위지만, 국내
-# 예상지도 그 의미로 혼용하고 있고 무엇보다 읽는 쪽에 익숙한 말이 우선이다.
-MARKS = ["◎", "○", "▲", "△", "△"]
-MARK_NAMES = {"◎": "축마", "○": "상대마", "▲": "복병", "△": "주의마"}
+# 기호는 **순위표가 아니라 수준 표시**다. 순위대로 ◎○△ 를 기계적으로 붙이면,
+# 우열이 갈리지 않는 접전 경주에서도 1순위에 ◎ 가 찍혀 "2착 이내 유력"이라고
+# 말하게 된다. 그래서 착순 확률이 각 기호가 약속하는 수준에 닿을 때만 붙이고,
+# 닿는 말이 없으면 그 기호는 그 경주에서 아예 나오지 않는다.
+#
+#   ◎  2착 이내가 유력하다        (p_top2 기준, 경주당 최대 한 마리)
+#   ○  3착 이내가 유력하다        (p_top3 기준)
+#   △  조건이 맞으면 3착 이내      (p_top3 기준, 낮은 쪽)
+#   ※  그 아래 참고 (5순위까지)
+#
+# 임계값은 손으로 정하지 않는다. 과거 경주에서 '그 기호를 받은 말이 실제로 그
+# 착순에 든 비율'이 약속과 맞도록 보정한다 → tools/calibrate_marks.py
+# 보정 결과 (시간순 교차검증 6,143경주 · 평균 10.5두):
+#   ◎ p_top2≥0.46 → 경주의 51%에 등장, 실제 2착 이내 57.3% (무작위 19.1%)
+#   ○ p_top3≥0.46 → 경주당 약 1두,   실제 3착 이내 55.1% (무작위 28.7%)
+# 임계값을 더 올리면 적중은 오르지만 ◎ 가 경주의 22%에만 나와 예상지 구실을
+# 못 한다. '유력'이라 말할 수 있는 선(50% 초과)을 지키는 가장 낮은 값을 골랐다.
+MARK_THRESHOLDS = {"top2": 0.46, "top3": 0.46, "top3_weak": 0.33}
+MARK_LIMIT = 5          # 기호를 붙일 최대 두수
+
+# 기호 자체가 표기이므로 화면에 이름은 붙이지 않는다. 다만 처음 보는 사람을 위해
+# '무엇을 약속하는가'는 범례와 툴팁으로 남긴다 — 이름이 아니라 뜻이다.
+MARK_MEANING = {
+    "◎": "2착 이내 유력",
+    "○": "3착 이내 유력",
+    "△": "조건 맞으면 3착 이내",
+    "※": "참고",
+}
+
+
+def assign_marks(runners: List[Dict]) -> None:
+    """착순 확률 수준에 따라 예상 기호를 붙인다 (제자리 수정).
+
+    두 가지를 지킨다.
+      * **약속과 결과가 맞을 것** — ◎ 는 실제로 2착 이내에 드는 비율이 그에
+        걸맞아야 한다. 그렇지 않으면 기호가 순위의 다른 이름일 뿐이다.
+      * **아래 순위가 더 센 기호를 받지 않을 것** — 확률 추정이 순위와 완전히
+        단조롭지는 않으므로, 표를 위에서 아래로 읽을 때 기호가 세지지 않도록
+        내림차순을 강제한다. 안 그러면 3순위에 ○, 2순위에 △ 가 붙는다.
+    """
+    t = MARK_THRESHOLDS
+    ordered = sorted(runners, key=lambda r: r.get("pred_rank") or 99)
+    strongest = 0          # 0=◎ 1=○ 2=△ 3=※ — 값이 클수록 약한 기호
+    for i, r in enumerate(ordered):
+        r["mark"] = ""
+        if i >= MARK_LIMIT:
+            continue
+        p2 = r.get("p_top2") or 0.0
+        p3 = r.get("p_place") or 0.0
+
+        if i >= 3:
+            # 4·5순위는 수준과 무관하게 참고 표시. 우열이 안 갈리는 경주에서
+            # 다섯 마리에 △ 가 똑같이 붙으면 읽는 쪽에 아무 순서도 주지 못한다.
+            level = 3
+        elif i == 0 and p2 >= t["top2"]:
+            level = 0                      # ◎ 는 경주당 한 마리
+        elif p3 >= t["top3"]:
+            level = 1
+        elif p3 >= t["top3_weak"]:
+            level = 2
+        else:
+            level = 3
+        level = max(level, strongest)      # 위 순위보다 세질 수 없다
+        strongest = level
+        r["mark"] = ["◎", "○", "△", "※"][level]
+        r["mark_meaning"] = MARK_MEANING[r["mark"]]
 
 
 def _row_to_dict(row: sqlite3.Row) -> Dict:
@@ -174,6 +234,11 @@ def load_metrics(path: Path = Path("models/metrics.json")) -> Dict:
 
     # 신뢰도 등급별 실적 — tools/calibrate_confidence.py 가 기록한 값.
     # 화면 수치는 재현 가능한 산출물에서만 가져온다.
+    # 기호별 실제 착순 — tools/calibrate_marks.py 가 기록한 값
+    marks = raw.get("marks") or {}
+    out["mark_n_races"] = marks.get("n_races")
+    out["mark_levels"] = marks.get("levels") or []
+
     conf = raw.get("confidence") or {}
     out["conf_n_races"] = conf.get("n_races")
     out["conf_tiers"] = conf.get("tiers") or []
@@ -216,15 +281,13 @@ def load_runners(conn: sqlite3.Connection, race_key: str) -> List[Dict]:
         d["win_rate_text"] = f"{wins / starts:.0%}" if starts else "-"
         d["p_win_pct"] = round((d.get("p_win") or 0) * 100, 1)
         d["p_place_pct"] = round((d.get("p_place") or 0) * 100, 1)
-        rank = d.get("pred_rank") or 99
-        d["mark"] = MARKS[rank - 1] if 1 <= rank <= len(MARKS) else ""
-        d["mark_name"] = MARK_NAMES.get(d["mark"], "")
         d["style_label"] = STYLE_LABEL.get(d.get("style_code") or "", "")
         try:
             d["tag_list"] = json.loads(d.get("tags") or "[]")
         except (ValueError, TypeError):
             d["tag_list"] = []
         runners.append(d)
+    assign_marks(runners)
     return runners
 
 
@@ -368,7 +431,8 @@ def form_summary(form: List[Dict]) -> Dict:
 
 
 PICKS_SQL = """
-SELECT p.race_key, p.pred_rank, p.p_win, p.style_code, e.chul_no, e.hr_name
+SELECT p.race_key, p.pred_rank, p.p_win, p.p_place, p.p_top2, p.style_code,
+       e.chul_no, e.hr_name
 FROM predictions p
 JOIN entries e ON e.race_key = p.race_key AND e.hr_no = p.hr_no
 WHERE p.pred_rank <= 3
@@ -384,15 +448,18 @@ def load_picks(conn: sqlite3.Connection) -> Dict[str, List[Dict]]:
     out: Dict[str, List[Dict]] = {}
     for r in conn.execute(PICKS_SQL + " ORDER BY p.race_key, p.pred_rank"):
         d = _row_to_dict(r)
-        d["mark"] = MARKS[d["pred_rank"] - 1] if d["pred_rank"] <= len(MARKS) else ""
         d["p_win_pct"] = round((d.get("p_win") or 0) * 100)
         d["style_label"] = STYLE_LABEL.get(d.get("style_code") or "", "")
         out.setdefault(d["race_key"], []).append(d)
+    # 기호는 경주 단위로 정해진다 — 한 마리만 보고는 붙일 수 없다
+    for picks in out.values():
+        assign_marks(picks)
     return out
 
 
 OUTCOME_SQL = """
-SELECT p.race_key, p.pred_rank, p.hr_no, e.hr_name, e.chul_no,
+SELECT p.race_key, p.pred_rank, p.hr_no, p.p_win, p.p_place, p.p_top2,
+       e.hr_name, e.chul_no,
        res.ord, res.win_odds, res.record_sec,
        CASE WHEN c.hr_no IS NOT NULL THEN 1 ELSE 0 END AS cancelled
 FROM predictions p
@@ -422,11 +489,15 @@ def load_outcomes(conn: sqlite3.Connection) -> Dict[str, Dict]:
         live = [r for r in rows if not r["cancelled"]]
         if not live:
             continue
-        # 취소마를 뺀 상태에서 예상 순위를 다시 부여
+        # 취소마를 뺀 상태에서 예상 순위와 기호를 다시 부여.
+        # 기호는 순위가 아니라 착순 확률 수준에서 나오므로, 남은 말들 기준으로
+        # 다시 매겨야 화면과 판정이 어긋나지 않는다.
         live.sort(key=lambda r: r["pred_rank"])
         for i, r in enumerate(live, 1):
             r["adj_rank"] = i
-            r["mark"] = MARKS[i - 1] if i <= len(MARKS) else ""
+        for r in live:
+            r["pred_rank"] = r["adj_rank"]
+        assign_marks(live)
 
         top1 = live[0]
         ords = {r["adj_rank"]: r["ord"] for r in live[:3] if r["ord"]}

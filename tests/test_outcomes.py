@@ -34,21 +34,23 @@ def build_db(path: str) -> None:
             "field_size, has_result) VALUES (?,?,?,?,?,?,1)",
             (KEY, "서울", "2026-01-01", 1, 1200, 4),
         )
+        # 기호는 순위가 아니라 착순 확률 수준에서 나오므로, 확률을 명시해 둔다.
+        # 취소마를 빼면 H2 가 1순위가 되고 p_top2 가 임계값을 넘어 ◎ 를 받는다.
         horses = [
-            # hr_no, name, chul_no, pred_rank, p_win, ord
-            ("H1", "취소마", 1, 1, 0.40, None),
-            ("H2", "실제우승", 2, 2, 0.30, 1),
-            ("H3", "삼번마", 3, 3, 0.20, 2),
-            ("H4", "사번마", 4, 4, 0.10, 3),
+            # hr_no, name, chul_no, pred_rank, p_win, p_top2, p_top3, ord
+            ("H1", "취소마", 1, 1, 0.40, 0.70, 0.85, None),
+            ("H2", "실제우승", 2, 2, 0.30, 0.60, 0.80, 1),
+            ("H3", "삼번마", 3, 3, 0.20, 0.40, 0.55, 2),
+            ("H4", "사번마", 4, 4, 0.10, 0.20, 0.35, 3),
         ]
-        for hr_no, name, chul, rank, p, ordv in horses:
+        for hr_no, name, chul, rank, p, p2, p3, ordv in horses:
             conn.execute(
                 "INSERT INTO entries (race_key, hr_no, hr_name, chul_no) VALUES (?,?,?,?)",
                 (KEY, hr_no, name, chul))
             conn.execute(
                 "INSERT INTO predictions (race_key, hr_no, pred_rank, p_win, p_place, "
-                "model_version) VALUES (?,?,?,?,?,'test')",
-                (KEY, hr_no, rank, p, min(1.0, p * 2)))
+                "p_top2, model_version) VALUES (?,?,?,?,?,?,'test')",
+                (KEY, hr_no, rank, p, p3, p2))
             if ordv is not None:
                 conn.execute(
                     "INSERT INTO results (race_key, hr_no, hr_name, chul_no, ord, win_odds) "
@@ -67,7 +69,8 @@ def test_site_outcome_reranks(conn: sqlite3.Connection) -> None:
     assert len(o["cancelled"]) == 1, f"취소마 인식 실패: {o['cancelled']}"
     assert o["top1"]["hr_name"] == "실제우승", \
         f"취소마를 빼고 재순위를 매기지 않았다 (축마={o['top1']['hr_name']})"
-    assert o["top1"]["mark"] == "◎", "재순위 후 마크가 갱신되지 않았다"
+    assert o["top1"]["mark"] == "◎", \
+        f"재순위 후 기호가 갱신되지 않았다 (본래 2순위였던 말의 기호={o['top1']['mark']})"
     assert o["hit_win"] is True, "재순위 축마가 1착인데 적중으로 판정되지 않았다"
     assert o["winner_pick"]["adj_rank"] == 1, "우승마의 표시 순위가 취소 전 값이다"
     print("  ✓ 화면용 결과: 취소마 제외 후 재순위 · 적중 판정")
@@ -137,6 +140,50 @@ def test_freeze_by_post_time(path: str) -> None:
     print("  ✓ 예측 동결: 발주 시각 기준으로 잠김")
 
 
+def test_marks_follow_probability_not_rank() -> None:
+    """기호는 순위가 아니라 착순 확률 수준에서 나와야 한다.
+
+    순위대로 붙이면 우열이 안 갈리는 경주에서도 1순위에 ◎ 가 찍혀
+    '2착 이내 유력'이라고 말하게 된다. 그런 경주에서는 ◎ 가 없어야 한다.
+    """
+    from horseai.site import MARK_THRESHOLDS, assign_marks
+
+    t = MARK_THRESHOLDS
+
+    # 한 마리가 확실히 앞선 경주 — ◎ 가 나와야 한다
+    clear = [{"pred_rank": 1, "p_top2": t["top2"] + 0.1, "p_place": 0.9},
+             {"pred_rank": 2, "p_top2": 0.3, "p_place": t["top3"] + 0.05},
+             {"pred_rank": 3, "p_top2": 0.2, "p_place": t["top3_weak"] + 0.02},
+             {"pred_rank": 4, "p_top2": 0.1, "p_place": 0.2},
+             {"pred_rank": 5, "p_top2": 0.05, "p_place": 0.1}]
+    assign_marks(clear)
+    got = [r["mark"] for r in clear]
+    assert got == ["◎", "○", "△", "※", "※"], got
+
+    # 접전 경주 — 아무도 '2착 이내 유력' 수준이 아니면 ◎ 가 없어야 한다
+    tight = [{"pred_rank": i, "p_top2": t["top2"] - 0.05,
+              "p_place": t["top3"] - 0.05} for i in range(1, 6)]
+    assign_marks(tight)
+    got = [r["mark"] for r in tight]
+    assert "◎" not in got, f"접전 경주에 ◎ 가 붙었다: {got}"
+    assert got[:3] == ["△", "△", "△"] and got[3:] == ["※", "※"], got
+
+    # 확률 추정이 순위와 어긋나도 기호는 아래로 갈수록 약해져야 한다
+    messy = [{"pred_rank": 1, "p_top2": 0.2, "p_place": t["top3_weak"] + 0.01},
+             {"pred_rank": 2, "p_top2": 0.9, "p_place": 0.95},
+             {"pred_rank": 3, "p_top2": 0.1, "p_place": 0.9}]
+    assign_marks(messy)
+    order = ["◎", "○", "△", "※"]
+    idx = [order.index(r["mark"]) for r in messy]
+    assert idx == sorted(idx), f"아래 순위가 더 센 기호를 받았다: {[r['mark'] for r in messy]}"
+
+    # 6순위부터는 기호를 붙이지 않는다
+    many = [{"pred_rank": i, "p_top2": 0.5, "p_place": 0.6} for i in range(1, 9)]
+    assign_marks(many)
+    assert all(r["mark"] == "" for r in many[5:]), "6순위 이하에 기호가 붙었다"
+    print("  ✓ 예상 기호: 확률 수준 기준 · 접전이면 ◎ 없음 · 내림차순 유지")
+
+
 def main() -> int:
     path = "data/_test_outcomes.sqlite"
     Path(path).unlink(missing_ok=True)
@@ -147,6 +194,7 @@ def main() -> int:
         test_verify_excludes_cancelled(conn)
         test_no_cancellation_is_unchanged(conn)
     test_freeze_by_post_time("data/_test_freeze.sqlite")
+    test_marks_follow_probability_not_rank()
     Path(path).unlink(missing_ok=True)
     Path("data/_test_freeze.sqlite").unlink(missing_ok=True)
     print("모든 검사 통과")

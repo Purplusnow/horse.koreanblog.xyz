@@ -9,7 +9,7 @@
 {% block title %}{{ title_text }} | {{ site.name }}{% endblock %}
 {% block description %}
 {{ race.rc_date }} {{ race.meet }}경마장 제{{ race.rc_no }}경주({{ race.distance }}m{% if race.grade %}, {{ race.grade }}{% endif %}) 출주마별 승률과 전적 정리.
-{% if top %}축마 {{ top.chul_no }}번 {{ top.hr_name }} 예상 승률 {{ '%.0f'|format(top.p_win_pct) }}%.{% endif %}
+{% if top %}1순위 {{ top.chul_no }}번 {{ top.hr_name }} 예상 승률 {{ '%.0f'|format(top.p_win_pct) }}%.{% endif %}
 출주마 전원의 승률과 연승률을 공개합니다.
 {% endblock %}
 
@@ -75,7 +75,7 @@
   <div class="board-picks">
     {% for r in runners[:4] %}
     <div class="board-pick board-{{ loop.index }}">
-      <span class="board-mark" title="{{ r.mark_name }}">{{ r.mark }}</span>
+      <span class="board-mark" title="{{ r.mark_meaning }}">{{ r.mark }}</span>
       <span class="board-name">{{ r.hr_name }}</span>
       <span class="board-gate">{{ r.chul_no }}</span>
       <span class="board-meta">
@@ -118,7 +118,7 @@
 </section>
 
 <p class="mark-legend">
-  <b>◎</b> 축마 &nbsp; <b>○</b> 상대마 &nbsp; <b>▲</b> 복병 &nbsp; <b>△</b> 주의마
+  <b>◎</b> 2착 이내 유력 &nbsp; <b>○</b> 3착 이내 유력 &nbsp; <b>△</b> 조건 맞으면 3착 이내 &nbsp; <b>※</b> 참고
   <span>· 예측 엔진이 산출한 승률 순서입니다. 조합은 구매 권유가 아닙니다.</span>
 </p>
 {% endif %}
@@ -242,7 +242,7 @@
       <tbody>
         {% for r in runners %}
         <tr{% if loop.index == 1 %} class="row-top"{% endif %}>
-          <td class="c-mark"><span class="mark" title="{{ r.mark_name }}">{{ r.mark }}</span></td>
+          <td class="c-mark"><span class="mark" title="{{ r.mark_meaning }}">{{ r.mark }}</span></td>
           <td class="c-gate"><span class="gate">{{ r.chul_no }}</span></td>
           <td class="c-name">
             <a href="{{ r.horse_url }}">{{ r.hr_name }}</a>
