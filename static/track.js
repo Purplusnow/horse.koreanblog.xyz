@@ -37,6 +37,7 @@
   function gateColor(g) { return GATE_COLOR[((g || 1) - 1) % GATE_COLOR.length]; }
 
   var playing = false, t = 0, speed = 1, raf = null, last = 0, follow = true;
+  var leadIdx = 0;
 
   /* ── 주로 기하 ────────────────────────────────────────────────
      경주로를 '스타디움' 모양으로 본다: 직선 2개 + 반원 2개.
@@ -219,6 +220,7 @@
 
        뒤에서부터 그려 선두가 맨 위에 온다 — 겹칠 때 가장 중요한 말이 보인다. */
     var idxByRank = order.map(function (o) { return o.i; });
+    leadIdx = idxByRank[0];
     for (var z = idxByRank.length - 1; z >= 0; z--) {
       var i = idxByRank[z], pt = pts[i], r = runners[i];
       var col = gateColor(r.gate), label = String(r.gate);
@@ -235,6 +237,10 @@
       ctx.fillText(label, pt.x, pt.y + 0.5);
     }
     ctx.textBaseline = 'alphabetic';
+
+    /* 미니맵 — 카메라가 따라가면 전체에서 어디쯤인지 알 수 없다.
+       구석에 주로 전체를 작게 그리고, 출발~현재 구간과 선두 위치를 표시한다. */
+    drawMiniMap(W, H, cFaint);
 
     /* 표기는 배율 밖에 그린다 — 따라가기 중에 글자까지 커지면 읽기 어렵다. */
     ctx.fillStyle = cFaint;
@@ -279,6 +285,76 @@
         + '<span class="tk-dot" style="background:' + c[0] + '"></span>'
         + r.gate + ' ' + r.name + '</li>';
     }).join('');
+  }
+
+  /* 미니맵. 오른쪽 위 구석에 주로 전체를 작게 그린다.
+     이미 지나온 구간은 진하게, 남은 구간은 옅게 — 한눈에 진행도가 읽힌다. */
+  function drawMiniMap(W, H, cFaint) {
+    var mw = Math.min(150, W * 0.2), mh = mw * 0.52;
+    var mx = W - mw - 12, my = 12;
+    var mbox = {
+      left: mx + mh * 0.28, innerW: mw - mh * 0.56,
+      innerH: mh * 0.44, cy: my + mh / 2, laneStep: 0
+    };
+
+    function mini(sv) { return toPx(trackPoint(sv), mbox, 0); }
+
+    ctx.save();
+    ctx.globalAlpha = 0.9;
+    ctx.fillStyle = 'rgba(255,255,255,.72)';
+    ctx.strokeStyle = 'rgba(0,0,0,.10)'; ctx.lineWidth = 1;
+    roundRect(mx - 8, my - 8, mw + 16, mh + 16, 8);
+    ctx.fill(); ctx.stroke();
+
+    /* 주로 전체 */
+    ctx.strokeStyle = 'rgba(0,0,0,.16)'; ctx.lineWidth = 3.5;
+    ctx.beginPath();
+    for (var k = 0; k <= 120; k++) {
+      var pt = mini(-k / 120 * LAP);
+      if (k === 0) ctx.moveTo(pt.x, pt.y); else ctx.lineTo(pt.x, pt.y);
+    }
+    ctx.closePath(); ctx.stroke();
+
+    /* 이번 경주 구간 — 출발부터 결승까지 */
+    ctx.strokeStyle = 'rgba(0,0,0,.30)'; ctx.lineWidth = 3.5;
+    ctx.beginPath();
+    for (var k2 = 0; k2 <= 80; k2++) {
+      var p2 = mini(-distance + k2 / 80 * distance);
+      if (k2 === 0) ctx.moveTo(p2.x, p2.y); else ctx.lineTo(p2.x, p2.y);
+    }
+    ctx.stroke();
+
+    /* 지나온 구간 */
+    var lead = progressAt(runners[leadIdx].splits, t);
+    ctx.strokeStyle = '#b4842a'; ctx.lineWidth = 3.5;
+    ctx.beginPath();
+    for (var k3 = 0; k3 <= 80; k3++) {
+      var p3 = mini(-distance + (k3 / 80) * distance * lead);
+      if (k3 === 0) ctx.moveTo(p3.x, p3.y); else ctx.lineTo(p3.x, p3.y);
+    }
+    ctx.stroke();
+
+    /* 선두 위치 */
+    var lp = mini(-distance + distance * lead);
+    ctx.beginPath(); ctx.arc(lp.x, lp.y, 3.2, 0, Math.PI * 2);
+    ctx.fillStyle = '#b4842a'; ctx.fill();
+
+    /* 결승선 */
+    var fp = mini(0);
+    ctx.strokeStyle = '#b4842a'; ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.moveTo(fp.x, fp.y - 5); ctx.lineTo(fp.x, fp.y + 5); ctx.stroke();
+    ctx.restore();
+  }
+
+  function roundRect(x, y, w, h, r) {
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.arcTo(x + w, y, x + w, y + h, r);
+    ctx.arcTo(x + w, y + h, x, y + h, r);
+    ctx.arcTo(x, y + h, x, y, r);
+    ctx.arcTo(x, y, x + w, y, r);
+    ctx.closePath();
   }
 
   function tick(now) {
