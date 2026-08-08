@@ -40,19 +40,28 @@
 
   /* ── 주로 기하 ────────────────────────────────────────────────
      경주로를 '스타디움' 모양으로 본다: 직선 2개 + 반원 2개.
-     결승선을 진행거리 0 으로 두고, 거꾸로 distance 만큼 물러난 곳이 출발점이다.
 
-     s(m) → 정규화 좌표. seg 는 어느 구간인지(straight/curve), a 는 반원에서의 각도.
-     반시계 방향(한국마사회 세 경마장 모두)으로 돈다. */
+     **결승선은 직선주로의 끝**이다. 마지막 코너를 돈 뒤 ST 미터를 달려 결승선에
+     들어온다. 결승선을 코너 바로 뒤에 두면 그 직선이 통째로 사라져, 실제
+     경주로와 전혀 다른 그림이 된다.
+
+     결승선을 진행거리 0 으로 두고 **거꾸로** 재면 다음 순서다.
+       0 ~ ST         결승 직선주로
+       ST ~ ST+CV     마지막 곡선 (3·4코너)
+       ~ 2ST+CV       반대편 직선
+       ~ 2ST+2CV      첫 곡선 (1·2코너)
+     거리가 길수록 출발점이 뒤로 물러난다 — 실제 경마와 같다.
+
+     s 는 결승선 기준 '남은 거리'(음수가 아니라 뒤로 간 거리)로 받는다. */
   function trackPoint(s) {
-    var u = ((s % LAP) + LAP) % LAP;
-    if (u < ST) return { seg: 'S', side: 1, k: u / ST };           // 홈스트레치
-    u -= ST;
-    if (u < CV) return { seg: 'C', side: 1, a: Math.PI * (u / CV) }; // 1·2코너
-    u -= CV;
-    if (u < ST) return { seg: 'S', side: -1, k: 1 - u / ST };      // 백스트레치
-    u -= ST;
-    return { seg: 'C', side: -1, a: Math.PI * (u / CV) };          // 3·4코너
+    var back = ((-s % LAP) + LAP) % LAP;      // 결승선에서 거꾸로 간 거리
+    if (back < ST) return { seg: 'S', side: 1, k: 1 - back / ST };
+    back -= ST;
+    if (back < CV) return { seg: 'C', side: 1, a: Math.PI * (1 - back / CV) };
+    back -= CV;
+    if (back < ST) return { seg: 'S', side: -1, k: back / ST };
+    back -= ST;
+    return { seg: 'C', side: -1, a: Math.PI * (1 - back / CV) };
   }
 
   /* 정규화 좌표 + 레인 → 화면 픽셀 */
