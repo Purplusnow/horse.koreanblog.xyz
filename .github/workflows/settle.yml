@@ -139,6 +139,7 @@ jobs:
       # 코드가 읽을 lanes 가 없어 말이 전부 0레인에 겹쳐 그려진다.
       # 여기서 다시 굽는다 — 게재한 승률·순위는 그대로 쓰므로 예상은 안 바뀐다.
       - name: 옛 미리보기 대본 재생성
+        if: steps.prog.outputs.changed == 'true'
         timeout-minutes: 20
         run: PYTHONPATH=src python -m horseai.predict --db "$DB" --rebuild-previews
 
