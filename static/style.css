@@ -1084,3 +1084,23 @@ tbody tr:hover { background: var(--bg-soft); }
   .runners th, .runners td { padding-left: 6px; padding-right: 6px; }
   .runners .c-name small { display: block; }
 }
+
+/* 결과 목록의 추천 5두 — 한 칸 안에 흐르게 둔다. 열로 쪼개면 다섯 배로
+   넓어져 좁은 화면에서 가로 스크롤이 생긴다. */
+.res-picks { white-space: normal; }
+.res-picks .rp {
+  display: inline-flex; align-items: center; gap: 4px;
+  margin: 2px 6px 2px 0; padding: 2px 7px 2px 4px;
+  border: 1px solid var(--border); border-radius: 14px;
+  font-size: 12.5px; white-space: nowrap;
+}
+.res-picks .rp .rr-name { max-width: 6.5em; overflow: hidden; text-overflow: ellipsis; }
+.res-picks .rp-ord {
+  font-variant-numeric: tabular-nums; color: var(--text-faint);
+  font-size: 11.5px; margin-left: 1px;
+}
+/* 3착 이내는 티가 나야 한다 — 어느 추천이 실제로 들어왔는지가 핵심이다 */
+.res-picks .rp-place { border-color: var(--text-faint); }
+.res-picks .rp-place .rp-ord { color: var(--text-soft); font-weight: 600; }
+.res-picks .rp-win { border-color: var(--gold); background: var(--accent-soft); }
+.res-picks .rp-win .rp-ord { color: var(--gold); font-weight: 700; }

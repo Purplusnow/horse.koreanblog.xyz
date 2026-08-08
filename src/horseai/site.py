@@ -481,7 +481,9 @@ def load_outcomes(conn: sqlite3.Connection,
         has_ord = any(r["ord"] for r in live)
 
         out[key] = {
-            "picks": live[:3],
+            # 화면에 나간 추천은 다섯 두다. 셋만 넘기면 결과 목록이
+            # 1순위 하나로만 판정하는 것처럼 보인다.
+            "picks": live[:5],
             "cancelled": cancelled,
             "top1": top1,
             "top1_ord": top1["ord"],
