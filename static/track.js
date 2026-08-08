@@ -216,30 +216,55 @@
     /* 마번은 지시선으로 밖에 뺀다. 원 안에 쓰면 원이 커져야 하고, 커지면
        서로 겹쳐 결국 못 읽는다.
 
-       라벨은 **등수 순서로 일정 간격에 한 줄로** 세운다. 말의 x 좌표를 따라가면
-       뭉친 구간에서 라벨도 뭉쳐 서로를 가린다. 자리를 고정하면 겹칠 수가 없고,
-       왼쪽부터 1등이라 줄 자체가 순위표가 된다. 추월이 일어나면 라벨이 자리를
-       바꾸므로 순위 변화도 눈에 들어온다. */
-    var LY = H - 24, R2 = 9.5;
-    var step = Math.min(30, (W - 40) / Math.max(1, runners.length - 1));
-    var x0 = (W - step * (runners.length - 1)) / 2;
+       라벨은 **주로 바깥선을 따라** 등수 순서로 놓는다. 화면 아래 직선에 세우면
+       무리가 코너에 있을 때 선이 길게 부챗살처럼 뻗어 어수선하다. 트랙을 따라
+       두면 선이 짧고, 줄 모양이 실제 대열과 같은 방향이라 눈에 자연스럽다.
+       선두를 기준으로 뒤로 일정 간격씩 — 왼쪽(앞)부터 1등이다. */
+    var R2 = 9.5, GAP = 26;
+
+    // 바깥선을 화면 좌표로 촘촘히 샘플링해 '길이 → 위치' 표를 만든다.
+    var NS = 400, ring = [], cum = [0];
+    for (var q = 0; q <= NS; q++) {
+      ring.push(screenPt(toPx(trackPoint(q / NS * LAP), box, lanes + 2.2)));
+      if (q > 0) {
+        var dx = ring[q].x - ring[q - 1].x, dy = ring[q].y - ring[q - 1].y;
+        cum.push(cum[q - 1] + Math.sqrt(dx * dx + dy * dy));
+      }
+    }
+    var ringLen = cum[NS];
+
+    /* 진행거리 s(m) → 바깥선 위의 화면 길이 */
+    function ringAt(len) {
+      var L = ((len % ringLen) + ringLen) % ringLen;
+      var lo = 0, hi = NS;
+      while (lo < hi - 1) { var mid = (lo + hi) >> 1; if (cum[mid] <= L) lo = mid; else hi = mid; }
+      var span = cum[hi] - cum[lo] || 1, f = (L - cum[lo]) / span;
+      return { x: ring[lo].x + (ring[hi].x - ring[lo].x) * f,
+               y: ring[lo].y + (ring[hi].y - ring[lo].y) * f };
+    }
+
+    // 선두의 트랙 위치를 바깥선 길이로 환산
+    var pLead = progressAt(runners[order[0].i].splits, t);
+    var uLead = ((-distance + pLead * distance) % LAP + LAP) % LAP;
+    var lenLead = uLead / LAP * ringLen;
 
     ctx.setLineDash([3, 3]);
     ctx.strokeStyle = 'rgba(0,0,0,.22)';
     ctx.lineWidth = 1;
-    order.forEach(function (o, idx) {
-      var lx = x0 + idx * step, pt = pts[o.i];
+    var slots = order.map(function (o, idx) { return ringAt(lenLead - idx * GAP); });
+    slots.forEach(function (sp, idx) {
+      var pt = pts[order[idx].i];
       ctx.beginPath();
       ctx.moveTo(pt.x, pt.y + R + 1);
-      ctx.lineTo(lx, LY - R2 - 1);
+      ctx.lineTo(sp.x, sp.y);
       ctx.stroke();
     });
     ctx.setLineDash([]);
 
-    order.forEach(function (o, idx) {
-      var r = runners[o.i], col = gateColor(r.gate), lx = x0 + idx * step;
+    slots.forEach(function (sp, idx) {
+      var r = runners[order[idx].i], col = gateColor(r.gate);
       ctx.beginPath();
-      ctx.arc(lx, LY, R2, 0, Math.PI * 2);
+      ctx.arc(sp.x, sp.y, R2, 0, Math.PI * 2);
       ctx.fillStyle = col[0]; ctx.fill();
       ctx.strokeStyle = idx === 0 ? '#b4842a' : 'rgba(0,0,0,.3)';
       ctx.lineWidth = idx === 0 ? 2 : 1;
@@ -248,7 +273,7 @@
       ctx.fillStyle = col[1];
       ctx.font = 'bold ' + (label.length > 1 ? 9.5 : 11) + 'px system-ui, sans-serif';
       ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-      ctx.fillText(label, lx, LY + 0.5);
+      ctx.fillText(label, sp.x, sp.y + 0.5);
     });
     ctx.textBaseline = 'alphabetic';
 
