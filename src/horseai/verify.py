@@ -113,23 +113,36 @@ def load_verified(conn: sqlite3.Connection) -> pd.DataFrame:
 
 
 def race_level(df: pd.DataFrame) -> pd.DataFrame:
-    """경주 단위 적중 여부 테이블."""
+    """경주 단위 적중 여부 테이블.
+
+    한국마사회가 발매하는 마권 7종을 모두 판정한다. 예상지 독자는 단승만 사지
+    않으므로, 단승 적중률 하나로는 이 예상이 자기에게 쓸모 있는지 알 수 없다.
+    """
     if df.empty:
         return df
     rows = []
     for key, g in df.groupby("race_key"):
         g = g.sort_values("pred_rank")
-        top1 = g[g["pred_rank"] == 1]
-        if top1.empty:
+        if g.empty or (g["pred_rank"] == 1).sum() != 1:
             continue
-        t1 = top1.iloc[0]
-        top3_ords = set(g[g["pred_rank"] <= 3]["ord"].dropna())
-        top2_ords = set(g[g["pred_rank"] <= 2]["ord"].dropna())
-        top5_ords = set(g[g["pred_rank"] <= 5]["ord"].dropna())
+        t1 = g[g["pred_rank"] == 1].iloc[0]
+
+        # 순위별 착순. 마권 적중 판정은 전부 이 표에서 나온다.
+        o = {int(r.pred_rank): (r.ord if pd.notna(r.ord) else None)
+             for r in g.itertuples() if pd.notna(r.pred_rank)}
+        top_n = lambda n: {v for k, v in o.items() if k <= n and v}   # noqa: E731
+        top2, top3, top4, top5 = (top_n(2), top_n(3), top_n(4), top_n(5))
+        at = o.get
+
+        # 연승 기준 착순은 출주 두수로 갈린다 (마사회 규정: 7두 이하는 2착까지)
+        fs = g["field_size"].iloc[0]
+        cut = 2 if (pd.notna(fs) and float(fs) <= 7) else 3
+
         # 화면에 실제로 나간 기호를 그대로 다시 매긴다 — 규칙은 marks 한 곳이다
         rows_for_mark = g.to_dict("records")
         assign_marks(rows_for_mark)
-        marks = {r["hr_no"]: r["mark"] for r in rows_for_mark}
+        marks = [r["mark"] for r in rows_for_mark]
+
         rows.append({
             "race_key": key,
             "conf_label": g["conf_label"].iloc[0] if "conf_label" in g else None,
@@ -138,24 +151,35 @@ def race_level(df: pd.DataFrame) -> pd.DataFrame:
             "rc_no": g["rc_no"].iloc[0],
             "distance": g["distance"].iloc[0],
             "grade": g["grade"].iloc[0],
-            "field_size": g["field_size"].iloc[0],
+            "field_size": fs,
             "track_cond": g["track_cond"].iloc[0],
-            "weekday": WEEKDAY_KO[g["rc_date"].iloc[0].weekday()] if pd.notna(g["rc_date"].iloc[0]) else "",
+            "weekday": (WEEKDAY_KO[g["rc_date"].iloc[0].weekday()]
+                        if pd.notna(g["rc_date"].iloc[0]) else ""),
             "top1_hr_name": t1.get("hr_name"),
-            "top1_ord": t1["ord"],
+            "top1_ord": at(1),
             "top1_odds": t1["win_odds"],
-            "hit_win": float(t1["ord"] == 1),
-            "hit_place": float(t1["ord"] <= 3),
-            "hit_top3_has_winner": float(1.0 in top3_ords),
-            "hit_exacta_box": float(top2_ords == {1.0, 2.0}),
-            # 마권 종류에 대응하는 관점. 사는 사람이 실제로 궁금해하는 조합이다.
-            "hit_trio_box": float({1.0, 2.0, 3.0} <= top3_ords),
-            "hit_trio_of5": float(len({1.0, 2.0, 3.0} & top5_ords) == 3),
-            "hit_top3_two": float(len(top3_ords & {1.0, 2.0, 3.0}) >= 2),
-            "hit_top5_winner": float(1.0 in top5_ords),
-            "star_race": float(any(m == "★" for m in marks.values())),
-            "marks": marks,
-            "payout_win": float(t1["win_odds"]) if t1["ord"] == 1 and pd.notna(t1["win_odds"]) else 0.0,
+            "star_race": float("★" in marks),
+
+            # ── 마권 7종 (한국마사회 발매 기준) ──────────────────────────
+            "hit_win": float(at(1) == 1),                                   # 단승
+            "hit_place": float(bool(at(1)) and at(1) <= cut),               # 연승
+            "hit_quinella": float(top2 == {1.0, 2.0}),                      # 복승
+            "hit_exacta": float(at(1) == 1 and at(2) == 2),                 # 쌍승
+            "hit_quinella_place": float(bool(at(1)) and bool(at(2))
+                                        and at(1) <= 3 and at(2) <= 3),     # 복연승
+            "hit_trio": float(top3 == {1.0, 2.0, 3.0}),                     # 삼복승
+            "hit_trifecta": float(at(1) == 1 and at(2) == 2 and at(3) == 3),  # 삼쌍승
+
+            # 박스 — 예상지 독자가 실제로 사는 방식
+            "hit_quinella_b3": float({1.0, 2.0} <= top3),
+            "hit_quinella_b5": float({1.0, 2.0} <= top5),
+            "hit_trio_b4": float({1.0, 2.0, 3.0} <= top4),
+            "hit_trio_b5": float({1.0, 2.0, 3.0} <= top5),
+
+            "hit_top3_has_winner": float(1.0 in top3),
+            "hit_top5_winner": float(1.0 in top5),
+            "payout_win": (float(t1["win_odds"])
+                           if at(1) == 1 and pd.notna(t1["win_odds"]) else 0.0),
         })
     return pd.DataFrame(rows)
 
@@ -186,11 +210,11 @@ def summarize(rl: pd.DataFrame) -> Dict:
         "hit_win": float(rl["hit_win"].mean()),
         "hit_place": float(rl["hit_place"].mean()),
         "hit_top3_has_winner": float(rl["hit_top3_has_winner"].mean()),
-        "hit_exacta_box": float(rl["hit_exacta_box"].mean()),
-        "hit_trio_box": float(rl["hit_trio_box"].mean()) if "hit_trio_box" in rl else None,
-        "hit_trio_of5": float(rl["hit_trio_of5"].mean()) if "hit_trio_of5" in rl else None,
-        "hit_top3_two": float(rl["hit_top3_two"].mean()) if "hit_top3_two" in rl else None,
-        "hit_top5_winner": float(rl["hit_top5_winner"].mean()) if "hit_top5_winner" in rl else None,
+        **{c: float(rl[c].mean()) for c in (
+            "hit_quinella", "hit_exacta", "hit_quinella_place", "hit_trio",
+            "hit_trifecta", "hit_quinella_b3", "hit_quinella_b5",
+            "hit_trio_b4", "hit_trio_b5", "hit_top5_winner",
+        ) if c in rl},
         "roi_win": float(rl.loc[rl["top1_odds"].notna(), "payout_win"].sum() / bets) if bets else None,
         "avg_win_odds": float(rl.loc[rl["hit_win"] == 1, "top1_odds"].mean())
         if (rl["hit_win"] == 1).any() else None,
@@ -318,7 +342,8 @@ def report_text(rep: Dict) -> str:
         f"  ◎ 1착        {o['hit_win']:6.1%}",
         f"  ◎ 3착 이내   {o['hit_place']:6.1%}",
         f"  ◎○▲ 중 우승마            {o['hit_top3_has_winner']:6.1%}",
-        f"  복승 박스 (상위2두=1·2착)   {o['hit_exacta_box']:6.1%}",
+        f"  복승 (상위2두)              {o['hit_quinella']:6.1%}",
+        f"  삼복승 (상위5두 박스)        {o['hit_trio_b5']:6.1%}",
     ]
     if o.get("roi_win") is not None:
         lines.append(f"  단승 회수율(ROI)            {o['roi_win']:6.1%}")

@@ -72,33 +72,71 @@
 {% endif %}
 
 
-{% if o.hit_trio_of5 is not none %}
+{% if o.hit_quinella is not none %}
 <section class="table-section">
-  <h2>조합별 적중률</h2>
+  <h2>마권 종류별 적중률</h2>
   <p class="panel-lead">
-    게재한 예상을 마권 조합에 대응해 집계했습니다. 순서를 가리지 않는 조합 기준입니다.
+    한국마사회가 발매하는 마권 7종에 게재 예상을 그대로 대입한 결과입니다.
+    <b>매수</b>는 그 방식으로 살 때 필요한 마권 수입니다 — 매수가 늘면 적중률도
+    함께 올라가므로, 두 값을 같이 보셔야 합니다.
   </p>
   <div class="table-scroll">
-    <table class="stats-table">
-      <thead><tr><th>조합</th><th>기준</th><th class="c-num">적중률</th></tr></thead>
+    <table class="stats-table bet-table">
+      <thead><tr>
+        <th>마권</th><th>사는 방식</th><th class="c-num">매수</th><th class="c-num">적중률</th>
+      </tr></thead>
       <tbody>
-        <tr><td>1순위 우승</td><td>1순위 마필이 1착</td>
-            <td class="c-num">{{ '%.1f'|format(o.hit_win * 100) }}%</td></tr>
-        <tr><td>1순위 입상</td><td>1순위 마필이 3착 이내</td>
-            <td class="c-num">{{ '%.1f'|format(o.hit_place * 100) }}%</td></tr>
-        <tr><td>상위 2두</td><td>상위 2두가 1·2착</td>
-            <td class="c-num">{{ '%.1f'|format(o.hit_exacta_box * 100) }}%</td></tr>
-        <tr><td>상위 3두</td><td>상위 3두가 1·2·3착</td>
-            <td class="c-num">{{ '%.1f'|format(o.hit_trio_box * 100) }}%</td></tr>
-        <tr><td>상위 3두 중 2두</td><td>상위 3두 중 2두가 3착 이내</td>
-            <td class="c-num">{{ '%.1f'|format(o.hit_top3_two * 100) }}%</td></tr>
-        <tr class="row-top"><td>상위 5두 중 3두</td><td>추천 5두 안에서 1·2·3착이 모두 나옴</td>
-            <td class="c-num">{{ '%.1f'|format(o.hit_trio_of5 * 100) }}%</td></tr>
-        <tr><td>상위 5두 중 우승마</td><td>추천 5두 안에 1착</td>
-            <td class="c-num">{{ '%.1f'|format(o.hit_top5_winner * 100) }}%</td></tr>
+        <tr>
+          <td><b>단승</b></td><td>1순위 단독</td>
+          <td class="c-num">1</td><td class="c-num">{{ '%.1f'|format(o.hit_win * 100) }}%</td>
+        </tr>
+        <tr>
+          <td><b>연승</b></td><td>1순위 단독</td>
+          <td class="c-num">1</td><td class="c-num">{{ '%.1f'|format(o.hit_place * 100) }}%</td>
+        </tr>
+        <tr>
+          <td><b>복승</b></td><td>1·2순위</td>
+          <td class="c-num">1</td><td class="c-num">{{ '%.1f'|format(o.hit_quinella * 100) }}%</td>
+        </tr>
+        <tr class="bet-box">
+          <td></td><td>상위 3두 박스</td>
+          <td class="c-num">3</td><td class="c-num">{{ '%.1f'|format(o.hit_quinella_b3 * 100) }}%</td>
+        </tr>
+        <tr class="bet-box">
+          <td></td><td>상위 5두 박스</td>
+          <td class="c-num">10</td><td class="c-num">{{ '%.1f'|format(o.hit_quinella_b5 * 100) }}%</td>
+        </tr>
+        <tr>
+          <td><b>쌍승</b></td><td>1순위 → 2순위 (순서까지)</td>
+          <td class="c-num">1</td><td class="c-num">{{ '%.1f'|format(o.hit_exacta * 100) }}%</td>
+        </tr>
+        <tr>
+          <td><b>복연승</b></td><td>1·2순위가 모두 3착 이내</td>
+          <td class="c-num">1</td><td class="c-num">{{ '%.1f'|format(o.hit_quinella_place * 100) }}%</td>
+        </tr>
+        <tr>
+          <td><b>삼복승</b></td><td>1·2·3순위</td>
+          <td class="c-num">1</td><td class="c-num">{{ '%.1f'|format(o.hit_trio * 100) }}%</td>
+        </tr>
+        <tr class="bet-box">
+          <td></td><td>상위 4두 박스</td>
+          <td class="c-num">4</td><td class="c-num">{{ '%.1f'|format(o.hit_trio_b4 * 100) }}%</td>
+        </tr>
+        <tr class="bet-box">
+          <td></td><td>상위 5두 박스</td>
+          <td class="c-num">10</td><td class="c-num">{{ '%.1f'|format(o.hit_trio_b5 * 100) }}%</td>
+        </tr>
+        <tr>
+          <td><b>삼쌍승</b></td><td>1 → 2 → 3순위 (순서까지)</td>
+          <td class="c-num">1</td><td class="c-num">{{ '%.1f'|format(o.hit_trifecta * 100) }}%</td>
+        </tr>
       </tbody>
     </table>
   </div>
+  <p class="panel-more">
+    연승은 출주 두수에 따라 기준 착순이 다릅니다 — 7두 이하는 2착, 8두 이상은 3착 이내입니다.
+    박스는 지정한 마필 전부를 조합해 사는 방식으로, 순서를 가리지 않습니다.
+  </p>
 </section>
 {% endif %}
 
