@@ -198,5 +198,10 @@ jobs:
             echo '```'
             PYTHONPATH=src python -m horseai.kra.collect stats --db "$DB" 2>/dev/null || true
             echo '```'
-            [ -f models/report.txt ] && { echo "### 모델 검증"; echo '```'; cat models/report.txt; echo '```'; }
+            # `[ -f x ] && { ... }` 가 스크립트의 마지막 명령이면, 파일이 없을 때
+            # 종료코드 1 이 그대로 남아 요약 단계 전체가 '실패'로 찍힌다.
+            # 배포는 멀쩡한데 실행이 빨간색이 되어 진짜 실패를 가린다.
+            if [ -f models/report.txt ]; then
+              echo "### 모델 검증"; echo '```'; cat models/report.txt; echo '```'
+            fi
           } >> "$GITHUB_STEP_SUMMARY"

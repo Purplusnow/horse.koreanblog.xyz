@@ -629,9 +629,12 @@ def build(db: str, out_dir: Path, config: Dict, template_dir: Path,
                 + [h["url"] for h in horse_pages])
         write(out_dir / "sitemap.xml", env.get_template("sitemap.xml").render(
             base=base, urls=urls, lastmod=today.isoformat()))
-        # GitHub Pages 커스텀 도메인 설정은 배포 산출물 안의 CNAME 으로 유지된다.
-        # dist/ 를 통째로 올리는 구조라 여기서 함께 쓰지 않으면 배포할 때마다
-        # 도메인 설정이 풀리고 사이트가 github.io 주소로 되돌아간다.
+        # 커스텀 도메인용 CNAME.
+        #
+        # Actions 로 배포할 때는 저장소 Pages 설정이 우선이고 이 파일은 참고에
+        # 그친다(설정은 API 로 한 번 지정해 두었다). 다만 브랜치 배포로 바꾸거나
+        # 다른 정적 호스팅으로 옮기면 이 파일이 도메인을 유지하는 유일한 근거가
+        # 되므로, 산출물에 항상 포함시켜 둔다.
         host = urlparse(config["site"]["url"]).hostname or ""
         if host and not host.endswith("github.io"):
             write(out_dir / "CNAME", host + "\n")
