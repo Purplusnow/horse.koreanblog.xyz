@@ -60,7 +60,6 @@
         <span class="meet meet-{{ race.meet }}">{{ race.meet }}</span>
         <b>{{ race.rc_no }}R</b>
         <small>{{ race.rc_date[5:] }} {{ race.post_time or '' }}</small>
-        {{ conf_badge(race.conf_label, race.conf_score) }}
       </div>
       {% if p %}
       <div class="featured-pick">

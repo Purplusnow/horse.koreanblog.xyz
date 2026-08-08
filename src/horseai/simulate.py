@@ -457,9 +457,22 @@ def lane_offsets(runners: Sequence[Runner], field_size: int) -> np.ndarray:
 # 처음에는 양방향 0.18초(한 마신)로 뒀는데, 그러면 조금만 벌어져도 뒷말이
 # 앞말 레인으로 들어가 결국 전원이 레일에 일렬로 붙었다. 실제 경주에서 무리가
 # 2~4레인 폭을 유지하는 이유는 바로 앞말을 밟고 지나갈 수 없기 때문이다.
-BLOCK_AHEAD = 0.35
+BLOCK_AHEAD = 0.25
 LANE_MIN_GAP = 1.0      # 비켜설 때 필요한 최소 레인 간격 (말 폭)
-LANE_SLEW = 2.2         # 한 구간(200m)에서 옆으로 옮길 수 있는 최대 레인 수
+LANE_SLEW = 4.0         # 한 구간(200m)에서 옆으로 옮길 수 있는 최대 레인 수
+
+# 출발 후 무리가 머무는 레인 폭의 상한. 실제 경주에서 코너를 크게 도는 말은
+# 드물다 — 거리 손해가 커서 기수가 어떻게든 안으로 붙인다. 기하만으로 자리를
+# 다투게 두면 열 마리가 열 레인으로 부챗살처럼 퍼지는데, 그런 그림은 나오지
+# 않는다. 안쪽이 전부 막혔을 때만 이 상한을 넘어선다.
+LANE_CAP = 4.0
+
+# 미리보기 대본의 판(版). 레인 계산이나 payload 구조를 바꾸면 올린다.
+#
+# 시행된 경주는 예측을 다시 만들지 않으므로 옛 대본이 DB 에 남는다. 형식이
+# 같아도 계산이 달라졌으면 다시 구워야 하는데, 'lanes 키가 있나' 로만 보면
+# 그걸 잡아내지 못한다 — 실제로 그래서 배포본만 옛 움직임으로 남았다.
+PAYLOAD_VERSION = 3
 
 
 def lane_paths(runners: Sequence[Runner], seg_times: np.ndarray) -> np.ndarray:
@@ -497,7 +510,9 @@ def lane_paths(runners: Sequence[Runner], seg_times: np.ndarray) -> np.ndarray:
         placed: List[tuple] = []            # (시각, 레인)
         for i in np.argsort(t):             # 앞선 말부터 자리를 잡는다
             lo = max(0.0, prev[i] - LANE_SLEW)
-            hi = prev[i] + LANE_SLEW
+            # 게이트에서 출발한 직후에는 자기 자리에서 시작하되, 이후로는
+            # 안쪽 무리 폭 안으로 들어오려 한다.
+            hi = min(prev[i] + LANE_SLEW, max(LANE_CAP, lo))
             lane = None
             # 안쪽부터 훑어 비어 있는 첫 자리를 잡는다
             cand = np.arange(lo, hi + 0.001, 0.25)
@@ -703,6 +718,7 @@ def animation_payload(sim: RaceSim, distance: float, top_k: int = 99,
     lanes = lane_paths(sim.runners, sim.seg_times)
     spec = TRACK_SPEC.get(meet or "", TRACK_SPEC["서울"])
     return {
+        "v": PAYLOAD_VERSION,
         "distance": float(distance),
         "segment_m": SEG_M,
         "n_segments": int(n_seg),

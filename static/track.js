@@ -139,9 +139,9 @@
      코너가 캔버스 밖으로 잘린다 — 처음에 그렇게 그려졌다. */
   function layout(W, H) {
     var lanes = Math.max(5, Math.min(14, runners.length));
-    // 레인 간격은 마커가 '반지름 이상 겹치지 않을' 만큼은 돼야 한다.
-    // 4px 이던 때는 레인을 제대로 계산하고도 12두가 한 점에 뭉쳐 보였다.
-    var laneStep = 10.0;
+    // 레인 간격은 마커 지름 이상이어야 한다. 10px 이던 때는 지름 15px 인 원이
+    // 옆 레인과 5px 씩 겹쳐, 레인을 제대로 계산하고도 서로 물려 보였다.
+    var laneStep = 15.0;
     // 말은 가장 바깥 레인 + 마커 반지름까지 나간다. 그 몫을 다 빼야 잘리지 않는다.
     var outer = lanes * laneStep + 12;
     var pad = 10;

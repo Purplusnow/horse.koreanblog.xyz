@@ -27,6 +27,7 @@ from .model import MODEL_VERSION, load, predict_frame
 from dataclasses import replace
 
 from .simulate import (
+    PAYLOAD_VERSION,
     animation_payload, build_runners, confidence, expected_run, fit_noise,
     TRACK_SPEC, corner_count, corner_counts, pace_factors, par_time, par_times, scale_to_par, simulate,
 )
@@ -259,8 +260,8 @@ def stale_preview_keys(conn: sqlite3.Connection) -> List[str]:
     값이 없어 말이 전부 0레인에 겹쳐 그려진다 — 실제로 그렇게 나왔다.
     """
     rows = conn.execute(
-        "SELECT race_key FROM simulations "
-        "WHERE payload NOT LIKE '%\"lanes\"%' OR payload NOT LIKE '%\"track\"%'"
+        "SELECT race_key FROM simulations WHERE payload NOT LIKE ?",
+        (f'%"v": {PAYLOAD_VERSION}%',),
     ).fetchall()
     return [r[0] for r in rows]
 
