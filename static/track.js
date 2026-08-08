@@ -216,45 +216,39 @@
     /* 마번은 지시선으로 밖에 뺀다. 원 안에 쓰면 원이 커져야 하고, 커지면
        서로 겹쳐 결국 못 읽는다.
 
-       라벨은 **화면 아래 고정 높이에 한 줄로** 세운다. 말마다 다른 방향으로
-       빼면 선이 사방으로 뻗어 오히려 어수선하다. 한 줄로 두면 지시선이 모두
-       아래로 내려가고, 좌우 순서가 곧 선두 순서라 읽기도 쉽다. */
-    var LY = H - 24, R2 = 9.5, MINX = R2 * 2 + 3;
-    var labels = pts.map(function (pt, i) { return { i: i, x: pt.x, y: pt.y }; })
-      .sort(function (a, b) { return a.x - b.x; });
+       라벨은 **등수 순서로 일정 간격에 한 줄로** 세운다. 말의 x 좌표를 따라가면
+       뭉친 구간에서 라벨도 뭉쳐 서로를 가린다. 자리를 고정하면 겹칠 수가 없고,
+       왼쪽부터 1등이라 줄 자체가 순위표가 된다. 추월이 일어나면 라벨이 자리를
+       바꾸므로 순위 변화도 눈에 들어온다. */
+    var LY = H - 24, R2 = 9.5;
+    var step = Math.min(30, (W - 40) / Math.max(1, runners.length - 1));
+    var x0 = (W - step * (runners.length - 1)) / 2;
 
-    // 좌우로 밀어 겹침을 푼다 (왼쪽부터 최소 간격 확보 → 오른쪽 넘치면 되민다)
-    labels.forEach(function (l, k) {
-      if (k > 0) l.x = Math.max(l.x, labels[k - 1].x + MINX);
-    });
-    var over = labels.length ? labels[labels.length - 1].x - (W - R2 - 4) : 0;
-    if (over > 0) {
-      for (var k2 = labels.length - 1; k2 >= 0; k2--) {
-        labels[k2].x -= over;
-        if (k2 > 0 && labels[k2 - 1].x <= labels[k2].x - MINX) break;
-        over = k2 > 0 ? labels[k2 - 1].x - (labels[k2].x - MINX) : 0;
-      }
-    }
-    labels.forEach(function (l) { l.x = Math.max(R2 + 4, Math.min(W - R2 - 4, l.x)); });
-
-    labels.forEach(function (l) {
-      var r = runners[l.i], col = gateColor(r.gate);
-      ctx.strokeStyle = 'rgba(0,0,0,.18)'; ctx.lineWidth = 1;
+    ctx.setLineDash([3, 3]);
+    ctx.strokeStyle = 'rgba(0,0,0,.22)';
+    ctx.lineWidth = 1;
+    order.forEach(function (o, idx) {
+      var lx = x0 + idx * step, pt = pts[o.i];
       ctx.beginPath();
-      ctx.moveTo(pts[l.i].x, l.y + R + 1);
-      ctx.lineTo(l.x, LY - R2 - 1);
+      ctx.moveTo(pt.x, pt.y + R + 1);
+      ctx.lineTo(lx, LY - R2 - 1);
       ctx.stroke();
+    });
+    ctx.setLineDash([]);
+
+    order.forEach(function (o, idx) {
+      var r = runners[o.i], col = gateColor(r.gate), lx = x0 + idx * step;
       ctx.beginPath();
-      ctx.arc(l.x, LY, R2, 0, Math.PI * 2);
+      ctx.arc(lx, LY, R2, 0, Math.PI * 2);
       ctx.fillStyle = col[0]; ctx.fill();
-      ctx.strokeStyle = rankOf[l.i] === 1 ? '#b4842a' : 'rgba(0,0,0,.3)';
-      ctx.lineWidth = rankOf[l.i] === 1 ? 2 : 1;
+      ctx.strokeStyle = idx === 0 ? '#b4842a' : 'rgba(0,0,0,.3)';
+      ctx.lineWidth = idx === 0 ? 2 : 1;
       ctx.stroke();
       var label = String(r.gate);
       ctx.fillStyle = col[1];
       ctx.font = 'bold ' + (label.length > 1 ? 9.5 : 11) + 'px system-ui, sans-serif';
       ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-      ctx.fillText(label, l.x, LY + 0.5);
+      ctx.fillText(label, lx, LY + 0.5);
     });
     ctx.textBaseline = 'alphabetic';
 
