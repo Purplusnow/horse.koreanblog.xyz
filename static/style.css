@@ -1001,14 +1001,15 @@ tbody tr:hover { background: var(--bg-soft); }
 
 /* 미리보기 순위 — 캔버스 밖. 안에 그리면 트랙과 겹치고 배율을 따라 흔들린다. */
 .track-wrap { position: relative; }
-/* 순위는 트랙 위에 겹쳐 가운데 띄운다. 아래 번호 범례와 나란히 두면 둘이
-   비슷해 보여 무엇이 순위인지 헷갈린다. 지금 순위가 가장 중요한 정보다. */
+/* 순위는 트랙 위에 겹쳐 좌상단부터 채운다. 아래 번호 범례와 나란히 두면 둘이
+   비슷해 보여 무엇이 순위인지 헷갈린다. 지금 순위가 가장 중요한 정보다.
+   가운데 정렬은 줄바꿈이 생길 때 5위만 아래 가운데로 떨어져 나가 어색했다. */
 .tk-order {
   list-style: none; margin: 0; padding: 0;
-  position: absolute; left: 50%; top: 10px; transform: translateX(-50%);
-  display: flex; flex-wrap: wrap; justify-content: center; gap: 4px 6px;
+  position: absolute; left: 12px; top: 10px; right: 12px;
+  display: flex; flex-wrap: wrap; justify-content: flex-start; gap: 4px 6px;
   font-size: 12.5px; font-variant-numeric: tabular-nums;
-  pointer-events: none; max-width: calc(100% - 24px);
+  pointer-events: none;
 }
 .tk-order li {
   display: inline-flex; align-items: center; gap: 5px;
