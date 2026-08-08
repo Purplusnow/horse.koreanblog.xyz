@@ -60,6 +60,11 @@ FEATURE_COLUMNS: List[str] = [
     # 마필 과거 이력
     "starts_prior", "win_rate", "place_rate", "top3_rate",
     "days_since_last", "last_ord_pct", "avg_ord_pct_3", "avg_ord_pct_5",
+    # 조교(일별훈련) — 경주일 이전 기록만.
+    # 접두사가 trg_ 인 이유: 기존 tr_ 는 조교사(trainer) 지표라 겹치면 반드시
+    # 헷갈린다. 조교사 성적과 조교 이력은 전혀 다른 것이다.
+    "trg_days_since", "trg_count_14", "trg_term_mean_14", "trg_jockey_14",
+    "trg_run1_14", "trg_run2_14", "trg_entry_planned", "trg_term_trend",
     "speed_last", "speed_avg3", "speed_best",
     "abs_speed_last", "abs_speed_avg3", "abs_speed_best", "speed_sd5",
     "early_speed_avg3", "early_speed_best",
@@ -496,6 +501,85 @@ def finalize(df: pd.DataFrame) -> pd.DataFrame:
     return df
 
 
+TRAINING_FEATURES = [
+    "trg_days_since", "trg_count_14", "trg_term_mean_14", "trg_jockey_14",
+    "trg_run1_14", "trg_run2_14", "trg_entry_planned", "trg_term_trend",
+]
+
+
+def add_training(df: pd.DataFrame, conn: sqlite3.Connection) -> pd.DataFrame:
+    """조교(일별훈련) 이력을 붙인다.
+
+    공개 데이터 중 마방 사정에 가장 가까운 자료다. 시장이 보고 우리가 못 보던
+    것이 여기 있을 가능성이 높다 — 7개월 쉬고 나온 말이 연승 1.0배로 지지받는
+    상황은 전적만 봐서는 설명되지 않는다.
+
+    **경주일 이전 기록만 쓴다.** 조교는 경주 당일 아침에도 이뤄지고 발주 전에
+    공시되지만, '당일 것을 쓸 수 있는가'는 수집 시점에 따라 달라진다. 경계를
+    날짜로 못 박아 두면 학습과 추론이 어긋날 여지가 없다.
+    """
+    for c in TRAINING_FEATURES:
+        df[c] = np.nan
+    try:
+        tr = pd.read_sql_query(
+            "SELECT hr_no, trng_dt, tr_term, run1_cnt, run2_cnt, pr_gubun, chul_gubun "
+            "FROM daily_training WHERE hr_no IS NOT NULL AND trng_dt IS NOT NULL", conn)
+    except Exception:  # noqa: BLE001 — 조교 테이블이 없어도 나머지는 돌아야 한다
+        return df
+    if tr.empty:
+        return df
+
+    tr["d"] = pd.to_datetime(tr["trng_dt"], errors="coerce")
+    tr = tr.dropna(subset=["d"]).sort_values(["hr_no", "d"])
+    tr["is_jk"] = (tr["pr_gubun"].astype(str) == "기수").astype(float)
+    tr["is_entry"] = tr["chul_gubun"].astype(str).str.contains("금주").astype(float)
+    for c in ("tr_term", "run1_cnt", "run2_cnt"):
+        tr[c] = pd.to_numeric(tr[c], errors="coerce")
+
+    cols = ["d", "tr_term", "run1_cnt", "run2_cnt", "is_jk", "is_entry"]
+    by_horse = {h: g[cols].to_numpy() for h, g in tr.groupby("hr_no")}
+    dates = {h: g["d"].to_numpy() for h, g in tr.groupby("hr_no")}
+
+    race_d = pd.to_datetime(df["rc_date"], errors="coerce").to_numpy()
+    hr = df["hr_no"].to_numpy()
+    out = np.full((len(df), len(TRAINING_FEATURES)), np.nan)
+    day = np.timedelta64(1, "D")
+
+    for i in range(len(df)):
+        h, rd = hr[i], race_d[i]
+        arr = by_horse.get(h)
+        if arr is None or rd != rd:
+            continue
+        ds = dates[h]
+        end = np.searchsorted(ds, rd)          # 경주일 이전만
+        if end == 0:
+            continue
+        last = ds[end - 1]
+        w14 = np.searchsorted(ds, rd - 14 * day)
+        w7 = np.searchsorted(ds, rd - 7 * day)
+        w30 = np.searchsorted(ds, rd - 30 * day)
+        a14 = arr[w14:end]
+        term7 = arr[w7:end, 1]
+        term30 = arr[w30:w7, 1]
+
+        out[i, 0] = (rd - last) / day
+        out[i, 1] = len(a14)
+        out[i, 2] = np.nanmean(a14[:, 1]) if len(a14) else np.nan
+        out[i, 3] = np.nansum(a14[:, 4]) if len(a14) else 0.0
+        out[i, 4] = np.nansum(a14[:, 2]) if len(a14) else 0.0
+        out[i, 5] = np.nansum(a14[:, 3]) if len(a14) else 0.0
+        # 마방의 출전 계획 — 직전 조교에 '금주출전예정' 이 찍혔는가
+        out[i, 6] = arr[end - 1, 5]
+        # 최근 일주일 조교량이 그전 3주 대비 늘었나 (컨디션 끌어올리는 중인가)
+        if len(term7) and len(term30):
+            a, b = np.nanmean(term7), np.nanmean(term30)
+            if b and b == b:
+                out[i, 7] = a / b
+
+    for j, c in enumerate(TRAINING_FEATURES):
+        df[c] = out[:, j]
+    return df
+
 def build_frame(conn: sqlite3.Connection,
                 race_keys: Optional[List[str]] = None) -> pd.DataFrame:
     """학습·추론이 **하나의** 프레임에서 나오게 한다.
@@ -552,6 +636,7 @@ def build_frame(conn: sqlite3.Connection,
 
     built = build_history_index(combined)
     built = add_official(built)
+    built = add_training(built, conn)
     built = finalize(built)
     built = built.copy()  # 컬럼을 많이 붙여 조각난 프레임을 한 번 정리
     built["y_win"] = built["is_win"]

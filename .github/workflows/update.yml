@@ -117,6 +117,22 @@ jobs:
       # 그 하루는 영구히 복구할 수 없으므로, 실패해도 배포를 막지 않되(continue-on-error)
       # 매 실행마다 반드시 시도한다. 반년쯤 쌓이면 비공개 정보에 가장 가까운
       # 자산이 되고, 지금 시장을 못 이기는 격차를 좁힐 유일한 후보다.
+      # 승식별 확정배당. 복승·쌍승·삼복승 배당은 여기에만 있고, 이것이 없으면
+      # '우리 추천대로 샀다면 얼마가 됐나'를 답할 수 없다. 결과 수집 뒤에 온다.
+      - name: 배당 수집
+        timeout-minutes: 15
+        continue-on-error: true
+        env:
+          KRA_SERVICE_KEY: ${{ secrets.KRA_SERVICE_KEY }}
+        run: PYTHONPATH=src python -m horseai.kra.collect dividends --days 14 --db "$DB"
+
+      - name: 조교 축적 (일별훈련)
+        timeout-minutes: 12
+        continue-on-error: true
+        env:
+          KRA_SERVICE_KEY: ${{ secrets.KRA_SERVICE_KEY }}
+        run: PYTHONPATH=src python -m horseai.kra.collect training --train-days 7 --db "$DB"
+
       - name: 일일 데이터 축적 (조교·마체중·출주취소)
         timeout-minutes: 10
         continue-on-error: true

@@ -24,6 +24,50 @@ from .clock import today_kst
 from .kra.store import session
 from .marks import assign_marks
 
+# 승식 정의. (코드, 이름, 우리 조합을 만드는 함수, 매수)
+# 조합은 순서 없는 승식이면 정렬한다 — 저장된 적중 조합과 표기를 맞추기 위해서다.
+POOL_LABEL = {"WIN": "단승", "PLC": "연승", "QNL": "복승", "EXA": "쌍승",
+              "QPL": "복연승", "TLA": "삼복승", "TRI": "삼쌍승"}
+
+
+def _combos(gates: List[int]) -> Dict[str, List[tuple]]:
+    """추천 마번(순위순)에서 승식별로 '우리가 사는 조합'을 만든다."""
+    from itertools import combinations
+    g = [x for x in gates if x]
+    if not g:
+        return {}
+    j = lambda *xs: "-".join(str(x) for x in xs)              # noqa: E731
+    srt = lambda xs: j(*sorted(xs))                            # noqa: E731
+    out: Dict[str, List[str]] = {}
+    out["단승"] = ("WIN", [j(g[0])])
+    out["연승"] = ("PLC", [j(g[0])])
+    if len(g) >= 2:
+        out["복승"] = ("QNL", [srt(g[:2])])
+        out["쌍승"] = ("EXA", [j(g[0], g[1])])
+        out["복연승"] = ("QPL", [srt(g[:2])])
+    if len(g) >= 3:
+        out["복승 3두박스"] = ("QNL", [srt(c) for c in combinations(g[:3], 2)])
+        out["삼복승"] = ("TLA", [srt(g[:3])])
+        out["삼쌍승"] = ("TRI", [j(*g[:3])])
+    if len(g) >= 4:
+        out["삼복승 4두박스"] = ("TLA", [srt(c) for c in combinations(g[:4], 3)])
+    if len(g) >= 5:
+        out["복승 5두박스"] = ("QNL", [srt(c) for c in combinations(g[:5], 2)])
+        out["삼복승 5두박스"] = ("TLA", [srt(c) for c in combinations(g[:5], 3)])
+    return out
+
+
+def load_dividends(conn: sqlite3.Connection) -> Dict[str, Dict[str, Dict[str, float]]]:
+    """적중 조합의 배당표. {race_key: {pool: {combo: odds}}}"""
+    out: Dict[str, Dict[str, Dict[str, float]]] = {}
+    try:
+        rows = conn.execute("SELECT race_key, pool, combo, odds FROM dividends").fetchall()
+    except Exception:  # noqa: BLE001
+        return out
+    for r in rows:
+        out.setdefault(r["race_key"], {}).setdefault(r["pool"], {})[r["combo"]] = r["odds"]
+    return out
+
 log = logging.getLogger(__name__)
 
 WEEKDAY_KO = ["월", "화", "수", "목", "금", "토", "일"]
@@ -31,6 +75,13 @@ WEEKDAY_KO = ["월", "화", "수", "목", "금", "토", "일"]
 # 이 아래로는 표본이 얕아 숫자가 잡음이 된다. 구간을 나눌수록 더 그렇다.
 MIN_GROUP_RACES = 20
 MIN_TIER_RACES = 30
+
+
+def set_min_sample(n: Optional[int]) -> None:
+    """표본 하한을 낮춘다 (개발 중 화면 확인용). config.build.min_sample."""
+    global MIN_GROUP_RACES, MIN_TIER_RACES
+    if n:
+        MIN_GROUP_RACES = MIN_TIER_RACES = int(n)
 
 
 def _distance_band(m) -> str:
@@ -74,7 +125,7 @@ SELECT
     p.race_key, p.hr_no, p.pred_rank, p.p_win, p.p_place, p.p_top2,
     p.model_version, p.created_at,
     r.rc_date, r.meet, r.rc_no, r.distance, r.grade, r.field_size, r.track_cond,
-    res.ord, res.win_odds, res.place_odds, res.hr_name,
+    res.ord, res.win_odds, res.place_odds, res.hr_name, res.chul_no,
     s.conf_label, s.conf_score,
     CASE WHEN c.hr_no IS NOT NULL THEN 1 ELSE 0 END AS cancelled
 FROM predictions p
@@ -112,7 +163,7 @@ def load_verified(conn: sqlite3.Connection) -> pd.DataFrame:
     return df[ok].copy()
 
 
-def race_level(df: pd.DataFrame) -> pd.DataFrame:
+def race_level(df: pd.DataFrame, div: Optional[Dict] = None) -> pd.DataFrame:
     """경주 단위 적중 여부 테이블.
 
     한국마사회가 발매하는 마권 7종을 모두 판정한다. 예상지 독자는 단승만 사지
@@ -143,8 +194,21 @@ def race_level(df: pd.DataFrame) -> pd.DataFrame:
         assign_marks(rows_for_mark)
         marks = [r["mark"] for r in rows_for_mark]
 
+        # ── 승식별 적중·배당 ────────────────────────────────────────
+        # 배당은 '적중 조합' 만 저장돼 있으므로, 우리 조합이 그 표에 있으면
+        # 적중이고 없으면 불발이다. 배당은 그대로 회수액이 된다(1배 = 원금).
+        gates = [g[g["pred_rank"] == r]["chul_no"].iloc[0] if (g["pred_rank"] == r).any()
+                 else None for r in range(1, 6)]
+        gates = [int(x) if pd.notna(x) else None for x in gates]
+        bets = {}
+        table = (div or {}).get(key, {})
+        for name, (pool, mine) in _combos(gates).items():
+            paid = sum(table.get(pool, {}).get(c) or 0.0 for c in mine)
+            bets[name] = {"cost": len(mine), "payout": paid, "hit": paid > 0}
+
         rows.append({
             "race_key": key,
+            "bets": bets,
             "conf_label": g["conf_label"].iloc[0] if "conf_label" in g else None,
             "rc_date": g["rc_date"].iloc[0],
             "meet": g["meet"].iloc[0],
@@ -223,12 +287,49 @@ def summarize(rl: pd.DataFrame) -> Dict:
     }
 
 
+BET_ORDER = ["단승", "연승", "복승", "복승 3두박스", "복승 5두박스", "쌍승",
+             "복연승", "삼복승", "삼복승 4두박스", "삼복승 5두박스", "삼쌍승"]
+
+
+def bet_summary(rl: pd.DataFrame) -> List[Dict]:
+    """승식별 누적 적중률과 환수율.
+
+    환수율은 '그 방식으로 매 경주 균등하게 샀다면 얼마가 돌아왔나'다. 박스는
+    매수가 늘어난 만큼 원금도 늘어나므로 분모에 그대로 반영된다 — 그래야
+    넓게 사는 방식이 유리해 보이는 착시가 없다.
+    """
+    if rl.empty or "bets" not in rl:
+        return []
+    agg: Dict[str, Dict[str, float]] = {}
+    for bets in rl["bets"]:
+        for name, b in (bets or {}).items():
+            a = agg.setdefault(name, {"n": 0, "hit": 0, "cost": 0.0, "payout": 0.0})
+            a["n"] += 1
+            a["hit"] += int(b["hit"])
+            a["cost"] += b["cost"]
+            a["payout"] += b["payout"]
+    out = []
+    for name in BET_ORDER:
+        a = agg.get(name)
+        if not a or not a["n"]:
+            continue
+        out.append({
+            "name": name,
+            "n_races": int(a["n"]),
+            "tickets": int(a["cost"] / max(1, a["n"])),
+            "hit_rate": a["hit"] / a["n"],
+            "roi": a["payout"] / a["cost"] if a["cost"] else None,
+            "best": None,
+        })
+    return out
+
+
 def build_report(conn: sqlite3.Connection) -> Dict:
     df = load_verified(conn)
-    rl = race_level(df)
+    rl = race_level(df, load_dividends(conn))
     if rl.empty:
         empty = {"overall": {"n_races": 0}, "monthly": [], "recent": []}
-        for k in ("by_meet", "by_conf", "by_mark", "by_distance", "by_field",
+        for k in ("by_bet", "by_meet", "by_conf", "by_mark", "by_distance", "by_field",
                   "by_grade", "by_weekday", "by_track"):
             empty[k] = []
         empty["star"] = {"n_races": 0}
@@ -319,6 +420,7 @@ def build_report(conn: sqlite3.Connection) -> Dict:
         "overall": summarize(rl),
         "last_90d": summarize(last90),
         "monthly": monthly,
+        "by_bet": bet_summary(rl),
         "by_meet": by_meet,
         "by_conf": by_conf,
         "by_mark": by_mark,

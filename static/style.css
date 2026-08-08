@@ -980,3 +980,6 @@ tbody tr:hover { background: var(--bg-soft); }
 .bet-table tbody tr.bet-box td:nth-child(2) { padding-left: 22px; color: var(--text-soft); }
 .bet-table tbody tr.bet-box td { border-top: none; }
 .bet-table tbody tr:not(.bet-box) td:first-child { white-space: nowrap; }
+.roi-plus { color: var(--accent-text); font-weight: 700; }
+.race-bets { margin-bottom: 26px; }
+.bet-combo { font-variant-numeric: tabular-nums; color: var(--text-soft); }

@@ -124,6 +124,35 @@
 {% endif %}
 
 {% if has_sim %}
+{% if bets %}
+<section class="table-section race-bets">
+  <h2>이 경주의 승식별 결과</h2>
+  <p class="panel-lead">발주 전에 게재한 추천을 승식별로 대입한 결과입니다. 배당은 100원당 회수액입니다.</p>
+  <div class="table-scroll">
+    <table class="stats-table bet-table">
+      <thead><tr>
+        <th>승식</th><th>조합</th><th class="c-num">매수</th>
+        <th class="c-num">배당</th><th class="c-num">결과</th>
+      </tr></thead>
+      <tbody>
+        {% for b in bets %}
+        <tr{% if '박스' in b.name %} class="bet-box"{% endif %}>
+          <td>{{ b.name }}</td>
+          <td class="bet-combo">{{ b.combo }}</td>
+          <td class="c-num">{{ b.tickets }}</td>
+          <td class="c-num">{% if b.hit %}{{ '%.1f'|format(b.payout) }}배{% else %}-{% endif %}</td>
+          <td class="c-num">
+            {% if b.hit %}<span class="hit hit-win">적중</span>
+            {% else %}<span class="hit hit-miss">불발</span>{% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+{% endif %}
+
 <section class="preview">
   <div class="preview-head">
     <h2>경주 미리보기</h2>

@@ -33,7 +33,9 @@ from .clock import now_kst, today_kst
 from .kra.normalize import MAX_ORD, ORD_STATUS
 from .kra.store import session
 from .style import STYLE_LABEL, STYLES, pace_map
-from .verify import build_report
+from .verify import (
+    POOL_LABEL, _combos, build_report, load_dividends, set_min_sample,
+)
 
 log = logging.getLogger(__name__)
 
@@ -491,6 +493,28 @@ def load_outcomes(conn: sqlite3.Connection) -> Dict[str, Dict]:
     return out
 
 
+def race_bets(runners: List[Dict], div_table: Dict) -> List[Dict]:
+    """이 경주에서 우리 추천이 승식별로 어떻게 됐는지.
+
+    배당표에는 적중 조합만 담겨 있으므로, 우리 조합이 거기 있으면 적중이고
+    배당이 곧 회수액이다. 착순 배지만으로는 '이 경주에서 삼복승까지 맞았다'는
+    사실이 드러나지 않는다.
+    """
+    gates = [r.get("chul_no") for r in sorted(runners, key=lambda r: r.get("pred_rank") or 99)[:5]]
+    gates = [int(g) for g in gates if g]
+    out = []
+    for name, (pool, mine) in _combos(gates).items():
+        table = div_table.get(pool, {})
+        paid = sum(table.get(c) or 0.0 for c in mine)
+        out.append({
+            "name": name, "pool": POOL_LABEL.get(pool, pool),
+            "combo": " / ".join(mine) if len(mine) <= 3 else f"{len(mine)}조합",
+            "tickets": len(mine), "hit": paid > 0, "payout": paid,
+            "roi": paid / len(mine) if mine else None,
+        })
+    return out
+
+
 def load_simulation(conn: sqlite3.Connection, race_key: str) -> Optional[Dict]:
     """미리보기 대본과 신뢰도. 예측과 함께 동결된 값을 그대로 읽는다."""
     row = conn.execute(
@@ -545,6 +569,7 @@ def write(path: Path, content: str) -> None:
 
 def build(db: str, out_dir: Path, config: Dict, template_dir: Path,
           static_dir: Path) -> Dict[str, int]:
+    set_min_sample(config.get("build", {}).get("min_sample"))
     env = make_env(template_dir)
     # 이전 빌드의 잔여 페이지를 지운다. 남겨 두면 삭제된 경주가 사이트에 계속
     # 살아 있고, sitemap 과 실제 페이지가 어긋난다.
@@ -558,6 +583,7 @@ def build(db: str, out_dir: Path, config: Dict, template_dir: Path,
         accuracy = build_report(conn)
         picks = load_picks(conn)
         outcomes = load_outcomes(conn)
+        dividends = load_dividends(conn)
         metrics = load_metrics()
 
         today = today_kst()
@@ -596,6 +622,8 @@ def build(db: str, out_dir: Path, config: Dict, template_dir: Path,
                 continue
             commentary = load_commentary(conn, r["race_key"])
             sim = load_simulation(conn, r["race_key"])
+            bets = (race_bets(runners, dividends.get(r["race_key"], {}))
+                    if r["has_result"] else [])
             for run in runners:
                 run["form"] = load_form(conn, run["hr_no"], r["rc_date"])
                 run["form_summary"] = form_summary(run["form"])
@@ -611,7 +639,7 @@ def build(db: str, out_dir: Path, config: Dict, template_dir: Path,
                 run["tr_stats"] = load_person_stats(conn, "tr_no", run.get("tr_no"), r["rc_date"])
             html = env.get_template("race.html").render(
                 **ctx_base, race=r, runners=runners, commentary=commentary,
-                sim=sim,
+                sim=sim, bets=bets,
                 combos=betting_combos(runners),
                 focus=focus_points(runners),
                 pace=pace_map(runners), styles=STYLES,

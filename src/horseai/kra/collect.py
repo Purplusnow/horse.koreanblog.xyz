@@ -25,6 +25,7 @@ from .normalize import (
     extract,
     race_key,
     to_date,
+    to_float,
     to_int,
     to_meet,
     to_str,
@@ -221,6 +222,115 @@ def run_range(
 
 
 MEET_CODE = {"서울": 1, "제주": 2, "부산경남": 3}
+
+
+# 승식 코드. 조합 수로 확인한 것이다 — 10두 경주에서 TRI 는 720개(=10P3, 순서
+# 있음)이고 TLA 는 120개(=10C3, 순서 없음)다. 이름만 보고 TRI 를 삼복승으로
+# 잡았다가 틀린 조합의 배당을 저장할 뻔했다.
+POOL_NAMES = {
+    "WIN": "단승", "PLC": "연승", "QNL": "복승", "EXA": "쌍승",
+    "QPL": "복연승", "TLA": "삼복승", "TRI": "삼쌍승",
+}
+# 순서를 가리지 않는 승식은 조합을 정렬해 두어야 조회가 맞는다.
+UNORDERED_POOLS = {"QNL", "QPL", "TLA"}
+
+
+def winning_combos(conn: sqlite3.Connection, race_keys) -> Dict[str, Dict[str, set]]:
+    """경주별 '적중 조합'을 만든다.
+
+    배당 API 는 전체 배당률 보드를 준다 — 서울 하루치가 1만 3천 행이다. 그중
+    의미 있는 것은 실제로 적중한 조합뿐이므로(나머지는 사지 않은 조합의 가정
+    배당), 착순에서 적중 조합을 만들어 그것만 골라 담는다.
+    """
+    out: Dict[str, Dict[str, set]] = {}
+    if not race_keys:
+        return out
+    qs = ",".join("?" for _ in race_keys)
+    rows = conn.execute(
+        f"SELECT race_key, chul_no, ord FROM results "
+        f"WHERE race_key IN ({qs}) AND ord BETWEEN 1 AND 3 AND chul_no IS NOT NULL",
+        list(race_keys)).fetchall()
+    by_race: Dict[str, Dict[int, int]] = {}
+    for r in rows:
+        by_race.setdefault(r["race_key"], {})[int(r["ord"])] = int(r["chul_no"])
+    for key, o in by_race.items():
+        a, b, c = o.get(1), o.get(2), o.get(3)
+        if not a:
+            continue
+        j = lambda *xs: "-".join(str(x) for x in xs)          # noqa: E731
+        srt = lambda *xs: j(*sorted(xs))                       # noqa: E731
+        combos = {"WIN": {j(a)}, "PLC": {j(x) for x in (a, b, c) if x}}
+        if b:
+            combos["QNL"] = {srt(a, b)}
+            combos["EXA"] = {j(a, b)}
+        if b and c:
+            combos["QPL"] = {srt(a, b), srt(a, c), srt(b, c)}
+            combos["TLA"] = {srt(a, b, c)}      # 삼복승 — 순서 무관
+            combos["TRI"] = {j(a, b, c)}        # 삼쌍승 — 순서까지
+        out[key] = combos
+    return out
+
+
+def collect_dividends(client: KraClient, conn: sqlite3.Connection,
+                      start: dt.date, end: dt.date) -> Dict[str, int]:
+    """승식별 확정배당(API301)에서 **적중 조합의 배당만** 받아 쌓는다.
+
+    단승·연승 배당은 경주성적에도 있지만 복승·쌍승·복연승·삼복승·삼쌍승은 여기에만
+    있다. 예상지 독자는 단승만 사지 않으므로, 이것이 없으면 '우리 추천대로
+    샀다면 얼마가 됐나'를 답할 수 없다.
+    """
+    stats = {"days": 0, "rows": 0, "skipped": 0}
+    for day in race_days(start, end):
+        ymd = day.strftime("%Y%m%d")
+        for meet in ACTIVE_MEETS:
+            # 결과 수집과 같은 이유로 최근 며칠은 기록이 있어도 다시 받는다.
+            # 경주가 진행 중일 때 받으면 그 시점까지 끝난 경주만 담긴 채 완료로
+            # 표시되고, 나머지 경주의 배당은 영영 비게 된다.
+            settled = day < today_kst() - dt.timedelta(days=RESETTLE_DAYS)
+            if settled and already_fetched(conn, "dividends", str(meet), ymd):
+                stats["skipped"] += 1
+                continue
+            keys = [r[0] for r in conn.execute(
+                "SELECT race_key FROM races WHERE rc_date = ? AND meet = ? "
+                "AND COALESCE(has_result,0) = 1",
+                (day.isoformat(), MEETS.get(meet, meet)))]
+            if not keys:
+                continue
+            want = winning_combos(conn, keys)
+            if not want:
+                continue
+            try:
+                recs = client.fetch(resolve("dividend_total"),
+                                    {"meet": meet, "rc_date": ymd},
+                                    rows=1000, max_pages=40)
+            except Exception as e:  # noqa: BLE001
+                log.warning("배당 %s %s 수집 실패: %s", MEETS.get(meet, meet), ymd, redact(e))
+                continue
+
+            rows = []
+            for r in recs:
+                pool = to_str(r.get("pool"))
+                key = race_key(to_meet(r.get("meet")), to_date(r.get("rcDate")),
+                               to_int(r.get("rcNo")))
+                nums = [to_int(r.get(k)) for k in ("chulNo", "chulNo2", "chulNo3")]
+                nums = [n for n in nums if n]
+                if not (pool and key and nums):
+                    continue
+                if pool in UNORDERED_POOLS:
+                    nums = sorted(nums)
+                combo = "-".join(str(n) for n in nums)
+                if combo not in want.get(key, {}).get(pool, ()):
+                    continue                      # 적중하지 않은 조합은 버린다
+                rows.append({"race_key": key, "pool": pool, "combo": combo,
+                             "odds": to_float(r.get("odds"))})
+            n = upsert(conn, "dividends", rows, ["race_key", "pool", "combo"])
+            log_fetch(conn, "dividends", str(meet), ymd, len(recs))
+            conn.commit()
+            stats["rows"] += n
+            if n:
+                log.info("  배당 %s %s → %d경주 %d건", MEETS.get(meet, meet), ymd, len(want), n)
+        stats["days"] += 1
+    return stats
 
 
 def collect_training(client: KraClient, conn: sqlite3.Connection,
@@ -452,7 +562,7 @@ def main(argv: Optional[List[str]] = None) -> int:
     ap = argparse.ArgumentParser(description="한국마사회 데이터 수집")
     ap.add_argument("command",
                     choices=["backfill", "results", "entries", "audit", "stats",
-                             "prune", "reingest", "daily", "training"])
+                             "prune", "reingest", "daily", "training", "dividends"])
     ap.add_argument("--years", type=float, default=5, help="backfill 기간(년)")
     ap.add_argument("--days", type=int, default=14, help="results 소급 일수")
     ap.add_argument("--ahead", type=int, default=7, help="entries 조회 일수(미래)")
@@ -494,6 +604,13 @@ def main(argv: Optional[List[str]] = None) -> int:
         except ValueError as e:
             print(f"✗ {e}", file=sys.stderr)
             return 2
+
+        if args.command == "dividends":
+            start = today - dt.timedelta(days=args.days)
+            print(f"배당 수집: {start} ~ {today}")
+            st = collect_dividends(client, conn, start, today)
+            print(f"완료: {st['rows']:,}건 · 기수집 {st['skipped']}건")
+            return 0
 
         if args.command == "training":
             start = today - dt.timedelta(days=args.train_days)

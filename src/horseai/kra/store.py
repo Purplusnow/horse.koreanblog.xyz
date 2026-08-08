@@ -226,6 +226,21 @@ def connect(path: Path | str = DEFAULT_DB) -> sqlite3.Connection:
 
 # 스키마가 뒤늦게 늘어나도 기존 DB를 버리지 않도록 하는 가벼운 마이그레이션.
 # (테이블, 컬럼, 타입) — 이미 있으면 조용히 건너뛴다.
+SCHEMA_DIVIDENDS = """
+-- 승식별 확정배당(API301). 우리 추천 조합이 실제로 얼마를 돌려줬는지 검증하는
+-- 유일한 근거다. 단승·연승만으로는 예상지 독자가 사는 방식을 평가할 수 없다.
+CREATE TABLE IF NOT EXISTS dividends (
+    race_key TEXT NOT NULL,
+    pool     TEXT NOT NULL,      -- WIN 단승 · PLC 연승 · QNL 복승 · EXA 쌍승
+                                 -- QPL 복연승 · TRI 삼복승 · TLA 삼쌍승
+    combo    TEXT NOT NULL,      -- 마번 조합. 순서 없는 승식은 오름차순 정렬
+    odds     REAL,
+    fetched_at TEXT NOT NULL DEFAULT (datetime('now')),
+    PRIMARY KEY (race_key, pool, combo)
+);
+CREATE INDEX IF NOT EXISTS idx_div_race ON dividends(race_key);
+"""
+
 MIGRATIONS = [
     ("results", col, "INTEGER")
     for col in ("s1f_rank", "g1f_rank", "c1_rank", "c2_rank", "c3_rank", "c4_rank")
@@ -259,6 +274,7 @@ MIGRATIONS = [
 
 def init_db(conn: sqlite3.Connection) -> None:
     conn.executescript(SCHEMA)
+    conn.executescript(SCHEMA_DIVIDENDS)
     for table, col, coltype in MIGRATIONS:
         existing = {r["name"] for r in conn.execute(f"PRAGMA table_info({table})")}
         if col not in existing:
