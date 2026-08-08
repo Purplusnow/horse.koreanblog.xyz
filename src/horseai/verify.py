@@ -400,6 +400,11 @@ def highlights(rl: pd.DataFrame, limit: int = 6) -> Dict[str, List[Dict]]:
         return {"top": [], "recent": []}
     out = []
     for r in rl.itertuples():
+        # 그 경주에서 맞힌 승식 수는 **거르기 전에** 센다. 10배 미만을 먼저
+        # 걸러 놓고 세면 저배당 적중이 빠져, 일곱 승식을 다 맞힌 경주가
+        # '3개 적중' 으로 적힌다. 실제로 그렇게 나갔다.
+        n_hit = sum(1 for k in BET_ORDER if (r.bets or {}).get(k, {}).get("hit"))
+        n_bet = sum(1 for k in BET_ORDER if k in (r.bets or {}))
         for name in BET_ORDER:
             b = (r.bets or {}).get(name)
             if not b or not b["hit"]:
@@ -408,6 +413,7 @@ def highlights(rl: pd.DataFrame, limit: int = 6) -> Dict[str, List[Dict]]:
             if odds < HIGHLIGHT_MIN_ODDS:
                 continue
             out.append({
+                "n_hit": n_hit, "n_bet": n_bet,
                 "race_key": r.race_key,
                 "date": str(r.rc_date)[:10],
                 "meet": r.meet,
@@ -421,10 +427,7 @@ def highlights(rl: pd.DataFrame, limit: int = 6) -> Dict[str, List[Dict]]:
     for h in out:
         cur = best.get(h["race_key"])
         if not cur or h["odds"] > cur["odds"]:
-            h["also"] = (cur or {}).get("also", 0) + (1 if cur else 0)
             best[h["race_key"]] = h
-        else:
-            best[h["race_key"]]["also"] = best[h["race_key"]].get("also", 0) + 1
     rows = list(best.values())
 
     # 두 갈래로 낸다.

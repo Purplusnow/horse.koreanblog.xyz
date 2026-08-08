@@ -71,7 +71,11 @@
       <span class="meet meet-{{ h.meet }}">{{ h.meet }}</span>{{ h.rc_no }}R
       <small>{{ h.date[5:] }}</small>
     </span>
-    {% if h.also %}<small class="win-also">이 경주 {{ h.also + 1 }}개 승식 적중</small>{% endif %}
+    {% if h.n_hit and h.n_hit > 1 %}
+    <small class="win-also{% if h.n_hit >= h.n_bet %} is-perfect{% endif %}">
+      {% if h.n_hit >= h.n_bet %}{{ h.n_bet }}개 승식 전부 적중{% else %}{{ h.n_hit }}개 승식 적중{% endif %}
+    </small>
+    {% endif %}
   </a>
   {% endfor %}
 </div>
