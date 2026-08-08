@@ -194,11 +194,16 @@ def race_level(df: pd.DataFrame, div: Optional[Dict] = None) -> pd.DataFrame:
         gates = [g[g["pred_rank"] == r]["chul_no"].iloc[0] if (g["pred_rank"] == r).any()
                  else None for r in range(1, 6)]
         gates = [int(x) if pd.notna(x) else None for x in gates]
+        # **배당표가 없는 경주는 판정하지 않는다.** 적중 조합만 저장되므로
+        # '표에 없으면 불발'인데, 자료 자체가 안 들어온 경주까지 그렇게 세면
+        # 맞힌 경주가 불발로 남는다. 실제로 8/8 서울 8~10R 처럼 1순위가 1착한
+        # 경주가 0/7 로 찍혔다. 자료가 올 때까지 집계에서 빼는 것이 맞다.
         bets = {}
-        table = (div or {}).get(key, {})
-        for name, (pool, mine) in _combos(gates).items():
-            paid = sum(table.get(pool, {}).get(c) or 0.0 for c in mine)
-            bets[name] = {"cost": len(mine), "payout": paid, "hit": paid > 0}
+        table = (div or {}).get(key)
+        if table:
+            for name, (pool, mine) in _combos(gates).items():
+                paid = sum(table.get(pool, {}).get(c) or 0.0 for c in mine)
+                bets[name] = {"cost": len(mine), "payout": paid, "hit": paid > 0}
 
         rows.append({
             "race_key": key,
@@ -473,6 +478,12 @@ def build_report(conn: sqlite3.Connection) -> Dict:
             "odds": float(r.top1_odds) if pd.notna(r.top1_odds) else None,
             "hit_win": bool(r.hit_win),
             "hit_place": bool(r.hit_place),
+            # ◎ 의 1착 여부만으로 성패를 적으면 이 예상이 실제로 쓸모 있었는지
+            # 알 수 없다. 5두를 추천하고 일곱 승식으로 평가하는데, 목록에서만
+            # 단승 하나로 판정하면 삼복승·삼쌍승을 맞힌 경주가 '실패'로 남는다.
+            "hit_bets": [k for k in BET_ORDER
+                         if (r.bets or {}).get(k, {}).get("hit")],
+            "n_bets": len([k for k in BET_ORDER if k in (r.bets or {})]),
         }
         for r in recent.itertuples()
     ]

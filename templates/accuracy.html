@@ -308,10 +308,10 @@
 {% if accuracy.recent %}
 <section class="table-section">
   <h2>최근 예상 60건</h2>
-  <p class="panel-lead">가장 최근 경주부터 싣습니다. 적중과 실패를 가리지 않습니다.</p>
+  <p class="panel-lead">가장 최근 경주부터 싣습니다. 그 경주에서 <b>어느 승식이 적중했는지</b>를 함께 적습니다 — 1순위가 2착이어도 복승·삼복승은 적중일 수 있습니다.</p>
   <div class="table-scroll">
     <table class="stats-table">
-      <thead><tr><th>일자</th><th>경주</th><th>◎</th><th class="c-num">착순</th><th class="c-num">배당</th><th class="c-num">결과</th></tr></thead>
+      <thead><tr><th>일자</th><th>경주</th><th>◎</th><th class="c-num">착순</th><th class="c-num">배당</th><th>적중 승식</th></tr></thead>
       <tbody>
         {% for r in accuracy.recent %}
         <tr>
@@ -320,10 +320,12 @@
           <td>{{ r.pick or '-' }}</td>
           <td class="c-num">{{ r.ord or '-' }}</td>
           <td class="c-num">{{ r.odds or '-' }}</td>
-          <td class="c-num">
-            {% if r.hit_win %}<span class="ord ord-1">적중</span>
-            {% elif r.hit_place %}<span class="ord ord-3">3착 이내</span>
-            {% else %}<span class="ord ord-none">실패</span>{% endif %}
+          <td class="hit-cell">
+            {% if r.hit_bets %}
+              <b class="hit-count">{{ r.hit_bets|length }}/{{ r.n_bets }}</b>
+              {% for b in r.hit_bets %}<span class="hit-chip">{{ b }}</span>{% endfor %}
+            {% elif r.n_bets %}<span class="ord ord-none">불발</span>
+            {% else %}<span class="ord ord-none" title="배당 자료 미도착">집계 대기</span>{% endif %}
           </td>
         </tr>
         {% endfor %}

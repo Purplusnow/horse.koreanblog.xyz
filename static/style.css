@@ -1042,3 +1042,13 @@ tbody tr:hover { background: var(--bg-soft); }
   border-top: 2px solid var(--text-faint);
   font-weight: 700; color: var(--text);
 }
+
+/* 최근 예상 — 경주마다 어느 승식이 맞았는지 */
+.stats-table td.hit-cell { white-space: normal; line-height: 2; }
+.hit-count { font-variant-numeric: tabular-nums; color: var(--text-faint);
+  font-size: 12px; margin-right: 4px; }
+.hit-chip {
+  display: inline-block; margin-right: 3px; padding: 1px 7px;
+  border-radius: 10px; font-size: 11.5px; font-weight: 600;
+  background: var(--accent); color: #fff;
+}
