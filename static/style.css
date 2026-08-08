@@ -1120,11 +1120,23 @@ tbody tr:hover { background: var(--bg-soft); }
   font-style: normal; font-size: 12px; font-variant-numeric: tabular-nums;
   color: var(--text-faint); min-width: 13px;
 }
-/* 3착 이내만 또렷하게. 나머지는 배경으로 물러난다. */
-.res-picks .rp-in .rp-mark { color: var(--text-soft); }
+/* 입상마는 테두리로만 두른다. 색면을 쓰면 글자가 바탕에 묻히고, 한 줄에
+   여럿이 들어오면 그 자체가 얼룩이 된다. 착순은 테두리 색으로 가른다. */
+.res-picks .rp-in {
+  border: 1.5px solid var(--border); border-radius: 13px;
+  padding: 1px 9px 1px 7px; margin-right: 10px;
+}
 .res-picks .rp-in .rp-gate,
 .res-picks .rp-in .rp-name { color: var(--text); font-weight: 600; }
-.res-picks .rp-in .rp-ord { color: var(--accent-text); font-weight: 700; }
+.res-picks .rp-in .rp-mark { color: var(--text-soft); }
+.res-picks .rp-in .rp-ord { font-weight: 700; }
+
+.res-picks .rp-1 { border-color: #c9992f; }          /* 1착 */
+.res-picks .rp-1 .rp-ord { color: #a97c1c; }
+.res-picks .rp-2 { border-color: #9aa4ae; }          /* 2착 */
+.res-picks .rp-2 .rp-ord { color: #6b747d; }
+.res-picks .rp-3 { border-color: #bd8a63; }          /* 3착 */
+.res-picks .rp-3 .rp-ord { color: #97653f; }
 
 /* 적중 눈금 */
 .hit-cell { white-space: nowrap; }
@@ -1138,7 +1150,9 @@ tbody tr:hover { background: var(--bg-soft); }
 .hit-meter b span { color: var(--text-faint); font-weight: 500; }
 
 @media (prefers-color-scheme: dark) {
-  .res-picks .rp-in .rp-ord { color: #7fd3a6; }
+  .res-picks .rp-1 .rp-ord { color: #e0b45a; }
+  .res-picks .rp-2 .rp-ord { color: #b3bcc5; }
+  .res-picks .rp-3 .rp-ord { color: #c9а08a; }
 }
 @media (max-width: 640px) {
   .res-picks .rp { margin-right: 10px; font-size: 12.5px; }

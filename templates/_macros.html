@@ -132,7 +132,7 @@
   <td class="res-picks">
     {% if o %}
     {% for p in o.picks %}
-    <span class="rp{% if p.ord and p.ord <= 3 %} rp-in{% endif %}">
+    <span class="rp{% if p.ord and p.ord <= 3 %} rp-in rp-{{ p.ord }}{% endif %}">
       <i class="rp-mark">{{ p.mark }}</i><b class="rp-gate">{{ p.chul_no }}</b>
       <span class="rp-name">{{ p.hr_name }}</span>
       <em class="rp-ord">{% if p.ord %}{{ p.ord }}{% else %}·{% endif %}</em>
