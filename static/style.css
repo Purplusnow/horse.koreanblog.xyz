@@ -874,15 +874,6 @@ tbody tr:hover { background: var(--bg-soft); }
 /* 행 바탕 = 그 경주에서 맞힌 승식 수(0~7).
    일곱 승식을 다 맞힌 경주와 단승 하나만 맞힌 경주는 같은 색일 수 없다.
    목록을 훑을 때 잘한 날이 색의 농도로 먼저 읽히게 하는 것이 목적이다. */
-.race-row.hit-0 { background: var(--surface); }
-.race-row.hit-1 { background: #eaf5ef; }
-.race-row.hit-2 { background: #d5ebde; }
-.race-row.hit-3 { background: #bfe1cd; }
-.race-row.hit-4 { background: #a6d6ba; }
-.race-row.hit-5 { background: #8bcaa6; }
-.race-row.hit-6 { background: #6dbd90; }
-.race-row.hit-7 { background: #4bae78; }
-.race-row[class*="hit-"]:hover { filter: brightness(.97); }
 
 @media (prefers-color-scheme: dark) {
   .race-row.hit-1 { background: #14201a; }
@@ -1073,15 +1064,6 @@ tbody tr:hover { background: var(--bg-soft); }
   font-weight: 700; color: var(--text);
 }
 
-/* 최근 예상 — 경주마다 어느 승식이 맞았는지 */
-.stats-table td.hit-cell { white-space: normal; line-height: 2; }
-.hit-count { font-variant-numeric: tabular-nums; color: var(--text-faint);
-  font-size: 12px; margin-right: 4px; }
-.hit-chip {
-  display: inline-block; margin-right: 3px; padding: 1px 7px;
-  border-radius: 10px; font-size: 11.5px; font-weight: 600;
-  background: var(--accent); color: #fff;
-}
 
 /* 출주마 일람 — 좁은 화면에서 가로 스크롤이 생기지 않게 열을 접는다.
    열이 열한 개라 어떤 조판으로도 휴대폰 폭에 다 들어가지 않는다. 예상지에서
@@ -1106,47 +1088,68 @@ tbody tr:hover { background: var(--bg-soft); }
   .runners .c-name small { display: block; }
 }
 
-/* 결과 목록의 추천 5두 — 한 칸 안에 흐르게 둔다. 열로 쪼개면 다섯 배로
-   넓어져 좁은 화면에서 가로 스크롤이 생긴다. */
-.res-picks { white-space: normal; }
-.res-picks .rp {
-  display: inline-flex; align-items: center; gap: 4px;
-  margin: 2px 6px 2px 0; padding: 2px 7px 2px 4px;
-  border: 1px solid var(--border); border-radius: 14px;
-  font-size: 12.5px; white-space: nowrap;
-  /* 행 바탕이 적중 수만큼 진해지므로, 칩은 흰 바탕으로 띄워 둔다.
-     같은 계열끼리 겹치면 글자가 바탕에 묻힌다. */
-  background: #fff; color: var(--text);
-}
-.res-picks .rp .rr-name { max-width: 6.5em; overflow: hidden; text-overflow: ellipsis; }
-.res-picks .rp-ord {
-  font-variant-numeric: tabular-nums; color: var(--text-faint);
-  font-size: 11.5px; margin-left: 1px;
-}
+
 /* 3착 이내는 티가 나야 한다 — 이 표에서 가장 먼저 찾는 정보가 그것이다.
    테두리만으로는 한 줄에 다섯 칩이 늘어섰을 때 눈에 걸리지 않는다.
    바탕을 채우고 착순 숫자를 배지로 세워 색으로 먼저 읽히게 한다. */
-.res-picks .rp-place { border-color: #4a9a72; }
-.res-picks .rp-place .rr-name { color: var(--accent-text); font-weight: 600; }
-.res-picks .rp-place .rp-ord {
-  background: var(--accent-text); color: #fff; font-weight: 700;
-  padding: 1px 6px; border-radius: 9px; margin-left: 3px;
-}
 /* 1착은 그중에서도 따로 세운다 */
-.res-picks .rp-win {
-  border-color: var(--gold); box-shadow: 0 0 0 1px var(--gold) inset;
-}
-.res-picks .rp-win .rr-name { color: #6b4d12; font-weight: 700; }
-.res-picks .rp-win .rp-ord {
-  background: var(--gold); color: #fff; font-weight: 700;
-  padding: 1px 6px; border-radius: 9px; margin-left: 3px;
-}
 /* 착순 밖은 뒤로 물린다 — 들어온 말이 상대적으로 더 드러난다 */
-.res-picks .rp:not(.rp-place):not(.rp-win) { color: var(--text-soft); }
 
 @media (prefers-color-scheme: dark) {
   .res-picks .rp { background: #1b1f26; color: var(--text); }
   .res-picks .rp-place { border-color: #3f8a64; }
   .res-picks .rp-place .rr-name { color: #7fd3a6; }
   .res-picks .rp-win .rr-name { color: #e8c884; }
+}
+
+/* ─────────────────────────────────── 결과 한 줄
+   한 행에 다섯 추천과 일곱 승식이 함께 놓인다. 저마다 테두리와 바탕을 가지면
+   행이 알약밭이 되어 정작 중요한 '누가 들어왔나' 가 안 보인다. 상자를 걷고
+   글자 굵기와 색으로만 층을 나눈다. */
+.res-picks { white-space: normal; line-height: 1.9; }
+.res-picks .rp {
+  display: inline-flex; align-items: baseline; gap: 3px;
+  margin-right: 13px; font-size: 13px; color: var(--text-faint);
+}
+.res-picks .rp-mark { font-style: normal; font-size: 11.5px; width: 11px; }
+.res-picks .rp-gate {
+  font-variant-numeric: tabular-nums; font-weight: 700; color: var(--text-soft);
+  min-width: 14px; text-align: right;
+}
+.res-picks .rp-name { color: var(--text-soft); }
+.res-picks .rp-ord {
+  font-style: normal; font-size: 11.5px; font-variant-numeric: tabular-nums;
+  color: var(--text-faint); min-width: 12px;
+}
+/* 3착 이내만 살린다 — 나머지는 배경으로 물러난다 */
+.res-picks .rp-in .rp-mark,
+.res-picks .rp-in .rp-gate { color: var(--accent-text); }
+.res-picks .rp-in .rp-name { color: var(--text); font-weight: 600; }
+.res-picks .rp-in .rp-ord {
+  color: #fff; background: var(--accent-text); font-weight: 700;
+  padding: 0 5px; border-radius: 8px; font-size: 11px;
+}
+
+/* 적중 눈금 — 일곱 칸 중 몇 칸이 찼는지로 성적을 말한다 */
+.hit-cell { white-space: nowrap; }
+.hit-meter { display: inline-flex; align-items: center; gap: 2px; cursor: default; }
+.hit-meter i {
+  width: 6px; height: 15px; border-radius: 2px; background: var(--border);
+}
+.hit-meter i.on { background: var(--accent); }
+.hit-meter b {
+  margin-left: 7px; font-size: 12.5px; font-variant-numeric: tabular-nums;
+  color: var(--text-soft);
+}
+.hit-meter b span { color: var(--text-faint); font-weight: 500; }
+
+@media (prefers-color-scheme: dark) {
+  .res-picks .rp-in .rp-ord { background: #3f8a64; }
+  .res-picks .rp-in .rp-mark,
+  .res-picks .rp-in .rp-gate { color: #7fd3a6; }
+}
+@media (max-width: 640px) {
+  .res-picks .rp { margin-right: 9px; font-size: 12.5px; }
+  .res-picks .rp-name { max-width: 5.5em; overflow: hidden;
+    text-overflow: ellipsis; white-space: nowrap; }
 }
