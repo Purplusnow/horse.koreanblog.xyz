@@ -46,36 +46,6 @@
   {% endif %}
 </section>
 
-{% if featured %}
-<section class="featured">
-  <h2 class="featured-heading">
-    금주의 추천경주
-    <small>시뮬레이션 결과가 한 마리로 좁게 모인 경주</small>
-  </h2>
-  <div class="featured-grid">
-    {% for race in featured %}
-    {% set p = race.picks[0] if race.picks else None %}
-    <a class="featured-card" href="{{ race.url }}">
-      <div class="featured-top">
-        <span class="meet meet-{{ race.meet }}">{{ race.meet }}</span>
-        <b>{{ race.rc_no }}R</b>
-        <small>{{ race.rc_date[5:] }} {{ race.post_time or '' }}</small>
-      </div>
-      {% if p %}
-      <div class="featured-pick">
-        <span class="gate">{{ p.chul_no }}</span>
-        <strong>{{ p.hr_name }}</strong>
-        {% if p.style_label %}<span class="style style-{{ p.style_code }}">{{ p.style_label }}</span>{% endif %}
-      </div>
-      <div class="featured-meta">
-        우승 확률 <b>{{ p.p_win_pct }}%</b> · {{ race.distance }}m{% if race.grade %} · {{ race.grade }}{% endif %}
-      </div>
-      {% endif %}
-    </a>
-    {% endfor %}
-  </div>
-</section>
-{% endif %}
 
 {{ ad(adsense, 'slot_top') }}
 
@@ -140,6 +110,11 @@
   </p>
 
   <div class="feat-groups">
+    <p class="feat-lead">
+      출주마 한 마리를 아래 분류의 <b>{{ metrics.n_features }}개 지표</b>로 봅니다.
+      전적과 기수 성적처럼 누구나 보는 값에 더해, 원자료를 조합해 만든 자체 지표가
+      가장 큰 비중을 차지합니다.
+    </p>
     <ul>
       {% for g in feature_groups %}
       <li><b>{{ g.n }}</b><span>{{ g.name }}</span></li>
