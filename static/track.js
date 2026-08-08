@@ -450,18 +450,10 @@
   var rateBtns = Array.prototype.slice.call(document.querySelectorAll('.tk-rate'));
   var btnZoom = document.getElementById('tk-zoom');
   var seek = document.getElementById('tk-seek');
-  var clock = document.getElementById('tk-clock');
 
   /* 108.4초 보다 '1분 48.4초' 가 경마 기록으로 읽힌다. 중계도 기록지도 그렇게 적는다. */
-  function fmtTime(sec) {
-    var m = Math.floor(sec / 60);
-    var s = sec - m * 60;
-    return m > 0 ? m + '분 ' + s.toFixed(1) + '초' : s.toFixed(1) + '초';
-  }
-
   function sync() {
     if (seek) seek.value = String(Math.round((t / duration) * 1000));
-    if (clock) clock.textContent = fmtTime(t);
   }
   function start() { playing = true; if (btnPlay) btnPlay.textContent = '❚❚ 정지'; }
   function stop() { playing = false; if (btnPlay) btnPlay.textContent = '▶ 재생'; }
@@ -473,6 +465,7 @@
   if (btnReplay) btnReplay.addEventListener('click', function () { t = 0; sync(); start(); });
   /* 배속은 브라우저에 저장한다. 경주마다 다시 고르게 하면 성가시다. */
   var RATE_KEY = 'horseai.playRate';
+  var RATES = [4, 8];               // 버튼에 있는 값만 허용한다
   function setRate(v, save) {
     speed = parseFloat(v) || 1;
     rateBtns.forEach(function (b) {
@@ -483,9 +476,11 @@
   rateBtns.forEach(function (b) {
     b.addEventListener('click', function () { setRate(b.dataset.rate, true); });
   });
+  // 저장된 값이 예전 버튼(1·2·16)이면 기본으로 떨어뜨린다. 그대로 두면
+  // 어느 버튼도 켜지지 않은 채 엉뚱한 속도로 재생된다.
   var saved = null;
-  try { saved = localStorage.getItem(RATE_KEY); } catch (e) {}
-  setRate(saved || 1, false);
+  try { saved = parseFloat(localStorage.getItem(RATE_KEY)); } catch (e) {}
+  setRate(RATES.indexOf(saved) >= 0 ? saved : RATES[0], false);
   if (btnZoom) btnZoom.addEventListener('click', function () {
     follow = !follow;
     btnZoom.setAttribute('aria-pressed', String(follow));

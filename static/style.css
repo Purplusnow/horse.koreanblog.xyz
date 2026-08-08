@@ -382,8 +382,6 @@ tbody tr:hover { background: var(--bg-soft); }
   .header-inner { min-height: 56px; padding-top: 8px; padding-bottom: 8px; }
   .nav { width: 100%; overflow-x: auto; }
   .nav a { padding: 6px 10px; font-size: 13.5px; white-space: nowrap; }
-  .trustbar-inner { gap: 12px; font-size: 12.5px; }
-  .trustbar-link { margin-left: 0; }
   .race-grid { grid-template-columns: 1fr; }
   .race-header, .commentary, .pick-summary, .panel { padding: 16px 18px; }
   .race-facts { gap: 18px; }
