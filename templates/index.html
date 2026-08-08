@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% from "_macros.html" import ad, race_row, result_row, conf_badge %}
+{% from "_macros.html" import ad, race_card, result_row, conf_badge %}
 
 {% block title %}{{ site.name }} — 경마 출마표 · 전적 · 예상{% endblock %}
 {% block description %}{{ site.description }}{% endblock %}
@@ -89,28 +89,10 @@
     <span class="day-weekday">{{ races[0].weekday }}요일</span>
     <span class="day-count">{{ races|length }}경주</span>
   </h2>
-  <div class="table-scroll">
-    <table class="race-table">
-      <thead>
-        <tr>
-          <th class="rr-no">경주</th>
-          <th class="rr-time">발주</th>
-          <th class="rr-cond">조건</th>
-          {# 기호는 경주마다 달라진다(접전이면 ◎ 가 없다). 머리글을 ◎○△ 로
-             고정하면 표기가 어긋나므로 자리번호만 둔다. #}
-          <th class="rr-pick">1</th>
-          <th class="rr-pick">2</th>
-          <th class="rr-pick">3</th>
-          <th class="rr-pick">4</th>
-          <th class="rr-pick">5</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for race in races %}
-        {{ race_row(race) }}
-        {% endfor %}
-      </tbody>
-    </table>
+  <div class="race-list">
+    {% for race in races %}
+    {{ race_card(race) }}
+    {% endfor %}
   </div>
 </section>
 {% endfor %}
@@ -130,7 +112,7 @@
 <section class="day-section">
   <h2 class="day-heading">최근 경주 결과 <a class="see-all" href="/results/">전체 보기 →</a></h2>
   <div class="table-scroll">
-    <table class="race-table">
+    <table class="race-table res-table">
       <thead>
         <tr>
           <th class="rr-no">경주</th>

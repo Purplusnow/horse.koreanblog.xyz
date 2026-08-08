@@ -58,35 +58,38 @@
 {% endif %}
 {% endmacro %}
 
-{# 경주 한 줄 — 목록에서 클릭 없이 예상까지 읽히게 한다.
-   경마 팬이 목록에서 알고 싶은 건 거리나 두수가 아니라 '뭘 미는가'다. #}
-{% macro race_row(race) %}
-<tr class="race-row" onclick="location.href='{{ race.url }}'">
-  <td class="rr-no">
-    <a href="{{ race.url }}">
-      <span class="meet meet-{{ race.meet }}">{{ race.meet }}</span>
-      <b>{{ race.rc_no }}R</b>
-    </a>
-    {{ conf_badge(race.conf_label, race.conf_score, 'sm') }}
-  </td>
-  <td class="rr-time">{{ race.post_time or '-' }}</td>
-  <td class="rr-cond">
-    {{ race.distance }}m
-    {% if race.grade %}<span class="rr-grade">{{ race.grade }}</span>{% endif %}
-    <small>{{ race.field_size }}두</small>
-  </td>
-  {% for i in range(5) %}
-  {% set p = race.picks[i] if race.picks|length > i else None %}
-  <td class="rr-pick">
-    {% if p %}
-    <span class="mark">{{ p.mark }}</span>
-    <span class="gate gate-sm">{{ p.chul_no }}</span>
-    <span class="rr-name" title="{{ p.hr_name }}">{{ p.hr_name }}</span>
-    <span class="rr-prob">{{ p.p_win_pct }}%</span>
-    {% else %}<span class="rr-empty">-</span>{% endif %}
-  </td>
-  {% endfor %}
-</tr>
+{# 경주 카드 — 목록에서 클릭 없이 예상까지 읽히게 한다.
+   경마 팬이 목록에서 알고 싶은 건 거리나 두수가 아니라 '뭘 미는가'다.
+
+   표가 아니라 카드인 이유: 추천을 5두로 늘리자 어떤 표 구조로도 좁은 화면에서
+   가로 스크롤이 생겼다. 카드는 폭이 모자라면 추천이 다음 줄로 흐르므로 어떤
+   화면에서도 넘치지 않는다. 예상지를 좌우로 밀어 가며 읽게 할 수는 없다. #}
+{% macro race_card(race) %}
+<a class="race-item" href="{{ race.url }}">
+  <div class="ri-head">
+    <span class="meet meet-{{ race.meet }}">{{ race.meet }}</span>
+    <b class="ri-no">{{ race.rc_no }}R</b>
+    <span class="ri-time">{{ race.post_time or '' }}</span>
+    <span class="ri-cond">
+      {{ race.distance }}m
+      {% if race.grade %}<span class="rr-grade">{{ race.grade }}</span>{% endif %}
+      {% if race.field_size %}<small>{{ race.field_size }}두</small>{% endif %}
+    </span>
+    {{ conf_badge(race.conf_label, race.conf_score) }}
+  </div>
+  <div class="ri-picks">
+    {% for p in race.picks[:5] %}
+    <span class="ri-pick">
+      <span class="mark">{{ p.mark }}</span>
+      <span class="gate gate-sm">{{ p.chul_no }}</span>
+      <span class="rr-name" title="{{ p.hr_name }}">{{ p.hr_name }}</span>
+      <span class="rr-prob">{{ p.p_win_pct }}%</span>
+    </span>
+    {% else %}
+    <span class="rr-empty">예상 준비 중</span>
+    {% endfor %}
+  </div>
+</a>
 {% endmacro %}
 
 {# 결과 한 줄 — 우리가 뭘 밀었고 실제로 어떻게 됐는지를 나란히 놓는다.

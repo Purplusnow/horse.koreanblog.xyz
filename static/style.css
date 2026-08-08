@@ -895,33 +895,60 @@ tbody tr:hover { background: var(--bg-soft); }
 .stats-table .c-mark .mark { font-size: 17px; font-weight: 700; }
 
 
-/* ── 경주 목록 반응형 ──────────────────────────────────────────
-   5두를 싣기 시작하면서 표가 좁은 화면을 넘어섰다. 예상지를 좌우로 밀어 가며
-   읽어야 한다면 목록으로서 실격이므로, 폭이 모자라면 표를 카드로 바꾼다.
-   한 경주가 한 덩어리가 되고 추천 5두는 2열로 흐른다. */
-@media (max-width: 900px) {
-  .table-scroll:has(.race-table) { overflow-x: visible; }
-  .race-table thead { display: none; }
-  .race-table, .race-table tbody { display: block; }
-  .race-row {
-    display: flex; flex-wrap: wrap; align-items: center;
-    gap: 5px 10px; padding: 12px 14px;
-    border-bottom: 1px solid var(--border);
-  }
-  .race-row:last-child { border-bottom: none; }
-  .race-table tbody td { display: block; border: none; padding: 0; }
-  .rr-no { flex: 0 0 auto; }
-  .rr-time, .rr-cond { flex: 0 0 auto; font-size: 12.5px; color: var(--text-faint); }
-  /* 경주 정보 줄과 추천 줄을 가르는 얇은 여백 */
-  .rr-cond { margin-right: auto; }
-  .rr-pick {
-    flex: 1 1 calc(50% - 10px); min-width: 150px;
-    font-size: 13px; padding-top: 2px;
-  }
-  .res-pick, .res-actual { flex: 1 1 100%; }
+
+
+/* ── 경주 목록 (카드) ────────────────────────────────────────────
+   추천 5두를 표로 싣자 어떤 열 구성으로도 좁은 화면에서 가로 스크롤이 났다.
+   카드는 폭이 모자라면 추천이 다음 줄로 흐른다 — 넘칠 수가 없는 구조다. */
+.race-list {
+  display: grid; gap: 1px; background: var(--border);
+  border: 1px solid var(--border); border-radius: var(--radius-lg);
+  overflow: hidden; box-shadow: var(--shadow);
+}
+.race-item {
+  display: block; padding: 12px 14px 13px;
+  background: var(--surface); color: var(--text);
+  transition: background .12s;
+}
+.race-item:hover { background: var(--accent-soft); text-decoration: none; }
+
+.ri-head {
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+  font-size: 13.5px; margin-bottom: 8px;
+}
+.ri-no { font-size: 15px; font-variant-numeric: tabular-nums; letter-spacing: -.02em; }
+.ri-time {
+  font-variant-numeric: tabular-nums; color: var(--text-soft); font-weight: 600;
+}
+.ri-cond { color: var(--text-soft); font-variant-numeric: tabular-nums; }
+.ri-cond small { color: var(--text-faint); margin-left: 3px; }
+/* 신뢰도 배지는 오른쪽 끝. 좁아지면 자연스럽게 다음 줄로 내려간다. */
+.ri-head .conf { margin-left: auto; }
+
+.ri-picks { display: flex; flex-wrap: wrap; gap: 5px 16px; }
+.ri-pick {
+  display: inline-flex; align-items: center; gap: 4px;
+  font-size: 13px; white-space: nowrap;
+}
+.ri-pick .mark { font-size: 15px; }
+
+@media (max-width: 640px) {
+  .race-item { padding: 11px 12px 12px; }
+  .ri-head { gap: 6px; font-size: 12.5px; }
+  .ri-picks { gap: 4px 12px; }
+  .ri-pick { font-size: 12.5px; }
+  /* 좁은 화면에서는 마명이 잘리는 것보다 두 줄로 흐르는 편이 낫다 */
+  .ri-pick .rr-name { max-width: none; }
 }
 
-@media (max-width: 420px) {
-  /* 아주 좁으면 추천도 한 줄에 하나씩 — 마명이 잘리는 것보다 낫다 */
-  .rr-pick { flex: 1 1 100%; }
+
+/* 최근 결과 표 — 좁은 화면에서는 부차적인 칸을 접는다.
+   조건(거리·등급)과 단승 배당은 경주 페이지에 그대로 있고, 목록에서 필요한 건
+   '우리가 뭘 밀었고 어떻게 됐나'다. 홈에서 좌우로 밀 일이 없어야 한다. */
+@media (max-width: 640px) {
+  .res-table thead th:nth-child(2), .res-table tbody td:nth-child(2),
+  .res-table thead th:nth-child(6), .res-table tbody td:nth-child(6) { display: none; }
+  .res-table { font-size: 12.5px; }
+  .res-table .rr-name { max-width: 5.5em; }
+  .res-rank { display: block; margin-left: 0; }
 }
