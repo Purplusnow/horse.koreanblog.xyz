@@ -1,14 +1,12 @@
 # 사이트 설정. 배포 전에 site.url 과 adsense 값을 실제 값으로 바꾸세요.
 site:
-  # 잠정안. 예측 방식을 전면에 내세우지 않는 이름으로 두었습니다.
-  # 다른 후보: 경주로 / 포스트타임 / 출발선 / 페이스노트
-  name: "레이스노트"
+  name: "경마천재"
   tagline: "출마표 · 전적 · 예상"
-  # 실제 도메인. sitemap/canonical/OG 태그에 쓰이므로 배포 전 필수 수정.
-  url: "https://example.com"
+  # sitemap/canonical/OG 태그에 쓰인다. 자체 도메인을 붙이면 여기부터 바꾼다.
+  url: "https://horse.koreanblog.xyz"
   locale: "ko_KR"
   description: "서울·부산경남·제주 경주의 출마표와 전적, 구간기록을 정리하고 경주별 예상을 공개합니다. 모든 예상은 발주 전에 게재하고 결과와 대조한 적중률을 그대로 공개합니다."
-  author: "레이스노트"
+  author: "경마천재"
 
 # 애드센스. client 가 비어 있으면 광고 영역 자체가 렌더링되지 않습니다.
 adsense:

@@ -24,6 +24,7 @@ import shutil
 import sqlite3
 from pathlib import Path
 from typing import Dict, List, Optional
+from urllib.parse import urlparse
 
 import yaml
 from jinja2 import Environment, FileSystemLoader, select_autoescape
@@ -627,6 +628,13 @@ def build(db: str, out_dir: Path, config: Dict, template_dir: Path,
                 + [h["url"] for h in horse_pages])
         write(out_dir / "sitemap.xml", env.get_template("sitemap.xml").render(
             base=base, urls=urls, lastmod=today.isoformat()))
+        # GitHub Pages 커스텀 도메인 설정은 배포 산출물 안의 CNAME 으로 유지된다.
+        # dist/ 를 통째로 올리는 구조라 여기서 함께 쓰지 않으면 배포할 때마다
+        # 도메인 설정이 풀리고 사이트가 github.io 주소로 되돌아간다.
+        host = urlparse(config["site"]["url"]).hostname or ""
+        if host and not host.endswith("github.io"):
+            write(out_dir / "CNAME", host + "\n")
+
         write(out_dir / "robots.txt",
               f"User-agent: *\nAllow: /\n\nSitemap: {base}/sitemap.xml\n")
 
