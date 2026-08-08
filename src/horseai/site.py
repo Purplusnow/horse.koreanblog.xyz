@@ -251,8 +251,21 @@ def load_metrics(path: Path = Path("models/metrics.json")) -> Dict:
     return out
 
 
+def _post_order(race: Dict) -> tuple:
+    """발주 시각 기준 정렬 키. 시각이 없으면 그 날의 맨 뒤로 보낸다."""
+    return (race["rc_date"] or "", race.get("post_time") or "99:99",
+            race.get("rc_no") or 0, race.get("meet") or "")
+
+
 def load_races(conn: sqlite3.Connection) -> List[Dict]:
-    rows = conn.execute(RACE_LIST_SQL + " ORDER BY r.rc_date DESC, r.meet, r.rc_no").fetchall()
+    # 발주 시각 순. 경마장별로 묶으면 방문자는 '지금 곧 뛰는 경주'를 찾으려고
+    # 두 덩어리를 번갈아 훑어야 한다. 경마 팬이 목록에서 하는 일은 경마장 고르기가
+    # 아니라 시간표 읽기다. 발주시각이 비어 있으면 경주번호로 대신한다.
+    rows = conn.execute(
+        RACE_LIST_SQL
+        + " ORDER BY r.rc_date DESC, COALESCE(NULLIF(r.post_time,''), '99:99'),"
+          " r.rc_no, r.meet"
+    ).fetchall()
     out = []
     for r in rows:
         d = _row_to_dict(r)
@@ -608,10 +621,12 @@ def build(db: str, out_dir: Path, config: Dict, template_dir: Path,
         today = today_kst()
         upcoming = [r for r in races if not r["has_result"]
                     and r["date_obj"] and r["date_obj"] >= today]
-        upcoming.sort(key=lambda r: (r["rc_date"], r["meet"], r["rc_no"]))
+        upcoming.sort(key=_post_order)
         upcoming = upcoming[: config["build"]["upcoming_limit"]]
 
-        past = [r for r in races if r["has_result"]][: config["build"]["past_races"]]
+        # 지난 경주는 최근 것이 위로 — 같은 날 안에서도 늦게 뛴 경주가 먼저다
+        past = sorted((r for r in races if r["has_result"]),
+                      key=_post_order, reverse=True)[: config["build"]["past_races"]]
 
         ctx_base = {
             "site": config["site"],
