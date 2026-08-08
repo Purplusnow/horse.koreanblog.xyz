@@ -343,11 +343,49 @@ def bet_summary(rl: pd.DataFrame) -> List[Dict]:
     return out
 
 
+def daily_summary(rl: pd.DataFrame, limit: int = 60) -> List[Dict]:
+    """경주일별 성적.
+
+    누적만 보면 좋았던 날과 나빴던 날이 한 숫자에 뭉개진다. 특히 환수율은
+    고배당 적중 한 건이 오래 남아, 그 뒤로 계속 잃어도 누적은 좋아 보인다.
+    날짜별로 끊어 두면 어느 날에 무슨 일이 있었는지 그대로 드러난다.
+    """
+    if rl.empty or "bets" not in rl or "rc_date" not in rl:
+        return []
+    out = []
+    for day, g in rl.groupby(rl["rc_date"].dt.date):
+        cost = pay = hit = n = 0
+        per = {}
+        for bets in g["bets"]:
+            for name, b in (bets or {}).items():
+                if name not in BET_ORDER:
+                    continue
+                cost += b["cost"]; pay += b["payout"]
+                hit += int(b["hit"]); n += 1
+                d = per.setdefault(name, {"hit": 0, "n": 0})
+                d["hit"] += int(b["hit"]); d["n"] += 1
+        if not cost:
+            continue
+        out.append({
+            "date": str(day),
+            "n_races": int(g["race_key"].nunique()),
+            "tickets": int(cost),
+            "hits": int(hit),
+            "hit_rate": hit / n if n else None,
+            "roi": pay / cost,
+            "by_bet": [{"name": k, "hit": v["hit"], "n": v["n"]}
+                       for k, v in per.items()],
+        })
+    out.sort(key=lambda r: r["date"], reverse=True)
+    return out[:limit]
+
+
 def build_report(conn: sqlite3.Connection) -> Dict:
     df = load_verified(conn)
     rl = race_level(df, load_dividends(conn))
     if rl.empty:
-        empty = {"overall": {"n_races": 0}, "monthly": [], "recent": []}
+        empty = {"overall": {"n_races": 0}, "monthly": [], "recent": [],
+                 "daily": []}
         for k in ("by_bet", "by_meet", "by_conf", "by_mark", "by_distance", "by_field",
                   "by_grade", "by_weekday", "by_track"):
             empty[k] = []
@@ -440,6 +478,7 @@ def build_report(conn: sqlite3.Connection) -> Dict:
         "last_90d": summarize(last90),
         "monthly": monthly,
         "by_bet": bet_summary(rl),
+        "daily": daily_summary(rl),
         "by_meet": by_meet,
         "by_conf": by_conf,
         "by_mark": by_mark,

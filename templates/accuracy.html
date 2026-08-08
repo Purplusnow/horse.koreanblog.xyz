@@ -72,6 +72,39 @@
 {% endif %}
 
 
+{% if accuracy.daily %}
+<section class="table-section">
+  <h2>경주일별 성적</h2>
+  <p class="panel-lead">
+    누적 수치는 좋았던 날과 나빴던 날이 한 숫자에 뭉개집니다. 특히 환수율은
+    고배당 적중 한 건이 오래 남으므로, 날짜별로 끊어 함께 보시는 편이 정확합니다.
+  </p>
+  <div class="table-scroll">
+    <table class="stats-table">
+      <thead><tr>
+        <th>경주일</th><th class="c-num">경주</th><th class="c-num">매수</th>
+        <th class="c-num">적중</th><th class="c-num">적중률</th><th class="c-num">환수율</th>
+      </tr></thead>
+      <tbody>
+        {% for d in accuracy.daily %}
+        <tr>
+          <td>{{ d.date }}</td>
+          <td class="c-num">{{ d.n_races }}</td>
+          <td class="c-num">{{ '{:,}'.format(d.tickets) }}</td>
+          <td class="c-num">{{ d.hits }}</td>
+          <td class="c-num">{{ '%.1f'|format(d.hit_rate * 100) }}%</td>
+          <td class="c-num{% if d.roi >= 1 %} roi-plus{% endif %}">{{ '%.0f'|format(d.roi * 100) }}%</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  <p class="panel-more">
+    일곱 승식을 매 경주 한 통씩 구매한 기준입니다. 매수는 그날 산 마권 수입니다.
+  </p>
+</section>
+{% endif %}
+
 {% if accuracy.by_bet %}
 <section class="table-section">
   <h2>승식별 적중률과 환수율</h2>
