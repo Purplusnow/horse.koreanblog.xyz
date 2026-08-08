@@ -201,80 +201,27 @@
 
     ctx.restore();
 
-    /* 말 — 작은 원. 배율 밖이라 확대해도 크기가 일정하다. */
-    var R = 6.5;
-    pts.forEach(function (pt, i) {
-      var col = gateColor(runners[i].gate);
+    /* 말 — 원은 숫자가 들어갈 만큼만 작게, 숫자는 원에 꽉 차게.
+       지시선을 빼고도 읽히게 하려는 것이다. 선이 없으면 화면이 훨씬 조용하고,
+       가려지는 말은 모자색으로 구분된다(아래 범례).
+
+       뒤에서부터 그려 선두가 맨 위에 온다 — 겹칠 때 가장 중요한 말이 보인다. */
+    var idxByRank = order.map(function (o) { return o.i; });
+    for (var z = idxByRank.length - 1; z >= 0; z--) {
+      var i = idxByRank[z], pt = pts[i], r = runners[i];
+      var col = gateColor(r.gate), label = String(r.gate);
+      var rad = label.length > 1 ? 9.5 : 8.5;
       ctx.beginPath();
-      ctx.arc(pt.x, pt.y, R, 0, Math.PI * 2);
+      ctx.arc(pt.x, pt.y, rad, 0, Math.PI * 2);
       ctx.fillStyle = col[0]; ctx.fill();
-      ctx.strokeStyle = rankOf[i] === 1 ? '#b4842a' : 'rgba(0,0,0,.35)';
-      ctx.lineWidth = rankOf[i] === 1 ? 2.2 : 1;
+      ctx.strokeStyle = z === 0 ? '#b4842a' : 'rgba(0,0,0,.4)';
+      ctx.lineWidth = z === 0 ? 2.2 : 1.2;
       ctx.stroke();
-    });
-
-    /* 마번은 지시선으로 밖에 뺀다. 원 안에 쓰면 원이 커져야 하고, 커지면
-       서로 겹쳐 결국 못 읽는다.
-
-       라벨은 **주로 바깥선을 따라** 등수 순서로 놓는다. 화면 아래 직선에 세우면
-       무리가 코너에 있을 때 선이 길게 부챗살처럼 뻗어 어수선하다. 트랙을 따라
-       두면 선이 짧고, 줄 모양이 실제 대열과 같은 방향이라 눈에 자연스럽다.
-       선두를 기준으로 뒤로 일정 간격씩 — 왼쪽(앞)부터 1등이다. */
-    var R2 = 9.5, GAP = 26;
-
-    // 바깥선을 화면 좌표로 촘촘히 샘플링해 '길이 → 위치' 표를 만든다.
-    var NS = 400, ring = [], cum = [0];
-    for (var q = 0; q <= NS; q++) {
-      ring.push(screenPt(toPx(trackPoint(q / NS * LAP), box, lanes + 2.2)));
-      if (q > 0) {
-        var dx = ring[q].x - ring[q - 1].x, dy = ring[q].y - ring[q - 1].y;
-        cum.push(cum[q - 1] + Math.sqrt(dx * dx + dy * dy));
-      }
-    }
-    var ringLen = cum[NS];
-
-    /* 진행거리 s(m) → 바깥선 위의 화면 길이 */
-    function ringAt(len) {
-      var L = ((len % ringLen) + ringLen) % ringLen;
-      var lo = 0, hi = NS;
-      while (lo < hi - 1) { var mid = (lo + hi) >> 1; if (cum[mid] <= L) lo = mid; else hi = mid; }
-      var span = cum[hi] - cum[lo] || 1, f = (L - cum[lo]) / span;
-      return { x: ring[lo].x + (ring[hi].x - ring[lo].x) * f,
-               y: ring[lo].y + (ring[hi].y - ring[lo].y) * f };
-    }
-
-    // 선두의 트랙 위치를 바깥선 길이로 환산
-    var pLead = progressAt(runners[order[0].i].splits, t);
-    var uLead = ((-distance + pLead * distance) % LAP + LAP) % LAP;
-    var lenLead = uLead / LAP * ringLen;
-
-    ctx.setLineDash([3, 3]);
-    ctx.strokeStyle = 'rgba(0,0,0,.22)';
-    ctx.lineWidth = 1;
-    var slots = order.map(function (o, idx) { return ringAt(lenLead - idx * GAP); });
-    slots.forEach(function (sp, idx) {
-      var pt = pts[order[idx].i];
-      ctx.beginPath();
-      ctx.moveTo(pt.x, pt.y + R + 1);
-      ctx.lineTo(sp.x, sp.y);
-      ctx.stroke();
-    });
-    ctx.setLineDash([]);
-
-    slots.forEach(function (sp, idx) {
-      var r = runners[order[idx].i], col = gateColor(r.gate);
-      ctx.beginPath();
-      ctx.arc(sp.x, sp.y, R2, 0, Math.PI * 2);
-      ctx.fillStyle = col[0]; ctx.fill();
-      ctx.strokeStyle = idx === 0 ? '#b4842a' : 'rgba(0,0,0,.3)';
-      ctx.lineWidth = idx === 0 ? 2 : 1;
-      ctx.stroke();
-      var label = String(r.gate);
       ctx.fillStyle = col[1];
-      ctx.font = 'bold ' + (label.length > 1 ? 9.5 : 11) + 'px system-ui, sans-serif';
+      ctx.font = 'bold ' + (label.length > 1 ? 11 : 13) + 'px system-ui, sans-serif';
       ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-      ctx.fillText(label, sp.x, sp.y + 0.5);
-    });
+      ctx.fillText(label, pt.x, pt.y + 0.5);
+    }
     ctx.textBaseline = 'alphabetic';
 
     /* 표기는 배율 밖에 그린다 — 따라가기 중에 글자까지 커지면 읽기 어렵다. */
@@ -293,6 +240,18 @@
 
   /* 순위는 캔버스 밖 목록에 그린다. 안에 그리면 트랙과 겹치고, 카메라 배율을
      따라 글자가 커졌다 작아졌다 해서 읽기 어렵다. */
+  /* 마번·모자색 범례. 겹쳐서 숫자가 가린 말은 색으로 찾는다. */
+  var legendEl = document.getElementById('tk-legend');
+  if (legendEl) {
+    legendEl.innerHTML = runners.slice()
+      .sort(function (a, b) { return (a.gate || 99) - (b.gate || 99); })
+      .map(function (r) {
+        var c = gateColor(r.gate);
+        return '<li><span class="tk-cap" style="background:' + c[0]
+          + ';color:' + c[1] + '">' + r.gate + '</span>' + r.name + '</li>';
+      }).join('');
+  }
+
   var orderEl = document.getElementById('tk-order');
   var lastOrder = '';
   function renderOrder(order) {

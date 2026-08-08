@@ -1014,3 +1014,18 @@ tbody tr:hover { background: var(--bg-soft); }
 .tk-order li.is-lead { border-color: var(--gold); color: var(--text); font-weight: 600; }
 .tk-order .tk-pos { color: var(--text-faint); font-size: 11.5px; min-width: 14px; text-align: right; }
 .tk-order .tk-dot { width: 9px; height: 9px; border-radius: 50%; display: inline-block; }
+
+/* 마번·모자색 범례 — 겹쳐서 숫자가 가린 말은 색으로 찾는다 */
+.tk-legend {
+  list-style: none; margin: 8px 0 0; padding: 8px 0 0;
+  border-top: 1px solid var(--border);
+  display: flex; flex-wrap: wrap; gap: 4px 12px;
+  font-size: 12px; color: var(--text-soft);
+}
+.tk-legend li { display: inline-flex; align-items: center; gap: 5px; }
+.tk-cap {
+  width: 18px; height: 18px; border-radius: 50%;
+  display: inline-flex; align-items: center; justify-content: center;
+  font-size: 11px; font-weight: 700; border: 1px solid rgba(0,0,0,.3);
+  font-variant-numeric: tabular-nums;
+}
