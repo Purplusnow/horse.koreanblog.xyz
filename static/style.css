@@ -84,6 +84,15 @@ a:hover { text-decoration: underline; }
 }
 .nav a:hover { background: var(--bg-sunken); color: var(--text); text-decoration: none; }
 
+/* 지금 보고 있는 탭.
+   색만 바꾸면 링크가 방문 표시된 것처럼 보인다. 바탕을 채워 '여기'임을
+   덩어리로 읽히게 하고, 아래 선으로 한 번 더 고정한다. */
+.nav a.is-here {
+  color: var(--accent); font-weight: 700;
+  background: var(--accent-soft);
+}
+.nav a.is-here:hover { background: var(--accent-soft); color: var(--accent); }
+
 /* --------------------------------------------------------- 신뢰 배너 */
 
 

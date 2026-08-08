@@ -35,10 +35,16 @@
         <small>{{ site.tagline }}</small>
       </span>
     </a>
+    {# 지금 보고 있는 곳을 표시한다. 경주·마필 상세는 '오늘의 예상' 갈래로
+       묶는다 — 목록에서 들어온 화면이라 그쪽에 속한 것으로 읽히는 게 자연스럽다. #}
+    {% set here = page_url or '/' %}
+    {% set tab = '/accuracy/' if here.startswith('/accuracy')
+                 else '/results/' if here.startswith('/results') else '/' %}
     <nav class="nav">
-      <a href="/">오늘의 예상</a>
-      <a href="/results/">지난 결과</a>
-      <a href="/accuracy/">적중률</a>
+      {% for url, label in [('/', '오늘의 예상'), ('/results/', '지난 결과'),
+                            ('/accuracy/', '적중률')] %}
+      <a href="{{ url }}"{% if tab == url %} class="is-here" aria-current="page"{% endif %}>{{ label }}</a>
+      {% endfor %}
     </nav>
   </div>
 </header>

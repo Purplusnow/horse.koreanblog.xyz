@@ -50,11 +50,13 @@
 {% endmacro %}
 
 {# 적중 배지 — 결과 페이지에서 한 눈에 성패가 읽히게 #}
+{# 축마(◎)가 1착이면 적중, 아니면 실패. 두 갈래로만 적는다.
+   '연대' 같은 중간 등급을 두면 결과가 흐려 보이고, 승식별 적중은 경주
+   상세와 결과 표에서 따로 밝히므로 여기서 겹쳐 말할 이유가 없다. #}
 {% macro hit_badge(outcome) %}
 {% if not outcome or not outcome.settled %}<span class="hit hit-none">집계중</span>
 {% elif outcome.hit_win %}<span class="hit hit-win">적중</span>
-{% elif outcome.hit_place %}<span class="hit hit-place">연대</span>
-{% else %}<span class="hit hit-miss">불발</span>
+{% else %}<span class="hit hit-miss">실패</span>
 {% endif %}
 {% endmacro %}
 
