@@ -568,35 +568,6 @@ def write(path: Path, content: str) -> None:
     path.write_text(content, encoding="utf-8")
 
 
-# 산출 지표를 방문자에게 보여줄 분류. **목록은 공개하지 않는다** — 91개 컬럼명은
-# 읽히지도 않을뿐더러 그대로 경쟁사의 설계도가 된다. 분류와 개수만 내면 폭이
-# 드러나면서 재현할 수 있는 정보는 남지 않는다.
-FEATURE_GROUPS = [
-    ("속도 · 경주기록", r"(spd|abs_speed|early|late|finish)"),
-    ("기수 · 조교사 · 마주", r"(jk_|tr_|ow_)"),
-    ("부담중량 · 등급 · 마체", r"(burden|weight|age|sex|origin|rating|class)"),
-    ("마번 · 거리 · 주로", r"(chul|gate|dist|track|meet|grade)"),
-    ("전적 · 상금", r"(win_rate|place_rate|career|starts|y1|prize)"),
-    ("출전 간격 · 최근성", r"(days|rest|last)"),
-    ("경주 내 상대 비교", r"(rel_|rank_|z_|field)"),
-]
-
-
-def feature_groups() -> List[Dict]:
-    """분류별 지표 수. 어디에도 안 걸린 것은 '자체 파생 지표'로 묶는다."""
-    from .features import FEATURE_COLUMNS
-    rest = list(FEATURE_COLUMNS)
-    out = []
-    for name, pat in FEATURE_GROUPS:
-        hit = [c for c in rest if re.match(pat, c)]
-        rest = [c for c in rest if c not in hit]
-        if hit:
-            out.append({"name": name, "n": len(hit)})
-    if rest:
-        out.append({"name": "자체 파생 지표", "n": len(rest)})
-    return sorted(out, key=lambda g: -g["n"])
-
-
 def build(db: str, out_dir: Path, config: Dict, template_dir: Path,
           static_dir: Path) -> Dict[str, int]:
     set_min_sample(config.get("build", {}).get("min_sample"))
@@ -648,7 +619,6 @@ def build(db: str, out_dir: Path, config: Dict, template_dir: Path,
             "analytics": config["analytics"],
             "accuracy": accuracy,
             "metrics": metrics,
-            "feature_groups": feature_groups(),
             "build_time": now_kst().strftime("%Y-%m-%d %H:%M"),
             # 화면 표기는 사람이 읽기 좋게, datetime 속성은 기계가 읽도록 나눈다.
             "build_time_short": now_kst().strftime("%m월 %d일 %H:%M"),

@@ -110,23 +110,6 @@
     경주가 시행될 때마다 결과가 쌓이고, 그 데이터로 모델을 다시 학습해 예측을 개선합니다.
   </p>
 
-  <div class="feat-groups">
-    <p class="feat-lead">
-      출주마 한 마리를 아래 분류의 <b>{{ metrics.n_features }}개 지표</b>로 봅니다.
-      전적과 기수 성적처럼 누구나 보는 값에 더해, 원자료를 조합해 만든 자체 지표가
-      가장 큰 비중을 차지합니다.
-    </p>
-    <ul class="feat-bars">
-      {% set top = feature_groups[0].n %}
-      {% for g in feature_groups %}
-      <li>
-        <span class="fb-name">{{ g.name }}</span>
-        <span class="fb-track"><i style="width:{{ (g.n / top * 100)|round(1) }}%"></i></span>
-        <span class="fb-num">{{ g.n }}</span>
-      </li>
-      {% endfor %}
-    </ul>
-  </div>
 
   <ul>
     <li><b>경주가 쌓일수록 정교해집니다.</b> 새로운 결과가 나올 때마다 모델을 다시 학습해 예측을 갱신합니다. 어제의 경주가 내일의 예상을 바꿉니다.</li>
