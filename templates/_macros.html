@@ -129,15 +129,6 @@
     {% else %}<span class="rr-empty">-</span>{% endif %}
   </td>
   <td class="c-num">{{ ord_badge(o.top1_ord if o else None) }}</td>
-  <td class="res-actual">
-    {% if o and o.winner_pick %}
-      <span class="mark">{{ o.winner_pick.mark or '－' }}</span>
-      <span class="rr-name">{{ o.winner_pick.hr_name }}</span>
-      <small class="res-rank">예상 {{ o.winner_pick.adj_rank }}순위</small>
-    {% elif o and o.settled %}
-      <small class="res-rank">예상 밖</small>
-    {% else %}<span class="rr-empty">-</span>{% endif %}
-  </td>
   <td class="c-num res-odds">{{ '%.1f'|format(o.top1_odds) if o and o.top1_odds else '-' }}</td>
   <td class="c-num">
     {{ hit_badge(o) }}

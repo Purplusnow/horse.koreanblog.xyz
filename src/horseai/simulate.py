@@ -451,13 +451,15 @@ def lane_offsets(runners: Sequence[Runner], field_size: int) -> np.ndarray:
     return np.asarray(out, dtype=float)
 
 
-# 나란히 달린다고 볼 시간차(초). 이 안에 있으면 옆에 있는 것이고, 그러면 레인이
-# 겹칠 수 없다. 16m/s 에서 0.18초는 약 3m — 말 한 마리 길이쯤이다.
-# 이 값을 크게 잡으면 무리 전체가 '나란히' 로 판정돼 10마리가 10레인으로 퍼진다.
-# 실제 경주는 대개 2~4마리 폭으로 달린다.
-SIDE_BY_SIDE = 0.18
-LANE_MIN_GAP = 1.0      # 나란히 있을 때 필요한 최소 레인 간격 (말 폭)
-LANE_SLEW = 1.2         # 한 구간에서 옆으로 움직일 수 있는 최대 레인 수
+# 앞말이 이 시간차 안에 있으면 그 레인은 쓸 수 없다. 16m/s 에서 0.35초는 약 6m,
+# 두 마신쯤이다 — 그보다 붙으면 앞말 뒷발에 걸린다. **뒷말은 막지 않는다** — 막는 것은 언제나 앞이다.
+#
+# 처음에는 양방향 0.18초(한 마신)로 뒀는데, 그러면 조금만 벌어져도 뒷말이
+# 앞말 레인으로 들어가 결국 전원이 레일에 일렬로 붙었다. 실제 경주에서 무리가
+# 2~4레인 폭을 유지하는 이유는 바로 앞말을 밟고 지나갈 수 없기 때문이다.
+BLOCK_AHEAD = 0.35
+LANE_MIN_GAP = 1.0      # 비켜설 때 필요한 최소 레인 간격 (말 폭)
+LANE_SLEW = 2.2         # 한 구간(200m)에서 옆으로 옮길 수 있는 최대 레인 수
 
 
 def lane_paths(runners: Sequence[Runner], seg_times: np.ndarray) -> np.ndarray:
@@ -469,8 +471,8 @@ def lane_paths(runners: Sequence[Runner], seg_times: np.ndarray) -> np.ndarray:
 
     두 가지 제약으로 재현한다.
       * **안쪽 우선** — 비어 있으면 레일 쪽으로 들어간다
-      * **겹치지 않음** — 나란히 달리는(시간차 SIDE_BY_SIDE 이내) 말끼리는
-        레인이 한 마리 폭 이상 벌어져야 한다. 실제로도 겹쳐 달릴 수 없다.
+      * **앞을 밟지 못함** — 앞말이 BLOCK_AHEAD 안에 있으면 그 레인을 쓸 수 없고
+        한 마리 폭 이상 비켜서야 한다. 뒤따르는 말은 막지 않는다.
 
     옆으로 움직이는 속도에도 한계를 둔다(LANE_SLEW). 한 구간 만에 트랙을 가로질러
     순간이동하면 그것대로 어색하다.
@@ -500,13 +502,13 @@ def lane_paths(runners: Sequence[Runner], seg_times: np.ndarray) -> np.ndarray:
             # 안쪽부터 훑어 비어 있는 첫 자리를 잡는다
             cand = np.arange(lo, hi + 0.001, 0.25)
             for c in cand:
-                if all(abs(t[i] - tk) >= SIDE_BY_SIDE or abs(c - lk) >= LANE_MIN_GAP
+                if all(t[i] - tk >= BLOCK_AHEAD or abs(c - lk) >= LANE_MIN_GAP
                        for tk, lk in placed):
                     lane = c
                     break
             if lane is None:                # 안쪽이 다 막히면 밖으로 낸다
                 lane = hi
-                while any(abs(t[i] - tk) < SIDE_BY_SIDE and abs(lane - lk) < LANE_MIN_GAP
+                while any(t[i] - tk < BLOCK_AHEAD and abs(lane - lk) < LANE_MIN_GAP
                           for tk, lk in placed):
                     lane += 0.25
             out[i, j] = lane

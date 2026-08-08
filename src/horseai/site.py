@@ -709,6 +709,17 @@ def build(db: str, out_dir: Path, config: Dict, template_dir: Path,
             for r in detail_pages
         ], ensure_ascii=False))
 
+        # 정산 워크플로가 헛돌지 않게 오늘 진척을 남긴다. 10분마다 도는 정산은
+        # 게재본의 이 파일을 먼저 읽어, 오늘 경주가 없거나 이미 다 정산됐으면
+        # 아무것도 하지 않고 끝낸다.
+        today_races = [r for r in races if r["date_obj"] == today]
+        write(out_dir / "settle.json", json.dumps({
+            "date": today.isoformat(),
+            "total": len(today_races),
+            "settled": sum(1 for r in today_races if r["has_result"]),
+            "built_at": now_kst().isoformat(timespec="seconds"),
+        }, ensure_ascii=False))
+
         # sitemap / robots
         base = config["site"]["url"].rstrip("/")
         urls = (["/", "/accuracy/", "/results/"]

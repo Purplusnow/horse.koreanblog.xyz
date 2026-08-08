@@ -309,10 +309,17 @@ def bet_summary(rl: pd.DataFrame) -> List[Dict]:
             a["cost"] += b["cost"]
             a["payout"] += b["payout"]
     out = []
+    # 승식을 모두 합친 값. 각 방식을 매 경주 한 세트씩 산 포트폴리오의 성적이다.
+    # 개별 환수율만 늘어놓으면 좋은 것만 눈에 들어오는데, 실제로 예상을 그대로
+    # 따라 산 사람의 손익은 이 한 줄이다.
+    tot = {"n": 0, "hit": 0, "cost": 0.0, "payout": 0.0}
     for name in BET_ORDER:
         a = agg.get(name)
         if not a or not a["n"]:
             continue
+        if "박스" not in name:      # 박스는 기본 매수와 겹쳐 사는 것이라 이중 계산이 된다
+            for k in tot:
+                tot[k] += a[k]
         out.append({
             "name": name,
             "n_races": int(a["n"]),
@@ -320,6 +327,19 @@ def bet_summary(rl: pd.DataFrame) -> List[Dict]:
             "hit_rate": a["hit"] / a["n"],
             "roi": a["payout"] / a["cost"] if a["cost"] else None,
             "best": None,
+        })
+    if tot["cost"]:
+        # 경주 수는 승식마다 같으므로 최댓값이 곧 실제 경주 수다.
+        # tot["n"] 은 '경주 × 승식' 이라 여기 쓰면 안 된다.
+        races = max((r["n_races"] for r in out), default=0)
+        out.append({
+            "name": "전체 통합",
+            "n_races": races,
+            "tickets": int(round(tot["cost"] / races)) if races else 0,
+            "hit_rate": tot["hit"] / tot["n"],
+            "roi": tot["payout"] / tot["cost"],
+            "best": None,
+            "is_total": True,
         })
     return out
 

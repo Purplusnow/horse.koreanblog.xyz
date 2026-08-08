@@ -10,6 +10,14 @@ name: 경주 결과 정산
 # **예측은 만들지 않는다.** 이미 게재한 예상을 건드릴 여지를 아예 두지 않는다.
 # DB 도 저장하지 않는다 — 수집분은 저녁 파이프라인이 정식으로 갈무리하고,
 # 여기서 쓰고 버리면 수집 파이프라인과 쓰기 충돌이 날 일이 없다.
+#
+# 갱신할 것이 없으면 아무것도 하지 않는다. 관문이 둘이다.
+#
+#   1. check — 게재본의 settle.json 만 읽는다(curl 한 번, 몇 초). 오늘 경주가
+#      없거나 이미 다 정산됐으면 여기서 끝난다. 당일 경주가 모두 끝난 뒤부터
+#      다음 날 첫 경주까지가 여기 걸린다.
+#   2. 진척 확인 — 성적을 받아 본 뒤, 게재본보다 정산된 경주가 늘지 않았으면
+#      빌드·배포를 건너뛴다. 경주와 경주 사이에 도는 실행이 여기 걸린다.
 on:
   schedule:
     # 금·토·일 12:00~22:00 KST (UTC 03~13시) 10분마다.
@@ -29,9 +37,47 @@ permissions:
 env:
   DB: data/horseai.sqlite
   DB_RELEASE_TAG: db-state
+  SITE_URL: https://horse.koreanblog.xyz
 
 jobs:
+  # 게재본 상태만 보고 할 일이 있는지 판단한다. 저장소도 받지 않고 파이썬도
+  # 깔지 않는다 — 헛도는 실행의 비용을 curl 한 번으로 끝내는 것이 목적이다.
+  check:
+    runs-on: ubuntu-latest
+    outputs:
+      go: ${{ steps.gate.outputs.go }}
+      was: ${{ steps.gate.outputs.was }}
+    steps:
+      - id: gate
+        run: |
+          today=$(TZ=Asia/Seoul date +%F)
+          state=$(curl -fsS --max-time 20 "$SITE_URL/settle.json" || echo '{}')
+          date=$(jq -r '.date // ""'   <<<"$state")
+          total=$(jq -r '.total // 0'  <<<"$state")
+          done_=$(jq -r '.settled // 0' <<<"$state")
+          echo "오늘 $today · 게재본 $date ($done_/$total 정산)"
+
+          # 게재본이 오늘 것이 아니면 오늘자 페이지 자체가 아직 안 올라갔다.
+          # was=-1 로 두어 아래 진척 관문도 통과시킨다(정산 0경주여도 빌드해야
+          # 오늘 경주 카드와 settle.json 이 올라간다).
+          if [ "$date" != "$today" ]; then
+            echo "→ 게재본이 오늘 것이 아니다. 진행한다"
+            go=true; was=-1
+          elif [ "$total" -eq 0 ]; then
+            echo "→ 오늘은 경주가 없다. 건너뛴다"
+            go=false; was=0
+          elif [ "$done_" -ge "$total" ]; then
+            echo "→ 오늘 $total 경주 모두 정산됐다. 건너뛴다"
+            go=false; was="$done_"
+          else
+            echo "→ 미정산 $((total - done_))경주. 진행한다"
+            go=true; was="$done_"
+          fi
+          { echo "go=$go"; echo "was=$was"; } >> "$GITHUB_OUTPUT"
+
   settle:
+    needs: check
+    if: needs.check.outputs.go == 'true'
     runs-on: ubuntu-latest
     environment:
       name: github-pages
@@ -61,16 +107,48 @@ jobs:
           KRA_SERVICE_KEY: ${{ secrets.KRA_SERVICE_KEY }}
         run: PYTHONPATH=src python -m horseai.kra.collect results --days 1 --db "$DB"
 
+      # 성적을 받아 봤더니 게재본과 같으면(경주와 경주 사이) 여기서 멈춘다.
+      # 빌드가 이 워크플로에서 가장 오래 걸리는 단계라, 이 관문이 실효가 크다.
+      - name: 정산 진척 확인
+        id: prog
+        env:
+          WAS: ${{ needs.check.outputs.was }}
+        run: |
+          now=$(python - <<'PY'
+          import datetime as dt, os, sqlite3
+          kst = dt.timezone(dt.timedelta(hours=9))
+          today = dt.datetime.now(dt.timezone.utc).astimezone(kst).date().isoformat()
+          conn = sqlite3.connect(os.environ["DB"])
+          print(conn.execute(
+              "SELECT COUNT(DISTINCT r.race_key) FROM races r "
+              "JOIN results s ON s.race_key = r.race_key AND s.ord = 1 "
+              "WHERE r.rc_date = ?", (today,)).fetchone()[0])
+          PY
+          )
+          echo "게재본 $WAS 경주 → 지금 $now 경주"
+          if [ "$now" -gt "$WAS" ]; then
+            echo "→ 새로 정산된 경주가 있다. 배포한다"
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "→ 달라진 것이 없다. 배포하지 않는다"
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: 적중률 검증
+        if: steps.prog.outputs.changed == 'true'
         run: PYTHONPATH=src python -m horseai.verify --db "$DB" --out data/accuracy.json
 
       - name: 사이트 빌드
+        if: steps.prog.outputs.changed == 'true'
         timeout-minutes: 15
         run: PYTHONPATH=src python -m horseai.site --db "$DB" --out dist
 
       - uses: actions/configure-pages@v5
+        if: steps.prog.outputs.changed == 'true'
       - uses: actions/upload-pages-artifact@v3
+        if: steps.prog.outputs.changed == 'true'
         with:
           path: dist
       - id: deployment
+        if: steps.prog.outputs.changed == 'true'
         uses: actions/deploy-pages@v4
