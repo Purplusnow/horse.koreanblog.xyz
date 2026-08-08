@@ -196,10 +196,17 @@
     // 말은 가장 바깥 레인 + 마커 반지름까지 나간다. 그 몫을 다 빼야 잘리지 않는다.
     var outer = lanes * laneStep + 12;
     var pad = 10;
-    var ry = Math.max(26, (H - pad * 2) / 2 - outer);
-    var innerW = Math.max(60, W - pad * 2 - (ry + outer) * 2);
+    /* 직선과 곡선의 축척(px/m)을 같게 맞춘다.
+       직선 ST m 가 innerW px, 곡선 CV m 가 반원 호 π·ry px 이므로
+       innerW/ST = π·ry/CV 가 되어야 한다. 이 비를 안 맞추면 코너에 들어서는
+       순간 화면상 속도가 뚝 떨어져, 말들이 브레이크를 잡은 것처럼 보인다.
+       실제로 제주(직선 410m·곡선 306m)에서 곡선 축척이 직선의 38% 였다. */
+    var c = CV / (Math.PI * ST);
+    var ry = c * (W - pad * 2 - outer * 2) / (1 + 2 * c);
+    ry = Math.max(20, Math.min(ry, (H - pad * 2) / 2 - outer));
+    var innerW = Math.max(60, ry * Math.PI * ST / CV);
     return {
-      left: pad + ry + outer, innerW: innerW,
+      left: (W - innerW) / 2, innerW: innerW,
       innerH: ry * 2, cy: H / 2, laneStep: laneStep, lanes: lanes
     };
   }
