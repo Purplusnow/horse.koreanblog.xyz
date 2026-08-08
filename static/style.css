@@ -1042,3 +1042,34 @@ tbody tr:hover { background: var(--bg-soft); }
   border-top: 2px solid var(--text-faint);
   font-weight: 700; color: var(--text);
 }
+
+/* 산출 지표 분류 — 막대로 비중을 함께 보여 준다.
+   숫자만 나열하면 읽는 사람이 크기를 머리로 비교해야 한다. */
+.feat-groups { margin: 18px 0 22px; }
+.feat-groups .feat-lead {
+  margin: 0 0 14px; color: var(--text-soft); font-size: 14px; line-height: 1.7;
+}
+.feat-groups ul.feat-bars { list-style: none; margin: 0; padding: 0; }
+.feat-groups ul.feat-bars > li {
+  display: grid; grid-template-columns: minmax(96px, 150px) 1fr 34px;
+  align-items: center; gap: 12px; padding: 5px 0; list-style: none;
+}
+.feat-groups ul.feat-bars > li::marker { content: none; }
+.feat-groups .fb-name {
+  font-size: 13px; color: var(--text-soft); text-align: right;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.feat-groups .fb-track {
+  height: 12px; border-radius: 3px; background: var(--bg-sunken); overflow: hidden;
+}
+.feat-groups .fb-track i {
+  display: block; height: 100%; border-radius: 3px; background: var(--accent);
+}
+.feat-groups .fb-num {
+  font-size: 14px; font-weight: 700; font-variant-numeric: tabular-nums;
+  color: var(--text); text-align: right;
+}
+@media (max-width: 520px) {
+  .feat-groups ul.feat-bars > li { grid-template-columns: 104px 1fr 28px; gap: 8px; }
+  .feat-groups .fb-name { font-size: 12px; }
+}

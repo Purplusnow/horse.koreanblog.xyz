@@ -116,9 +116,14 @@
       전적과 기수 성적처럼 누구나 보는 값에 더해, 원자료를 조합해 만든 자체 지표가
       가장 큰 비중을 차지합니다.
     </p>
-    <ul>
+    <ul class="feat-bars">
+      {% set top = feature_groups[0].n %}
       {% for g in feature_groups %}
-      <li><b>{{ g.n }}</b><span>{{ g.name }}</span></li>
+      <li>
+        <span class="fb-name">{{ g.name }}</span>
+        <span class="fb-track"><i style="width:{{ (g.n / top * 100)|round(1) }}%"></i></span>
+        <span class="fb-num">{{ g.n }}</span>
+      </li>
       {% endfor %}
     </ul>
   </div>
