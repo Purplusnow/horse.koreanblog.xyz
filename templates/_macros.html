@@ -114,7 +114,9 @@
    빗나간 예상을 감추면 맞은 예상도 믿을 수 없게 되므로 전량 그대로 싣는다. #}
 {% macro result_row(race) %}
 {% set o = race.outcome %}
-<tr class="race-row{% if o and o.hit_win %} res-hit{% endif %}"
+{# 행 바탕은 단승 적중이 아니라 **몇 승식을 맞혔나** 로 칠한다. 단승 하나로
+   칠하면 삼복승까지 맞힌 경주와 단승만 맞힌 경주가 같은 색이 된다. #}
+<tr class="race-row{% if o and o.n_bets %} hit-{{ o.hit_bets|length }}{% endif %}"
     onclick="location.href='{{ race.url }}'">
   <td class="rr-no">
     <a href="{{ race.url }}">
