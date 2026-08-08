@@ -28,7 +28,7 @@ from dataclasses import replace
 
 from .simulate import (
     animation_payload, build_runners, confidence, expected_run, fit_noise,
-    corner_count, corner_counts, pace_factors, par_time, par_times, scale_to_par, simulate,
+    TRACK_SPEC, corner_count, corner_counts, pace_factors, par_time, par_times, scale_to_par, simulate,
 )
 
 log = logging.getLogger(__name__)
@@ -152,7 +152,9 @@ def build_simulations(pred: pd.DataFrame, n_sims: int = 2000,
         conf = confidence(sim)
         # 승률은 위 시행(분포)에서, 미리보기는 '예상대로 전개될 경우'에서 나온다.
         # 둘을 섞으면 추천 순서와 화면이 어긋난다.
-        seg = expected_run(runners, distance, corners=n_corner)
+        spec = TRACK_SPEC.get(str(race["meet"].iloc[0]), TRACK_SPEC["서울"])
+        seg = expected_run(runners, distance, corners=n_corner,
+                           straight=spec["straight"], curve=spec["curve"])
         # 절대 시간은 실제 우승 기록 수준에 맞춘다. 시뮬레이션이 정하는 것은
         # 말들 사이의 차이이지 절대 속도가 아니다.
         # 기준 기록에 **출주마들의 실제 빠르기**를 곱한다. 경마장 평균만 쓰면

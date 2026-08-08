@@ -1001,18 +1001,24 @@ tbody tr:hover { background: var(--bg-soft); }
 
 /* 미리보기 순위 — 캔버스 밖. 안에 그리면 트랙과 겹치고 배율을 따라 흔들린다. */
 .track-wrap { position: relative; }
+/* 순위는 트랙 위에 겹쳐 가운데 띄운다. 아래 번호 범례와 나란히 두면 둘이
+   비슷해 보여 무엇이 순위인지 헷갈린다. 지금 순위가 가장 중요한 정보다. */
 .tk-order {
-  list-style: none; margin: 10px 0 0; padding: 0;
-  display: flex; flex-wrap: wrap; gap: 4px 6px;
+  list-style: none; margin: 0; padding: 0;
+  position: absolute; left: 50%; top: 10px; transform: translateX(-50%);
+  display: flex; flex-wrap: wrap; justify-content: center; gap: 4px 6px;
   font-size: 12.5px; font-variant-numeric: tabular-nums;
+  pointer-events: none; max-width: calc(100% - 24px);
 }
 .tk-order li {
   display: inline-flex; align-items: center; gap: 5px;
-  padding: 3px 8px 3px 4px; border: 1px solid var(--border);
-  border-radius: 20px; background: var(--surface); color: var(--text-soft);
+  padding: 3px 9px 3px 6px; border: 1px solid var(--border);
+  border-radius: 20px; background: rgba(255,255,255,.92); color: var(--text-soft);
+  box-shadow: 0 1px 4px rgba(0,0,0,.06);
 }
 .tk-order li.is-lead { border-color: var(--gold); color: var(--text); font-weight: 600; }
-.tk-order .tk-pos { color: var(--text-faint); font-size: 11.5px; min-width: 14px; text-align: right; }
+.tk-order .tk-pos { color: var(--text-faint); font-size: 11.5px; font-weight: 600; }
+.tk-order li.is-lead .tk-pos { color: var(--gold); }
 .tk-order .tk-dot { width: 9px; height: 9px; border-radius: 50%; display: inline-block; }
 
 /* 마번·모자색 범례 — 겹쳐서 숫자가 가린 말은 색으로 찾는다 */

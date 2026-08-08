@@ -479,12 +479,18 @@ def lane_paths(runners: Sequence[Runner], seg_times: np.ndarray) -> np.ndarray:
     if n == 0:
         return np.zeros((0, 0))
     cum = np.cumsum(seg_times, axis=1)
-    # 출발 직후에는 게이트에서 나온 자리 그대로다
-    start = np.array([max(0.0, ((r.chul_no or 1) - 1) * 0.9) for r in runners])
+    # 출발선에서는 게이트에 **한 마리 폭씩** 벌려 일렬로 선다. 1번이 레일,
+    # 바깥 게이트일수록 그만큼 밖이다. 여기서부터 안쪽으로 모여든다.
+    start = np.array([max(0.0, float((r.chul_no or 1) - 1)) for r in runners])
     out = np.zeros((n, n_seg))
     prev = start.copy()
 
     for j in range(n_seg):
+        if j == 0:
+            # 출발선에서는 게이트 자리 그대로다. 여기서부터 자리를 다툰다.
+            out[:, 0] = start
+            prev = start
+            continue
         t = cum[:, j]
         placed: List[tuple] = []            # (시각, 레인)
         for i in np.argsort(t):             # 앞선 말부터 자리를 잡는다
@@ -507,6 +513,47 @@ def lane_paths(runners: Sequence[Runner], seg_times: np.ndarray) -> np.ndarray:
             placed.append((t[i], lane))
         prev = out[:, j]
     return out
+
+
+def curve_fraction(distance: float, n_seg: int, straight: float,
+                   curve: float) -> np.ndarray:
+    """구간마다 **곡선 위를 달리는 비율**.
+
+    결승선에서 거꾸로 재면 직선주로 → 곡선 → 반대편 직선 → 곡선 순이다. 어느
+    구간이 코너에 걸쳐 있는지 알아야 '바깥으로 돈 대가' 를 그 구간에만 물릴 수
+    있다. 직선에서는 바깥으로 나가도 손해가 없다.
+    """
+    lap = 2 * straight + 2 * curve
+    seg = distance / max(1, n_seg)
+    out = np.zeros(n_seg)
+    for j in range(n_seg):
+        # j 번째 구간이 차지하는 '결승선까지 남은 거리' 범위
+        far, near = distance - j * seg, distance - (j + 1) * seg
+        hit, steps = 0, 12
+        for k in range(steps):                       # 잘게 나눠 곡선 여부를 센다
+            back = (near + (far - near) * (k + 0.5) / steps) % lap
+            if straight <= back < straight + curve or back >= 2 * straight + curve:
+                hit += 1
+        out[j] = hit / steps
+    return out
+
+
+def apply_lane_cost(seg_times: np.ndarray, lanes: np.ndarray, distance: float,
+                    straight: float, curve: float) -> np.ndarray:
+    """바깥 레인으로 돈 만큼 실제로 더 뛴 거리를 시간에 반영한다.
+
+    이것이 없으면 레인은 그림에 불과하고 아웃코스 불리함이 기록에 남지 않는다.
+    반경 r 만큼 밖에서 각도 θ 를 돌면 r·θ 만큼 더 뛴다. 곡선 길이 curve 가 π
+    라디안이므로, 구간이 곡선에 걸친 비율만큼 각도를 환산해 물린다.
+    """
+    n, n_seg = seg_times.shape
+    if n == 0 or n_seg == 0:
+        return seg_times
+    frac = curve_fraction(distance, n_seg, straight, curve)
+    seg_len = distance / n_seg
+    theta = frac * seg_len * math.pi / max(1e-6, curve)      # 구간별 회전 각도
+    extra = lanes * LANE_WIDTH * theta[None, :]              # 추가 주행거리(m)
+    return seg_times * (1.0 + extra / max(1e-6, seg_len))
 
 
 def pace_factors(conn, before: str) -> Dict[str, float]:
@@ -560,7 +607,8 @@ def par_time(pars: Dict[tuple, float], meet: str, distance: float) -> Optional[f
 
 def expected_run(runners: Sequence[Runner], distance: float,
                  n_sims: int = 800, noise_scale: float = 1.0,
-                 seed: int = 20260808, corners: int = 0) -> np.ndarray:
+                 seed: int = 20260808, corners: int = 0,
+                 straight: float = 0.0, curve: float = 0.0) -> np.ndarray:
     """**예상대로 전개될 경우**의 구간 소요시간을 만든다.
 
     화면의 미리보기가 답해야 할 질문은 '이번엔 어떻게 될까'가 아니라
@@ -596,6 +644,16 @@ def expected_run(runners: Sequence[Runner], distance: float,
     # 관측된 완주 시간 분포는 그대로 두고, i 번째로 빠른 시간을 i 번째 말에게 준다.
     target = np.sort(final)
     delta = target - final
+
+    # 게이트에서 출발해 안쪽으로 모여드는 실제 주행 코스를 만들고, 바깥으로
+    # 돈 대가를 시간에 물린다. 그래야 아웃코스 불리함이 기록에 남는다.
+    if straight and curve:
+        lanes = lane_paths(runners, seg)
+        seg = apply_lane_cost(seg, lanes, distance, straight, curve)
+        cum = np.cumsum(seg, axis=1)
+        final = cum[:, -1]
+        target = np.sort(final)          # 순서는 예상이 정한다 — 다시 맞춘다
+        delta = target - final
 
     # 보정은 마지막 두 구간에만 싣는다. 앞 구간을 건드리면 도중 전개가 바뀐다.
     k = min(2, seg.shape[1])

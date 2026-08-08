@@ -292,7 +292,7 @@
     orderEl.innerHTML = order.slice(0, 5).map(function (o, idx) {
       var r = runners[o.i], c = gateColor(r.gate);
       return '<li class="' + (idx === 0 ? 'is-lead' : '') + '">'
-        + '<span class="tk-pos">' + (idx + 1) + '</span>'
+        + '<span class="tk-pos">' + (idx + 1) + '위</span>'
         + '<span class="tk-dot" style="background:' + c[0] + '"></span>'
         + r.gate + ' ' + r.name + '</li>';
     }).join('');
