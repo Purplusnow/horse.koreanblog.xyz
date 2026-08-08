@@ -145,15 +145,42 @@ def build_simulations(pred: pd.DataFrame, n_sims: int = 2000) -> List[Dict]:
 
 
 def frozen_race_keys(conn: sqlite3.Connection) -> set:
-    """이미 경주일이 지났거나 결과가 들어온 경주 — 예측 수정 금지."""
-    today = dt.date.today().isoformat()
+    """예측 수정이 금지된 경주.
+
+    동결 기준은 **발주 시각**이다. 날짜 단위로만 잠그면, 당일 12:30 에 이미 달린
+    경주가 결과가 들어오기 전까지 몇 시간 동안 열려 있어 15:00 갱신에서 예측이
+    다시 쓰일 수 있다. 그러면 '발주 전에 게재한 예상'이라는 전제가 무너지고,
+    공개 적중률 전체가 의미를 잃는다. 결과 도착은 발주보다 늦으므로 has_result
+    만으로는 이 구간을 막지 못한다.
+
+    발주 시각이 비어 있는 경주는 그 날의 마지막 경주가 끝났다고 볼 수 없으므로
+    날짜만으로 판단한다(당일이면 열어 둔다).
+    """
+    now = dt.datetime.now()
+    today = now.date().isoformat()
     rows = conn.execute(
-        "SELECT DISTINCT p.race_key FROM predictions p "
-        "JOIN races r ON r.race_key = p.race_key "
-        "WHERE r.rc_date < ? OR COALESCE(r.has_result,0) = 1",
+        "SELECT DISTINCT p.race_key, r.rc_date, r.post_time, "
+        "       COALESCE(r.has_result, 0) AS has_result "
+        "FROM predictions p JOIN races r ON r.race_key = p.race_key "
+        "WHERE r.rc_date <= ? OR COALESCE(r.has_result,0) = 1",
         (today,),
     ).fetchall()
-    return {r[0] for r in rows}
+
+    frozen = set()
+    for key, rc_date, post_time, has_result in rows:
+        if has_result or (rc_date or "") < today:
+            frozen.add(key)
+            continue
+        if rc_date != today or not post_time:
+            continue
+        try:
+            hh, mm = str(post_time).strip().split(":")[:2]
+            post = now.replace(hour=int(hh), minute=int(mm), second=0, microsecond=0)
+        except (ValueError, TypeError):
+            continue
+        if now >= post:
+            frozen.add(key)
+    return frozen
 
 
 def generate(conn: sqlite3.Connection, race_keys: Optional[List[str]] = None,

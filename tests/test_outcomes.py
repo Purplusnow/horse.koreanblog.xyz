@@ -1,4 +1,4 @@
-"""출주 취소마 처리 회귀 테스트.
+"""공개 예측 무결성 회귀 테스트 (출주 취소 처리 · 예측 동결).
 
 취소 처리는 조용히 틀리기 쉽다. 취소마를 그냥 두면 실제로는 달리지도 않은 말을
 '본명'으로 세어 적중률이 떨어지고, 통째로 경주를 버리면 표본이 줄어든다. 어느
@@ -96,6 +96,44 @@ def test_no_cancellation_is_unchanged(conn: sqlite3.Connection) -> None:
     print("  ✓ 취소 없는 경주: 순위·판정 불변")
 
 
+def test_freeze_by_post_time(path: str) -> None:
+    """발주 시각이 지난 경주는 결과가 오기 전에도 잠겨야 한다.
+
+    날짜 단위로만 잠그면 당일 이미 달린 경주가 결과 도착 전까지 열려 있어,
+    다음 갱신에서 예측이 다시 쓰인다. '발주 전에 게재한 예상'이라는 전제가
+    무너지므로 공개 적중률 전체가 무의미해진다.
+    """
+    import datetime as dt
+
+    from horseai.predict import frozen_race_keys
+
+    now = dt.datetime.now()
+    today = now.date().isoformat()
+    past = (now - dt.timedelta(hours=1)).strftime("%H:%M")
+    future = (now + dt.timedelta(hours=1)).strftime("%H:%M")
+
+    # 취소 테스트와 같은 DB를 쓰면 외래키 때문에 경주를 지울 수 없다. 따로 만든다.
+    Path(path).unlink(missing_ok=True)
+    with session(path) as conn:
+        for no, post in ((1, past), (2, future)):
+            key = f"서울-{today.replace('-', '')}-{no:02d}"
+            conn.execute(
+                "INSERT INTO races (race_key, meet, rc_date, rc_no, distance, "
+                "post_time, has_result) VALUES (?,?,?,?,1200,?,0)",
+                (key, "서울", today, no, post))
+            conn.execute(
+                "INSERT INTO predictions (race_key, hr_no, pred_rank, p_win, "
+                "p_place, model_version) VALUES (?,'H9',1,0.5,0.7,'test')", (key,))
+        conn.commit()
+
+        frozen = frozen_race_keys(conn)
+        started = f"서울-{today.replace('-', '')}-01"
+        upcoming = f"서울-{today.replace('-', '')}-02"
+        assert started in frozen, "발주 시각이 지난 경주가 잠기지 않았다 — 예측 재작성 가능"
+        assert upcoming not in frozen, "아직 발주 전인 경주가 잠겼다 — 예측 갱신이 막힌다"
+    print("  ✓ 예측 동결: 발주 시각 기준으로 잠김")
+
+
 def main() -> int:
     path = "data/_test_outcomes.sqlite"
     Path(path).unlink(missing_ok=True)
@@ -105,7 +143,9 @@ def main() -> int:
         test_site_outcome_reranks(conn)
         test_verify_excludes_cancelled(conn)
         test_no_cancellation_is_unchanged(conn)
+    test_freeze_by_post_time("data/_test_freeze.sqlite")
     Path(path).unlink(missing_ok=True)
+    Path("data/_test_freeze.sqlite").unlink(missing_ok=True)
     print("모든 검사 통과")
     return 0
 
