@@ -51,6 +51,14 @@ jobs:
           gh release download "$DB_RELEASE_TAG" -p "metrics.json" -D models 2>/dev/null || true
           echo "복원 완료 ($(du -h "$DB" | cut -f1))"
 
+      # 보관된 DB 의 미리보기 대본이 옛 형식일 수 있다. 대본 형식이 바뀌어도
+      # 시행된 경주는 예측을 다시 만들지 않으므로 옛 값이 그대로 남고, 새 화면
+      # 코드가 읽을 lanes 가 없어 말이 전부 0레인에 겹쳐 그려진다.
+      # 여기서 다시 굽는다 — 게재한 승률·순위는 그대로 쓰므로 예상은 안 바뀐다.
+      - name: 옛 미리보기 대본 재생성
+        timeout-minutes: 20
+        run: PYTHONPATH=src python -m horseai.predict --db "$DB" --rebuild-previews
+
       - name: 적중률 검증
         run: PYTHONPATH=src python -m horseai.verify --db "$DB" --out data/accuracy.json
 
