@@ -17,6 +17,7 @@ from __future__ import annotations
 
 import argparse
 import datetime as dt
+import hashlib
 import json
 import logging
 import re
@@ -601,7 +602,18 @@ def build(db: str, out_dir: Path, config: Dict, template_dir: Path,
         # 홈 하단에는 '어제 이전' 만 남긴다 (오늘 것은 위 목록에 이미 있다)
         recent_past = [r for r in past if r["date_obj"] and r["date_obj"] < today]
 
+        # 정적 파일 주소에 붙일 내용 해시.
+        #
+        # 없으면 브라우저가 예전 track.js·style.css 를 계속 쓴다. 실제로 레인
+        # 간격을 고쳐 배포하고도 화면이 그대로여서 한참 딴 데를 짚었다.
+        assets = {}
+        for f in ("track.js", "style.css"):
+            src = static_dir / f
+            if src.exists():
+                assets[f] = hashlib.md5(src.read_bytes()).hexdigest()[:8]
+
         ctx_base = {
+            "assets": assets,
             "site": config["site"],
             "adsense": config["adsense"],
             "analytics": config["analytics"],

@@ -13,7 +13,7 @@
 <meta property="og:description" content="{% block og_description %}{{ self.description() }}{% endblock %}">
 <meta property="og:url" content="{{ site.url }}{{ page_url }}">
 <meta name="twitter:card" content="summary">
-<link rel="stylesheet" href="/static/style.css">
+<link rel="stylesheet" href="/static/style.css?v={{ assets['style.css'] }}">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🐎</text></svg>">
 {% block head_extra %}{% endblock %}
 {% if analytics.ga4_id %}

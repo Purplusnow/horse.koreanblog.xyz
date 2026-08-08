@@ -196,7 +196,7 @@
   </p>
 
   <script id="sim-data" type="application/json">{{ sim.payload_json | safe }}</script>
-  <script src="/static/track.js" defer></script>
+  <script src="/static/track.js?v={{ assets['track.js'] }}" defer></script>
 </section>
 {% endif %}
 
