@@ -968,3 +968,10 @@ tbody tr:hover { background: var(--bg-soft); }
 .ri-pick.is-winner .ri-ord { color: var(--accent-text); }
 .ri-pick.is-winner .rr-name { color: var(--accent-text); }
 .ri-picks.is-done .rr-name { font-weight: 500; }
+
+/* 적중률 페이지의 축별 소제목 */
+.axis-title {
+  margin: 20px 0 8px; font-size: 14px; letter-spacing: -.01em;
+  color: var(--text-soft); font-weight: 700;
+}
+.axis-title:first-of-type { margin-top: 4px; }

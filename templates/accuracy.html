@@ -71,6 +71,77 @@
 </section>
 {% endif %}
 
+
+{% if o.hit_trio_of5 is not none %}
+<section class="table-section">
+  <h2>조합별 적중률</h2>
+  <p class="panel-lead">
+    게재한 예상을 마권 조합에 대응해 집계했습니다. 순서를 가리지 않는 조합 기준입니다.
+  </p>
+  <div class="table-scroll">
+    <table class="stats-table">
+      <thead><tr><th>조합</th><th>기준</th><th class="c-num">적중률</th></tr></thead>
+      <tbody>
+        <tr><td>1순위 우승</td><td>1순위 마필이 1착</td>
+            <td class="c-num">{{ '%.1f'|format(o.hit_win * 100) }}%</td></tr>
+        <tr><td>1순위 입상</td><td>1순위 마필이 3착 이내</td>
+            <td class="c-num">{{ '%.1f'|format(o.hit_place * 100) }}%</td></tr>
+        <tr><td>상위 2두</td><td>상위 2두가 1·2착</td>
+            <td class="c-num">{{ '%.1f'|format(o.hit_exacta_box * 100) }}%</td></tr>
+        <tr><td>상위 3두</td><td>상위 3두가 1·2·3착</td>
+            <td class="c-num">{{ '%.1f'|format(o.hit_trio_box * 100) }}%</td></tr>
+        <tr><td>상위 3두 중 2두</td><td>상위 3두 중 2두가 3착 이내</td>
+            <td class="c-num">{{ '%.1f'|format(o.hit_top3_two * 100) }}%</td></tr>
+        <tr class="row-top"><td>상위 5두 중 3두</td><td>추천 5두 안에서 1·2·3착이 모두 나옴</td>
+            <td class="c-num">{{ '%.1f'|format(o.hit_trio_of5 * 100) }}%</td></tr>
+        <tr><td>상위 5두 중 우승마</td><td>추천 5두 안에 1착</td>
+            <td class="c-num">{{ '%.1f'|format(o.hit_top5_winner * 100) }}%</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+{% endif %}
+
+{% if accuracy.star and accuracy.star.n_races >= 20 %}
+<section class="panel">
+  <h2>★ 경주 실적</h2>
+  <p class="panel-lead">
+    한 마리의 우세가 뚜렷할 때만 다는 표시입니다. 전체 {{ '{:,}'.format(accuracy.star.n_races) }}경주에 등장했습니다.
+  </p>
+  <ul class="inline-stats">
+    <li><span>1순위 1착</span><b>{{ '%.1f'|format(accuracy.star.hit_win * 100) }}%</b></li>
+    <li><span>1순위 3착 이내</span><b>{{ '%.1f'|format(accuracy.star.hit_place * 100) }}%</b></li>
+    <li><span>상위 3두 중 우승마</span><b>{{ '%.1f'|format(accuracy.star.hit_top3_has_winner * 100) }}%</b></li>
+  </ul>
+</section>
+{% endif %}
+
+{% if accuracy.by_mark %}
+<section class="table-section">
+  <h2>기호별 실적</h2>
+  <p class="panel-lead">
+    각 기호를 받은 마필이 실제로 어떤 착순에 들었는지 집계했습니다.
+  </p>
+  <div class="table-scroll">
+    <table class="stats-table">
+      <thead><tr><th>기호</th><th class="c-num">두수</th><th class="c-num">1착</th>
+                 <th class="c-num">2착 이내</th><th class="c-num">3착 이내</th></tr></thead>
+      <tbody>
+        {% for m in accuracy.by_mark %}
+        <tr>
+          <td class="c-mark"><span class="mark{% if m.mark == '★' %} is-star{% endif %}">{{ m.mark }}</span></td>
+          <td class="c-num">{{ '{:,}'.format(m.n) }}</td>
+          <td class="c-num">{{ '%.1f'|format(m.hit_win * 100) }}%</td>
+          <td class="c-num">{{ '%.1f'|format(m.hit_top2 * 100) }}%</td>
+          <td class="c-num">{{ '%.1f'|format(m.hit_top3 * 100) }}%</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+{% endif %}
+
 {% if accuracy.monthly %}
 <section class="table-section">
   <h2>월별 추이</h2>
@@ -145,6 +216,50 @@
       </tbody>
     </table>
   </div>
+</section>
+{% endif %}
+
+
+{% macro axis_table(rows, head) %}
+<div class="table-scroll">
+  <table class="stats-table">
+    <thead><tr><th>{{ head }}</th><th class="c-num">경주</th><th class="c-num">1순위 1착</th>
+               <th class="c-num">1순위 3착 이내</th><th class="c-num">상위 3두 중 우승마</th></tr></thead>
+    <tbody>
+      {% for r in rows %}
+      <tr>
+        <td>{{ r.band or r.meet }}</td>
+        <td class="c-num">{{ '{:,}'.format(r.n_races) }}</td>
+        <td class="c-num">{{ '%.1f'|format(r.hit_win * 100) }}%</td>
+        <td class="c-num">{{ '%.1f'|format(r.hit_place * 100) }}%</td>
+        <td class="c-num">{{ '%.1f'|format(r.hit_top3_has_winner * 100) }}%</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endmacro %}
+
+{% set axes = [
+  ('거리대별', accuracy.by_distance, '거리'),
+  ('출주 두수별', accuracy.by_field, '두수'),
+  ('등급별', accuracy.by_grade, '등급'),
+  ('요일별', accuracy.by_weekday, '요일'),
+  ('주로 상태별', accuracy.by_track, '주로'),
+] %}
+{% if axes|selectattr(1)|list %}
+<section class="table-section">
+  <h2>조건별 적중률</h2>
+  <p class="panel-lead">
+    경주 조건에 따라 예측이 어떻게 달라지는지 나눠 봤습니다.
+    집계 경주가 20회에 못 미치는 구간은 표시하지 않습니다.
+  </p>
+  {% for title, rows, head in axes %}
+  {% if rows %}
+  <h3 class="axis-title">{{ title }}</h3>
+  {{ axis_table(rows, head) }}
+  {% endif %}
+  {% endfor %}
 </section>
 {% endif %}
 

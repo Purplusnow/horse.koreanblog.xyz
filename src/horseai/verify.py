@@ -20,14 +20,60 @@ from typing import Dict, List, Optional
 import numpy as np
 import pandas as pd
 
+from .clock import today_kst
 from .kra.store import session
+from .marks import assign_marks
 
 log = logging.getLogger(__name__)
 
+WEEKDAY_KO = ["월", "화", "수", "목", "금", "토", "일"]
+
+# 이 아래로는 표본이 얕아 숫자가 잡음이 된다. 구간을 나눌수록 더 그렇다.
+MIN_GROUP_RACES = 20
+MIN_TIER_RACES = 30
+
+
+def _distance_band(m) -> str:
+    """거리대. 단거리와 장거리는 사실상 다른 종목이라 따로 봐야 한다."""
+    try:
+        d = float(m)
+    except (TypeError, ValueError):
+        return ""
+    if d <= 1200:
+        return "단거리 (~1200m)"
+    if d <= 1700:
+        return "중거리 (1300~1700m)"
+    return "장거리 (1800m~)"
+
+
+def _field_band(n) -> str:
+    """출주 두수. 두수가 늘수록 맞히기 어려워지는 게 정상이다."""
+    try:
+        v = int(n)
+    except (TypeError, ValueError):
+        return ""
+    if v <= 8:
+        return "소두수 (~8두)"
+    if v <= 11:
+        return "중두수 (9~11두)"
+    return "다두수 (12두~)"
+
+
+def _grade_band(g) -> str:
+    """등급을 굵게 묶는다. 국1~국6을 그대로 나누면 구간마다 표본이 얕아진다."""
+    t = str(g or "").strip()
+    if not t:
+        return ""
+    for hi in ("1", "2", "3"):
+        if hi in t:
+            return "상위 등급"
+    return "하위 등급" if any(c in t for c in "456") else t
+
 VERIFY_SQL = """
 SELECT
-    p.race_key, p.hr_no, p.pred_rank, p.p_win, p.p_place, p.model_version, p.created_at,
-    r.rc_date, r.meet, r.rc_no, r.distance, r.grade,
+    p.race_key, p.hr_no, p.pred_rank, p.p_win, p.p_place, p.p_top2,
+    p.model_version, p.created_at,
+    r.rc_date, r.meet, r.rc_no, r.distance, r.grade, r.field_size, r.track_cond,
     res.ord, res.win_odds, res.place_odds, res.hr_name,
     s.conf_label, s.conf_score,
     CASE WHEN c.hr_no IS NOT NULL THEN 1 ELSE 0 END AS cancelled
@@ -53,7 +99,7 @@ def load_verified(conn: sqlite3.Connection) -> pd.DataFrame:
     if df.empty:
         return df
     df["rc_date"] = pd.to_datetime(df["rc_date"], errors="coerce")
-    for c in ("ord", "win_odds", "place_odds", "pred_rank", "p_win", "cancelled"):
+    for c in ("ord", "win_odds", "place_odds", "pred_rank", "p_win", "p_top2", "cancelled"):
         df[c] = pd.to_numeric(df[c], errors="coerce")
 
     # 취소마 제외 후 남은 출주마들로 예측 순위를 다시 부여
@@ -79,6 +125,11 @@ def race_level(df: pd.DataFrame) -> pd.DataFrame:
         t1 = top1.iloc[0]
         top3_ords = set(g[g["pred_rank"] <= 3]["ord"].dropna())
         top2_ords = set(g[g["pred_rank"] <= 2]["ord"].dropna())
+        top5_ords = set(g[g["pred_rank"] <= 5]["ord"].dropna())
+        # 화면에 실제로 나간 기호를 그대로 다시 매긴다 — 규칙은 marks 한 곳이다
+        rows_for_mark = g.to_dict("records")
+        assign_marks(rows_for_mark)
+        marks = {r["hr_no"]: r["mark"] for r in rows_for_mark}
         rows.append({
             "race_key": key,
             "conf_label": g["conf_label"].iloc[0] if "conf_label" in g else None,
@@ -87,6 +138,9 @@ def race_level(df: pd.DataFrame) -> pd.DataFrame:
             "rc_no": g["rc_no"].iloc[0],
             "distance": g["distance"].iloc[0],
             "grade": g["grade"].iloc[0],
+            "field_size": g["field_size"].iloc[0],
+            "track_cond": g["track_cond"].iloc[0],
+            "weekday": WEEKDAY_KO[g["rc_date"].iloc[0].weekday()] if pd.notna(g["rc_date"].iloc[0]) else "",
             "top1_hr_name": t1.get("hr_name"),
             "top1_ord": t1["ord"],
             "top1_odds": t1["win_odds"],
@@ -94,9 +148,32 @@ def race_level(df: pd.DataFrame) -> pd.DataFrame:
             "hit_place": float(t1["ord"] <= 3),
             "hit_top3_has_winner": float(1.0 in top3_ords),
             "hit_exacta_box": float(top2_ords == {1.0, 2.0}),
+            # 마권 종류에 대응하는 관점. 사는 사람이 실제로 궁금해하는 조합이다.
+            "hit_trio_box": float({1.0, 2.0, 3.0} <= top3_ords),
+            "hit_trio_of5": float(len({1.0, 2.0, 3.0} & top5_ords) == 3),
+            "hit_top3_two": float(len(top3_ords & {1.0, 2.0, 3.0}) >= 2),
+            "hit_top5_winner": float(1.0 in top5_ords),
+            "star_race": float(any(m == "★" for m in marks.values())),
+            "marks": marks,
             "payout_win": float(t1["win_odds"]) if t1["ord"] == 1 and pd.notna(t1["win_odds"]) else 0.0,
         })
     return pd.DataFrame(rows)
+
+
+def breakdown(rl: pd.DataFrame, key, label: str,
+              min_races: int = MIN_GROUP_RACES) -> List[Dict]:
+    """축 하나로 갈라 집계한다. 표본이 얕은 구간은 내보내지 않는다."""
+    if rl.empty:
+        return []
+    col = rl[key].map(key if callable(key) else (lambda v: v)) if callable(key) else rl[key]
+    out = []
+    for name, g in rl.assign(_k=col).groupby("_k"):
+        if not str(name) or len(g) < min_races:
+            continue
+        row = summarize(g)
+        row[label] = str(name)
+        out.append(row)
+    return out
 
 
 def summarize(rl: pd.DataFrame) -> Dict:
@@ -110,6 +187,10 @@ def summarize(rl: pd.DataFrame) -> Dict:
         "hit_place": float(rl["hit_place"].mean()),
         "hit_top3_has_winner": float(rl["hit_top3_has_winner"].mean()),
         "hit_exacta_box": float(rl["hit_exacta_box"].mean()),
+        "hit_trio_box": float(rl["hit_trio_box"].mean()) if "hit_trio_box" in rl else None,
+        "hit_trio_of5": float(rl["hit_trio_of5"].mean()) if "hit_trio_of5" in rl else None,
+        "hit_top3_two": float(rl["hit_top3_two"].mean()) if "hit_top3_two" in rl else None,
+        "hit_top5_winner": float(rl["hit_top5_winner"].mean()) if "hit_top5_winner" in rl else None,
         "roi_win": float(rl.loc[rl["top1_odds"].notna(), "payout_win"].sum() / bets) if bets else None,
         "avg_win_odds": float(rl.loc[rl["hit_win"] == 1, "top1_odds"].mean())
         if (rl["hit_win"] == 1).any() else None,
@@ -122,7 +203,12 @@ def build_report(conn: sqlite3.Connection) -> Dict:
     df = load_verified(conn)
     rl = race_level(df)
     if rl.empty:
-        return {"overall": {"n_races": 0}, "monthly": [], "by_meet": [], "recent": []}
+        empty = {"overall": {"n_races": 0}, "monthly": [], "recent": []}
+        for k in ("by_meet", "by_conf", "by_mark", "by_distance", "by_field",
+                  "by_grade", "by_weekday", "by_track"):
+            empty[k] = []
+        empty["star"] = {"n_races": 0}
+        return empty
 
     rl = rl.sort_values("rc_date")
     monthly = []
@@ -131,25 +217,62 @@ def build_report(conn: sqlite3.Connection) -> Dict:
         s["month"] = str(period)
         monthly.append(s)
 
-    by_meet = []
-    for meet, g in rl.groupby("meet"):
-        s = summarize(g)
-        s["meet"] = meet
-        by_meet.append(s)
+    # ── 축별 집계 ────────────────────────────────────────────────
+    # 하나의 총계만 내밀면 '어디서 강하고 어디서 약한가'를 알 수 없다. 축을
+    # 갈라 두면 방문자는 자기가 사는 경주에 맞는 수치를 골라 볼 수 있고, 우리도
+    # 약한 구간을 숨길 수 없게 된다.
+    by_meet = breakdown(rl, "meet", "meet", min_races=1)
+    rl = rl.assign(
+        _dist=rl["distance"].map(_distance_band),
+        _field=rl["field_size"].map(_field_band),
+        _grade=rl["grade"].map(_grade_band),
+    )
+    by_distance = breakdown(rl, "_dist", "band")
+    by_field = breakdown(rl, "_field", "band")
+    by_grade = breakdown(rl, "_grade", "band")
+    by_weekday = breakdown(rl, "weekday", "band")
+    by_track = breakdown(rl, "track_cond", "band")
 
     # 신뢰도 등급이 실제로 작동하는지 — 강승부가 정말 더 잘 맞는지 공개한다.
-    # 다만 표본이 적으면 등급별 적중률은 거의 잡음이다. 6경주에서 83%가 찍히면
+    # 표본이 적으면 등급별 적중률은 거의 잡음이다. 6경주에서 83%가 찍히면
     # 우리 의도와 무관하게 과장으로 읽히므로, 의미를 가질 때까지는 내보내지 않는다.
-    MIN_TIER_RACES = 30
     by_conf = []
     if "conf_label" in rl and rl["conf_label"].notna().any():
         for label in ("강승부", "중승부", "약승부"):
             g = rl[rl["conf_label"] == label]
             if len(g) < MIN_TIER_RACES:
                 continue
-            s = summarize(g)
-            s["label"] = label
-            by_conf.append(s)
+            row = summarize(g)
+            row["label"] = label
+            by_conf.append(row)
+
+    # ★ 가 붙은 경주만 따로. 유일하게 절대적인 주장이므로 실적도 따로 보여야 한다.
+    star = rl[rl["star_race"] == 1] if "star_race" in rl else rl.iloc[0:0]
+    star_stats = summarize(star) if len(star) >= MIN_GROUP_RACES else {"n_races": int(len(star))}
+
+    # 기호별 — 그 기호를 받은 마필이 실제로 어떤 착순에 들었나
+    by_mark = []
+    if not df.empty:
+        marked = []
+        for key, g in df.groupby("race_key"):
+            rows = g.to_dict("records")
+            assign_marks(rows)
+            marked.extend(rows)
+        md = pd.DataFrame(marked)
+        if not md.empty and "mark" in md:
+            o = pd.to_numeric(md["ord"], errors="coerce")
+            md = md.assign(_o=o)
+            for m in ("★", "◎", "○", "△", "※"):
+                g = md[md["mark"] == m]
+                if len(g) < MIN_GROUP_RACES:
+                    continue
+                by_mark.append({
+                    "mark": m,
+                    "n": int(len(g)),
+                    "hit_win": float((g["_o"] == 1).mean()),
+                    "hit_top2": float((g["_o"] <= 2).mean()),
+                    "hit_top3": float((g["_o"] <= 3).mean()),
+                })
 
     recent = rl.tail(60).sort_values("rc_date", ascending=False)
     recent_rows = [
@@ -174,6 +297,13 @@ def build_report(conn: sqlite3.Connection) -> Dict:
         "monthly": monthly,
         "by_meet": by_meet,
         "by_conf": by_conf,
+        "by_mark": by_mark,
+        "by_distance": by_distance,
+        "by_field": by_field,
+        "by_grade": by_grade,
+        "by_weekday": by_weekday,
+        "by_track": by_track,
+        "star": star_stats,
         "recent": recent_rows,
     }
 

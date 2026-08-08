@@ -238,9 +238,21 @@ def simulate(
                 if won.any():
                     cand = np.flatnonzero(won)
             if len(cand):
-                # 후보들 중 총소요시간이 중앙값인 판 = 가장 전형적인 전개
-                sub = total[cand].sum(axis=1)
-                idx = int(cand[np.argsort(sub)[len(cand) // 2]])
+                # 후보 중 **예상 순서와 가장 잘 맞는 판**을 고른다.
+                #
+                # 총소요시간이 중앙값인 판을 뽑던 방식은 1착만 맞을 뿐 나머지
+                # 순서가 난수였다. 그래서 화면에서 ◎ 2순위가 6착으로 들어오고
+                # 7순위가 2착을 하는 그림이 나왔다 — 같은 페이지 안에서 추천과
+                # 미리보기가 서로를 부정한다.
+                #
+                # runners 는 예상 순위대로 들어오므로 인덱스가 곧 예상 착순이다.
+                # 예상 착순과 시뮬 착순의 차이를 상위권에 가중해 더한 값이 작을수록
+                # '우리 예상대로 흘러간 판'이다. 다만 최솟값을 고르면 1-2-3-4-5 로
+                # 줄줄이 들어오는 비현실적인 그림이 되므로, 하위 15% 지점을 쓴다.
+                w = 1.0 / (np.arange(n) + 1.0)
+                cost = (np.abs(order[cand] - np.arange(n)[None, :]) * w).sum(axis=1)
+                pick = int(np.clip(round(len(cand) * 0.15), 0, len(cand) - 1))
+                idx = int(cand[np.argsort(cost)[pick]])
                 kept = seg_time[idx]
                 kept_total = total[idx]
         done += m
