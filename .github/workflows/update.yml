@@ -107,6 +107,14 @@ jobs:
       - name: 재학습 필요 여부 판단
         id: need
         run: |
+          # 보관된 모델을 실제로 열어 본다. 피클은 scikit-learn 버전이 어긋나면
+          # 그대로 깨지는데(사설 클래스 소실), 그걸 예측 단계에서 처음 알면
+          # 배포 전체가 멈춘다. 여기서 미리 확인하고 재학습으로 넘긴다.
+          if [ -f models/model.joblib ] && \
+             ! PYTHONPATH=src python -c "from horseai.model import load; load()" 2>/dev/null; then
+            echo "::warning::보관된 모델을 읽지 못했습니다(의존성 버전 불일치 가능) → 재학습합니다"
+            rm -f models/model.joblib
+          fi
           if [ ! -f models/model.joblib ]; then
             echo "yes=true" >> "$GITHUB_OUTPUT"; echo "모델 없음 → 학습"
           elif [ "${{ inputs.retrain }}" = "true" ]; then
