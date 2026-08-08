@@ -54,7 +54,7 @@ def race_days(start: dt.date, end: dt.date) -> List[dt.date]:
     return out
 
 
-def _race_row(rec: Dict, norm: Dict, key: str, *, has_result: bool) -> Dict:
+def _race_row(rec: Dict, norm: Dict, key: str) -> Dict:
     """경주 단위 메타 행을 만든다 (출전표/성적 공통)."""
     return {
         "race_key": key,
@@ -72,7 +72,9 @@ def _race_row(rec: Dict, norm: Dict, key: str, *, has_result: bool) -> Dict:
         "prize1": norm.get("prize1"),
         "weather": norm.get("weather"),
         "track_cond": norm.get("track_cond"),
-        "has_result": 1 if has_result else 0,
+        # has_result 는 여기서 쓰지 않는다. 출전표 수집이 0 으로 되돌리면 이미
+        # 시행된 경주가 다시 '예정'으로 살아난다. 성적 수집이 1착을 확인했을 때
+        # 별도 UPDATE 로만 세운다.
     }
 
 
@@ -118,16 +120,13 @@ def _ingest(conn: sqlite3.Connection, records: List[Dict], *, kind: str) -> int:
         # 먼저 실리기도 해서 '값이 있으면 완료'로도 판단할 수 없다.
         # 1착이 확인될 때만 그 경주는 끝난 것이다.
         settled = kind == "results" and norm.get("ord") == 1
-        row = _race_row(rec, norm, key, has_result=settled)
+        row = _race_row(rec, norm, key)
         if settled:
             settled_keys.add(key)
         if prev:  # 같은 경주의 여러 말 레코드 → 비어 있는 값만 채운다
             for k, v in row.items():
                 if prev.get(k) in (None, "") and v not in (None, ""):
                     prev[k] = v
-            # 한 마리라도 착순이 있으면 그 경주는 시행된 것이다
-            if settled:
-                prev["has_result"] = 1
         else:
             race_rows[key] = row
 

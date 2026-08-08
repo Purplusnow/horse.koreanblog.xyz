@@ -272,7 +272,13 @@ def _table_columns(conn: sqlite3.Connection, table: str) -> List[str]:
 
 def upsert(conn: sqlite3.Connection, table: str, rows: Iterable[Dict[str, Any]],
            key_cols: List[str]) -> int:
-    """존재하는 컬럼만 골라 upsert. 스키마에 없는 키는 조용히 버린다."""
+    """존재하는 컬럼만 골라 upsert. 스키마에 없는 키는 조용히 버린다.
+
+    **빈 값으로는 덮어쓰지 않는다.** 같은 행을 여러 API 가 조각조각 채운다 —
+    발주시각·출주두수는 출전표에만 있고 착순·배당은 성적에만 있다. 들어온 값이
+    비었다고 기존 값을 지우면, 성적을 수집하는 순간 발주시각이 사라진다
+    (실제로 그렇게 되어 발주 시각 기준 예측 동결이 무력화됐다).
+    """
     rows = [r for r in rows if r]
     if not rows:
         return 0
@@ -283,7 +289,7 @@ def upsert(conn: sqlite3.Connection, table: str, rows: Iterable[Dict[str, Any]],
 
     placeholders = ",".join("?" for _ in usable)
     update_cols = [c for c in usable if c not in key_cols]
-    set_clause = ", ".join(f"{c}=excluded.{c}" for c in update_cols)
+    set_clause = ", ".join(f"{c}=COALESCE(excluded.{c}, {table}.{c})" for c in update_cols)
     has_updated = "updated_at" in _table_columns(conn, table)
     if has_updated:
         set_clause = (set_clause + ", " if set_clause else "") + "updated_at=datetime('now')"
