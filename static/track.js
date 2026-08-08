@@ -55,13 +55,16 @@
      s 는 결승선 기준 '남은 거리'(음수가 아니라 뒤로 간 거리)로 받는다. */
   function trackPoint(s) {
     var back = ((-s % LAP) + LAP) % LAP;      // 결승선에서 거꾸로 간 거리
-    if (back < ST) return { seg: 'S', side: 1, k: 1 - back / ST };
+    // 거꾸로 가면 곡선의 좌우도 뒤바뀐다. 결승선(우하단)에서 홈 직선을 왼쪽으로
+    // 거슬러 오르면 그 앞은 **왼쪽** 곡선이다. 여기를 바꾸지 않으면 좌하단에서
+    // 우측 곡선으로 건너뛰어 경로가 끊긴다.
+    if (back < ST) return { seg: 'S', side: 1, k: 1 - back / ST };        // 홈 직선 우→좌
     back -= ST;
-    if (back < CV) return { seg: 'C', side: 1, a: Math.PI * (1 - back / CV) };
+    if (back < CV) return { seg: 'C', side: -1, a: Math.PI * (1 - back / CV) };  // 좌곡선 아래→위
     back -= CV;
-    if (back < ST) return { seg: 'S', side: -1, k: back / ST };
+    if (back < ST) return { seg: 'S', side: -1, k: back / ST };           // 백스트레치 좌→우
     back -= ST;
-    return { seg: 'C', side: -1, a: Math.PI * (1 - back / CV) };
+    return { seg: 'C', side: 1, a: Math.PI * (1 - back / CV) };           // 우곡선 위→아래
   }
 
   /* 정규화 좌표 + 레인 → 화면 픽셀 */
