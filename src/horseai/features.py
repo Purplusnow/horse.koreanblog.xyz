@@ -60,11 +60,20 @@ FEATURE_COLUMNS: List[str] = [
     # 마필 과거 이력
     "starts_prior", "win_rate", "place_rate", "top3_rate",
     "days_since_last", "last_ord_pct", "avg_ord_pct_3", "avg_ord_pct_5",
-    # 조교(일별훈련) — 경주일 이전 기록만.
-    # 접두사가 trg_ 인 이유: 기존 tr_ 는 조교사(trainer) 지표라 겹치면 반드시
-    # 헷갈린다. 조교사 성적과 조교 이력은 전혀 다른 것이다.
-    "trg_days_since", "trg_count_14", "trg_term_mean_14", "trg_jockey_14",
-    "trg_run1_14", "trg_run2_14", "trg_entry_planned", "trg_term_trend",
+    # 조교(일별훈련) 피처는 **빼 두었다**. TRAINING_FEATURES 를 여기에 이어
+    # 붙이면 바로 되살아난다.
+    #
+    # 왜 뺐나: 시간순 교차검증에서 넣으나 빼나 같았다(단승 -0.1%p, AUC -0.0007).
+    # 개별 피처를 뜯어봐도 승률 상관이 0.01~0.03 이고, 마필 자신의 평소 대비
+    # 편차로 바꿔도 0.04 를 넘지 못했다(쓸모 있는 피처는 0.15 이상이다).
+    #
+    # 원인은 자료의 성격에 있다. API18_1 이 주는 것은 조교 **시간·횟수·기승자**
+    # 이고 **조교 시계(기록)** 가 없다. 마방과 시장이 실제로 보는 것은 얼마나
+    # 오래 탔는지가 아니라 몇 초에 뛰었는지다. 그 숫자가 없으면 이 자료로는
+    # 시장과의 격차를 좁힐 수 없다.
+    #
+    # 수집은 계속한다 — 하루치를 놓치면 되돌릴 수 없고, 조교 기록이 담긴 자료를
+    # 나중에 확보하면 이 이력과 붙여 쓸 수 있다.
     "speed_last", "speed_avg3", "speed_best",
     "abs_speed_last", "abs_speed_avg3", "abs_speed_best", "speed_sd5",
     "early_speed_avg3", "early_speed_best",
