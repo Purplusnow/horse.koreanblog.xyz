@@ -23,12 +23,18 @@
   var spec = data.track || { lap: 1600, straight: 450, curve: 350 };
   var LAP = spec.lap, ST = spec.straight, CV = spec.curve;
 
-  var STYLE_COLOR = {
-    front: '#c8621f',   // 선행 — 따뜻한 쪽
-    stalk: '#2f5490',   // 선입
-    close: '#1f6b4c',   // 추입 — 잔디 그린
-    unknown: '#7a8593'
-  };
+  /* 마번별 모자색. 실제 경마에서 마번을 구분하는 방식 그대로다 —
+     각질(선행·추입)로 칠하면 같은 색이 여러 마리라 서로 구별되지 않는다.
+     [배경, 글자] 순. 흰색·노란색 모자는 글자를 어둡게 쓴다. */
+  var GATE_COLOR = [
+    ['#ffffff', '#22262c'], ['#22262c', '#ffffff'], ['#d43b34', '#ffffff'],
+    ['#2f5490', '#ffffff'], ['#f2c53d', '#22262c'], ['#2e9e5b', '#ffffff'],
+    ['#e8802a', '#ffffff'], ['#e77fa5', '#ffffff'], ['#7fc4e8', '#22262c'],
+    ['#8b5cc7', '#ffffff'], ['#a8cf4a', '#22262c'], ['#8a5a3c', '#ffffff'],
+    ['#9aa3ad', '#ffffff'], ['#1f3f7a', '#ffffff'], ['#00a0a0', '#ffffff'],
+    ['#c0392b', '#ffffff']
+  ];
+  function gateColor(g) { return GATE_COLOR[((g || 1) - 1) % GATE_COLOR.length]; }
 
   var playing = false, t = 0, speed = 1, raf = null, last = 0, follow = true;
 
@@ -135,24 +141,31 @@
 
     /* 카메라 — 무리를 따라가며 확대한다.
        경주 중 말들은 실제로 뭉쳐 다니므로, 전체를 담으면 마번을 읽을 수 없다.
-       중계 화면이 줌인해서 따라가는 것과 같은 이유다. */
-    var pts = runners.map(function (r) {
+       다만 **트랙만 확대하고 마커는 화면 좌표에 고정 크기로 그린다**. 마커까지
+       배율에 곱하면 원이 커져 서로 겹치고, 확대한 의미가 사라진다. */
+    var raw = runners.map(function (r) {
       var p = progressAt(r.splits, t);
       return toPx(trackPoint(-distance + p * distance), box, (r.lane || 0) + 0.6);
     });
-    ctx.save();
-    if (follow && pts.length) {
-      var xs = pts.map(function (p) { return p.x; }), ys = pts.map(function (p) { return p.y; });
-      var cx = (Math.min.apply(null, xs) + Math.max.apply(null, xs)) / 2;
-      var cy2 = (Math.min.apply(null, ys) + Math.max.apply(null, ys)) / 2;
+    var cam = { z: 1, cx: W / 2, cy: H / 2 };
+    if (follow && raw.length) {
+      var xs = raw.map(function (p) { return p.x; }), ys = raw.map(function (p) { return p.y; });
+      cam.cx = (Math.min.apply(null, xs) + Math.max.apply(null, xs)) / 2;
+      cam.cy = (Math.min.apply(null, ys) + Math.max.apply(null, ys)) / 2;
       var spread = Math.max(
         Math.max.apply(null, xs) - Math.min.apply(null, xs),
-        Math.max.apply(null, ys) - Math.min.apply(null, ys)) + 90;
-      var z = Math.max(1.2, Math.min(3.4, Math.min(W, H * 1.6) / spread));
-      ctx.translate(W / 2, H / 2);
-      ctx.scale(z, z);
-      ctx.translate(-cx, -cy2);
+        (Math.max.apply(null, ys) - Math.min.apply(null, ys)) * 1.6) + 60;
+      cam.z = Math.max(1, Math.min(2.6, Math.min(W, H * 1.7) / spread));
     }
+    function screenPt(p) {
+      return { x: W / 2 + (p.x - cam.cx) * cam.z, y: H / 2 + (p.y - cam.cy) * cam.z };
+    }
+    var pts = raw.map(screenPt);
+
+    ctx.save();
+    ctx.translate(W / 2, H / 2);
+    ctx.scale(cam.z, cam.z);
+    ctx.translate(-cam.cx, -cam.cy);
 
     /* 주로 바닥 */
     ctx.strokeStyle = cSunken;
@@ -186,23 +199,51 @@
     var rankOf = {};
     order.forEach(function (o, idx) { rankOf[o.i] = idx + 1; });
 
-    /* 말 — 레인은 안쪽(0)부터 바깥으로 */
-    runners.forEach(function (r, i) {
-      var pt = pts[i];
-      var color = STYLE_COLOR[r.style] || STYLE_COLOR.unknown;
+    ctx.restore();
+
+    /* 말 — 작은 원. 배율 밖이라 확대해도 크기가 일정하다. */
+    var R = 6.5;
+    pts.forEach(function (pt, i) {
+      var col = gateColor(runners[i].gate);
       ctx.beginPath();
-      ctx.arc(pt.x, pt.y, 9.5, 0, Math.PI * 2);
-      ctx.fillStyle = color; ctx.fill();
-      if (rankOf[i] === 1) { ctx.strokeStyle = '#b4842a'; ctx.lineWidth = 2.5; ctx.stroke(); }
+      ctx.arc(pt.x, pt.y, R, 0, Math.PI * 2);
+      ctx.fillStyle = col[0]; ctx.fill();
+      ctx.strokeStyle = rankOf[i] === 1 ? '#b4842a' : 'rgba(0,0,0,.35)';
+      ctx.lineWidth = rankOf[i] === 1 ? 2.2 : 1;
+      ctx.stroke();
+    });
+
+    /* 마번은 지시선으로 밖에 뺀다. 원 안에 쓰면 원이 커져야 하고, 커지면
+       서로 겹쳐 결국 못 읽는다. 라벨은 세로로 밀어 겹침을 푼다. */
+    var labels = pts.map(function (pt, i) {
+      return { i: i, x: pt.x, y: pt.y, ly: pt.y, side: pt.x < W / 2 ? -1 : 1 };
+    }).sort(function (a, b) { return a.y - b.y; });
+    var GAP = 15;
+    for (var k = 1; k < labels.length; k++) {
+      if (labels[k].ly - labels[k - 1].ly < GAP) labels[k].ly = labels[k - 1].ly + GAP;
+    }
+    var over = labels.length ? labels[labels.length - 1].ly - (H - 8) : 0;
+    if (over > 0) labels.forEach(function (l) { l.ly -= over; });
+
+    labels.forEach(function (l) {
+      var r = runners[l.i], col = gateColor(r.gate);
+      var lx = l.x + l.side * 26;
+      ctx.strokeStyle = 'rgba(0,0,0,.25)'; ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(l.x + l.side * (R + 1), l.y);
+      ctx.lineTo(lx - l.side * 9, l.ly);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.arc(lx, l.ly, 9, 0, Math.PI * 2);
+      ctx.fillStyle = col[0]; ctx.fill();
+      ctx.strokeStyle = 'rgba(0,0,0,.3)'; ctx.lineWidth = 1; ctx.stroke();
       var label = String(r.gate);
-      ctx.fillStyle = '#fff';
-      ctx.font = 'bold ' + (label.length > 1 ? 9 : 11) + 'px system-ui, sans-serif';
+      ctx.fillStyle = col[1];
+      ctx.font = 'bold ' + (label.length > 1 ? 9.5 : 11) + 'px system-ui, sans-serif';
       ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-      ctx.fillText(label, pt.x, pt.y + 0.5);
+      ctx.fillText(label, lx, l.ly + 0.5);
     });
     ctx.textBaseline = 'alphabetic';
-
-    ctx.restore();
 
     /* 표기는 배율 밖에 그린다 — 따라가기 중에 글자까지 커지면 읽기 어렵다. */
     ctx.fillStyle = cFaint;
@@ -224,15 +265,15 @@
   var lastOrder = '';
   function renderOrder(order) {
     if (!orderEl) return;
-    var key = order.map(function (o) { return o.i; }).join(',');
+    var key = order.slice(0, 5).map(function (o) { return o.i; }).join(',');
     if (key === lastOrder) return;
     lastOrder = key;
-    orderEl.innerHTML = order.map(function (o, idx) {
-      var r = runners[o.i];
-      var c = STYLE_COLOR[r.style] || STYLE_COLOR.unknown;
+    /* 5등까지만. 전부 늘어놓으면 목록이 길어져 오히려 순위가 안 읽힌다. */
+    orderEl.innerHTML = order.slice(0, 5).map(function (o, idx) {
+      var r = runners[o.i], c = gateColor(r.gate);
       return '<li class="' + (idx === 0 ? 'is-lead' : '') + '">'
         + '<span class="tk-pos">' + (idx + 1) + '</span>'
-        + '<span class="tk-dot" style="background:' + c + '"></span>'
+        + '<span class="tk-dot" style="background:' + c[0] + '"></span>'
         + r.gate + ' ' + r.name + '</li>';
     }).join('');
   }

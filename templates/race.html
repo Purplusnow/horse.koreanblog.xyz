@@ -176,7 +176,7 @@
     {# 배속은 콤보보다 버튼이 빠르다 — 한 번에 고를 수 있고 지금 값이 눈에 보인다.
        고른 값은 브라우저에 저장돼 다음 경주에서도 그대로 쓰인다. #}
     <span class="tk-speed" role="group" aria-label="재생 속도">
-      {% for v in ['0.5', '1', '2', '4'] %}
+      {% for v in ['1', '2', '4', '8', '16'] %}
       <button type="button" class="tk-rate" data-rate="{{ v }}">{{ v }}×</button>
       {% endfor %}
     </span>
