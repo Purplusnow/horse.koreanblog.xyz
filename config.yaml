@@ -21,7 +21,7 @@ adsense:
 # 비어 있으면 태그 자체가 나가지 않는다.
 verification:
   google: ""    # 구글 서치콘솔 → HTML 태그 방식
-  naver: ""     # 네이버 서치어드바이저 → HTML 태그 방식
+  naver: "24fca955c9a60861e3eca05729750de66e490d58"
 
 analytics:
   ga4_id: "G-2D35J53WMX"
