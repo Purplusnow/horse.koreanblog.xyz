@@ -17,6 +17,12 @@ adsense:
   slot_in_article: "5173699929"
   slot_bottom: "1855723286"
 
+# 검색엔진 소유권 확인. 각 서비스에서 주는 content 값만 넣으면 된다.
+# 비어 있으면 태그 자체가 나가지 않는다.
+verification:
+  google: ""    # 구글 서치콘솔 → HTML 태그 방식
+  naver: ""     # 네이버 서치어드바이저 → HTML 태그 방식
+
 analytics:
   ga4_id: "G-2D35J53WMX"
 

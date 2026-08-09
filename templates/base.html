@@ -15,6 +15,8 @@
 <meta name="twitter:card" content="summary">
 <link rel="stylesheet" href="/static/style.css?v={{ assets['style.css'] }}">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🐎</text></svg>">
+{% if verification.google %}<meta name="google-site-verification" content="{{ verification.google }}">{% endif %}
+{% if verification.naver %}<meta name="naver-site-verification" content="{{ verification.naver }}">{% endif %}
 {% block head_extra %}{% endblock %}
 {% if analytics.ga4_id %}
 {# 만드는 사람의 접속은 세지 않는다. IP 필터는 주소가 바뀌면 새므로, 브라우저에

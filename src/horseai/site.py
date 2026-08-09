@@ -636,6 +636,7 @@ def build(db: str, out_dir: Path, config: Dict, template_dir: Path,
             "site": config["site"],
             "adsense": config["adsense"],
             "analytics": config["analytics"],
+            "verification": config.get("verification") or {},
             "accuracy": accuracy,
             "metrics": metrics,
             "build_time": now_kst().strftime("%Y-%m-%d %H:%M"),
@@ -798,6 +799,7 @@ def load_config(path: Path) -> Dict:
     cfg.setdefault("adsense", {})
     cfg.setdefault("analytics", {})
     cfg.setdefault("build", {})
+    cfg.setdefault("verification", {})
     cfg["build"].setdefault("past_races", 300)
     cfg["build"].setdefault("upcoming_limit", 120)
     return cfg
