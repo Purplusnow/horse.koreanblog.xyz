@@ -1,7 +1,11 @@
 {% extends "base.html" %}
 {% from "_macros.html" import ad, form_table %}
 
-{% block title %}{{ horse.hr_name }} 전적 · 출주 이력 | {{ site.name }}{% endblock %}
+{# 마필 페이지가 앞으로 몇 달간 사실상 유일한 검색 유입 경로다. 경마장·날짜
+   키워드는 대형 사이트가 잡고 있지만 말 이름은 경쟁이 없다.
+   '허쉬대보' 만 치는 사람도 있고 '허쉬대보 경주마' 로 치는 사람도 있어 둘 다
+   담는다. #}
+{% block title %}{{ horse.hr_name }} 경주마 전적 · 출주 이력 | {{ site.name }}{% endblock %}
 {% block description %}
 {{ horse.hr_name }}({% if horse.sex %}{{ horse.sex }}{% endif %}{% if horse.age %} {{ horse.age }}세{% endif %}) 경주마 전적.
 최근 {{ form|length }}전 착순 · 경주기록 · 구간 통과순위 · 부담중량 · 마체중 · 배당률을 정리했습니다.
