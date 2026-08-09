@@ -50,13 +50,15 @@
 {% endmacro %}
 
 {# 적중 배지 — 결과 페이지에서 한 눈에 성패가 읽히게 #}
-{# 축마(◎)가 1착이면 적중, 아니면 실패. 두 갈래로만 적는다.
-   '연대' 같은 중간 등급을 두면 결과가 흐려 보이고, 승식별 적중은 경주
-   상세와 결과 표에서 따로 밝히므로 여기서 겹쳐 말할 이유가 없다. #}
+{# 그 경주에서 **몇 승식을 맞혔나** 로 적는다.
+   ◎ 의 1착 여부만 보면, 1순위가 2착이라 연승·복승이 맞은 경주까지 '실패' 가
+   된다. 다섯을 추천하고 일곱 승식으로 평가하면서 배지만 단승으로 판정할
+   이유가 없다. 배당이 아직 안 들어온 경주는 판정하지 않는다. #}
 {% macro hit_badge(outcome) %}
 {% if not outcome or not outcome.settled %}<span class="hit hit-none">집계중</span>
-{% elif outcome.hit_win %}<span class="hit hit-win">적중</span>
-{% else %}<span class="hit hit-miss">실패</span>
+{% elif not outcome.n_bets %}<span class="hit hit-none" title="배당 자료 미도착">집계중</span>
+{% elif outcome.hit_bets %}<span class="hit hit-win">{{ outcome.hit_bets|length }}승식 적중</span>
+{% else %}<span class="hit hit-miss">불발</span>
 {% endif %}
 {% endmacro %}
 
