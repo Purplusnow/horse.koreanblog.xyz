@@ -55,8 +55,9 @@
    된다. 다섯을 추천하고 일곱 승식으로 평가하면서 배지만 단승으로 판정할
    이유가 없다. 배당이 아직 안 들어온 경주는 판정하지 않는다. #}
 {% macro hit_badge(outcome) %}
-{% if not outcome or not outcome.settled %}<span class="hit hit-none">집계중</span>
-{% elif not outcome.n_bets %}<span class="hit hit-none" title="배당 자료 미도착">집계중</span>
+{% if not outcome or not outcome.settled %}<span class="hit hit-none">경주 전</span>
+{% elif not outcome.n_bets %}<span class="hit hit-none"
+  title="배당은 그날 경주가 모두 끝난 뒤 한 번에 받아 집계합니다">마감 후 정산</span>
 {% elif outcome.hit_bets %}<span class="hit hit-win">{{ outcome.hit_bets|length }}승식 적중</span>
 {% else %}<span class="hit hit-miss">불발</span>
 {% endif %}
@@ -152,7 +153,8 @@
         {% endfor %}
         <b>{{ o.hit_bets|length }}<span>/{{ o.n_bets }}</span></b>
       </span>
-    {% elif o and o.settled %}<span class="rr-empty" title="배당 자료 미도착">집계 대기</span>
+    {% elif o and o.settled %}<span class="rr-empty"
+      title="배당은 그날 경주가 모두 끝난 뒤 한 번에 받아 집계합니다">마감 후 정산</span>
     {% else %}<span class="rr-empty">-</span>{% endif %}
     {% if o and o.cancelled %}
     <small class="res-cancel" title="{{ o.cancelled|map(attribute='hr_name')|join(', ') }} 출주취소 — 집계 제외">
