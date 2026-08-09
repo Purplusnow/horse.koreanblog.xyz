@@ -773,6 +773,14 @@ def build(db: str, out_dir: Path, config: Dict, template_dir: Path,
         write(out_dir / "robots.txt",
               f"User-agent: *\nAllow: /\n\nSitemap: {base}/sitemap.xml\n")
 
+        # ads.txt — 이 도메인의 광고를 누가 팔 수 있는지 밝히는 파일.
+        # 없으면 구글이 '승인되지 않은 판매자' 로 보고 광고 게재를 제한한다.
+        # 태그를 아무리 정확히 넣어도 여기가 없으면 빈 자리만 남는다.
+        pub = str(config["adsense"].get("client") or "")
+        if pub:
+            write(out_dir / "ads.txt",
+                  f"google.com, {pub.replace('ca-', '')}, DIRECT, f08c47fec0942fa0\n")
+
     if static_dir.exists():
         shutil.copytree(static_dir, out_dir / "static", dirs_exist_ok=True)
 
