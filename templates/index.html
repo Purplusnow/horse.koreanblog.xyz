@@ -1,7 +1,9 @@
 {% extends "base.html" %}
 {% from "_macros.html" import ad, race_card, result_row, conf_badge %}
 
-{% block title %}{{ site.name }} — 경마 출마표 · 전적 · 예상{% endblock %}
+{# 브랜드명은 뒤로 보낸다. 아무도 사이트 이름으로 검색하지 않는다 —
+   유입은 '경마 예상' '오늘 경마' 같은 일반 검색어에서 온다. #}
+{% block title %}경마 예상 · 출주표 · 적중률 공개 | {{ site.name }}{% endblock %}
 {% block description %}{{ site.description }}{% endblock %}
 
 {% block head_extra %}

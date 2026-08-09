@@ -1,14 +1,14 @@
 # 사이트 설정. 배포 전에 site.url 과 adsense 값을 실제 값으로 바꾸세요.
 site:
-  name: "경마천재"
-  tagline: "출마표 · 전적 · 예상"
+  name: "머신러닝 경마연구소"
+  tagline: "경마 통계 · 예상 · 적중률"
   # sitemap/canonical/OG 태그에 쓰인다. 자체 도메인을 붙이면 여기부터 바꾼다.
   url: "https://horse.koreanblog.xyz"
   locale: "ko_KR"
   # 적중률을 헤드라인으로 올리기 시작하는 경주 수 (개발 중 1)
   min_headline: 1
   description: "서울·부산경남·제주 경주의 출마표와 전적, 구간기록을 정리하고 경주별 예상을 공개합니다. 모든 예상은 발주 전에 게재하고 결과와 대조한 적중률을 그대로 공개합니다."
-  author: "경마천재"
+  author: "머신러닝 경마연구소"
 
 # 애드센스. client 가 비어 있으면 광고 영역 자체가 렌더링되지 않습니다.
 adsense:

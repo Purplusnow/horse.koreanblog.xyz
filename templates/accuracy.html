@@ -2,7 +2,7 @@
 {% from "_macros.html" import ad %}
 {% set o = accuracy.overall %}
 
-{% block title %}예상 적중률 — 전 경주 검증 결과 | {{ site.name }}{% endblock %}
+{% block title %}경마 통계 · 예상 적중률 검증 결과 | {{ site.name }}{% endblock %}
 {% block description %}
 {% if o and o.n_races %}게재한 예상 {{ '{:,}'.format(o.n_races) }}경주 집계 결과, 1순위 마필이 1착 {{ '%.1f'|format(o.hit_win * 100) }}%, 3착 이내 {{ '%.1f'|format(o.hit_place * 100) }}%.{% else %}게재한 모든 예상을 실제 착순과 대조해 적중률을 그대로 공개합니다.{% endif %}
 
