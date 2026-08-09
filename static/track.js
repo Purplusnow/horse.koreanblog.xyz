@@ -282,10 +282,16 @@
     ctx.beginPath(); ctx.moveTo(s0.x, s0.y); ctx.lineTo(s1.x, s1.y); ctx.stroke();
     ctx.globalAlpha = 1;
 
-    /* 현재 순위 */
+    /* 현재 순위.
+       골인한 말은 진행률이 1 에서 멈춘다. 전원이 들어오면 값이 모두 같아져
+       정렬이 무의미해지고, 배열 순서(마번 순)로 되돌아간다 — 결승선을 지나자마자
+       순위가 1-2-3-4-5 로 리셋되던 이유다. 동률이면 골인 시각으로 가른다. */
     var order = runners.map(function (r, i) {
-      return { i: i, p: progressAt(r.splits, t) };
-    }).sort(function (a, b) { return b.p - a.p; });
+      return { i: i, p: progressAt(r.splits, t),
+               fin: r.splits[r.splits.length - 1] };
+    }).sort(function (a, b) {
+      return (b.p - a.p) || (a.fin - b.fin);
+    });
     var rankOf = {};
     order.forEach(function (o, idx) { rankOf[o.i] = idx + 1; });
 

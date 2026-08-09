@@ -79,7 +79,7 @@ a:hover { text-decoration: underline; }
 .brand-mark { font-size: 26px; line-height: 1; }
 .brand-text { display: flex; flex-direction: column; line-height: 1.25; }
 .brand-text strong { font-size: 18px; letter-spacing: -.02em; }
-.brand-text small { font-size: 11.5px; color: var(--text-faint); }
+.brand-text small { font-size: 12.5px; color: var(--text-faint); }
 
 .nav { display: flex; gap: 4px; flex-wrap: wrap; }
 .nav a {
@@ -127,11 +127,11 @@ main { padding: 32px 20px 56px; }
   padding-bottom: 10px; border-bottom: 1px solid var(--border);
 }
 .day-weekday {
-  font-size: 12px; font-weight: 600; color: var(--accent-text);
+  font-size: 13px; font-weight: 600; color: var(--accent-text);
   background: var(--accent-soft); padding: 2px 8px; border-radius: 20px;
 }
-.day-count { font-size: 13px; color: var(--text-faint); font-weight: 400; }
-.see-all { margin-left: auto; font-size: 13.5px; font-weight: 500; }
+.day-count { font-size: 14px; color: var(--text-faint); font-weight: 400; }
+.see-all { margin-left: auto; font-size: 14.5px; font-weight: 500; }
 
 .race-grid {
   display: grid; gap: 12px;
@@ -151,22 +151,22 @@ main { padding: 32px 20px 56px; }
 .race-card-head { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
 .race-no { font-weight: 700; font-size: 15px; letter-spacing: -.02em; }
 .post-time {
-  margin-left: auto; font-size: 12.5px; color: var(--text-faint);
+  margin-left: auto; font-size: 13.5px; color: var(--text-faint);
   font-variant-numeric: tabular-nums;
 }
 .race-card-meta {
   display: flex; gap: 6px; flex-wrap: wrap;
-  font-size: 12.5px; color: var(--text-soft);
+  font-size: 13.5px; color: var(--text-soft);
 }
 .race-card-meta span::after { content: "·"; margin-left: 6px; color: var(--text-faint); }
 .race-card-meta span:last-child::after { content: ""; }
 .race-card-headline {
-  margin: 9px 0 0; font-size: 13px; color: var(--text-soft); line-height: 1.5;
+  margin: 9px 0 0; font-size: 14px; color: var(--text-soft); line-height: 1.5;
   display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
 }
 
 .meet {
-  font-size: 11.5px; font-weight: 700; padding: 2px 7px; border-radius: 5px;
+  font-size: 12.5px; font-weight: 700; padding: 2px 7px; border-radius: 5px;
   background: var(--bg-sunken); color: var(--text-soft); white-space: nowrap;
 }
 .meet-서울 { background: var(--meet-seoul-bg); color: var(--meet-seoul-fg); }
@@ -175,7 +175,7 @@ main { padding: 32px 20px 56px; }
 
 /* --------------------------------------------------------- 경주 상세 */
 
-.breadcrumb { font-size: 13px; color: var(--text-faint); margin-bottom: 16px; }
+.breadcrumb { font-size: 14px; color: var(--text-faint); margin-bottom: 16px; }
 .breadcrumb span { margin: 0 5px; }
 
 .race-header {
@@ -187,13 +187,13 @@ main { padding: 32px 20px 56px; }
 .race-header h1 {
   font-size: clamp(21px, 3.6vw, 28px); letter-spacing: -.03em; margin: 0 0 16px;
 }
-.tag { font-size: 11.5px; font-weight: 700; padding: 2px 8px; border-radius: 5px; }
+.tag { font-size: 12.5px; font-weight: 700; padding: 2px 8px; border-radius: 5px; }
 .tag-live { background: var(--accent-soft); color: var(--accent-text); }
 .tag-done { background: var(--bg-sunken); color: var(--text-faint); }
 
 .race-facts { list-style: none; display: flex; gap: 26px; flex-wrap: wrap; margin: 0; padding: 0; }
 .race-facts li { display: flex; flex-direction: column; gap: 1px; }
-.race-facts span { font-size: 11.5px; color: var(--text-faint); }
+.race-facts span { font-size: 12.5px; color: var(--text-faint); }
 .race-facts b { font-size: 17px; font-variant-numeric: tabular-nums; letter-spacing: -.02em; }
 
 .commentary {
@@ -206,7 +206,7 @@ main { padding: 32px 20px 56px; }
 .commentary-body p:last-child { margin-bottom: 0; }
 .commentary-note {
   margin: 16px 0 0; padding-top: 12px; border-top: 1px solid var(--border);
-  font-size: 12px; color: var(--text-faint);
+  font-size: 13px; color: var(--text-faint);
 }
 
 .pick-summary {
@@ -224,17 +224,17 @@ main { padding: 32px 20px 56px; }
 .pick-rank {
   width: 24px; height: 24px; flex: none; border-radius: 50%;
   display: grid; place-items: center;
-  font-size: 12.5px; font-weight: 700;
+  font-size: 13.5px; font-weight: 700;
   background: var(--surface); color: var(--text-soft); border: 1px solid var(--border-strong);
 }
 .pick-1 .pick-rank { background: var(--accent); color: var(--accent-on); border-color: transparent; }
 .pick-gate {
-  font-variant-numeric: tabular-nums; font-weight: 700; font-size: 14px;
+  font-variant-numeric: tabular-nums; font-weight: 700; font-size: 15px;
   color: var(--text-soft);
 }
 .pick-name { font-weight: 700; font-size: 16px; letter-spacing: -.02em; }
 .pick-prob {
-  margin-left: auto; font-size: 13.5px; color: var(--text-soft);
+  margin-left: auto; font-size: 14.5px; color: var(--text-soft);
   font-variant-numeric: tabular-nums;
 }
 
@@ -250,11 +250,11 @@ main { padding: 32px 20px 56px; }
   border-radius: var(--radius-lg); box-shadow: var(--shadow);
 }
 
-table { border-collapse: collapse; width: 100%; font-size: 13.5px; }
+table { border-collapse: collapse; width: 100%; font-size: 14.5px; }
 thead th {
   position: sticky; top: 0;
   background: var(--bg-sunken); color: var(--text-soft);
-  font-size: 11.5px; font-weight: 700; letter-spacing: .02em;
+  font-size: 12.5px; font-weight: 700; letter-spacing: .02em;
   text-align: left; padding: 10px 12px; white-space: nowrap;
   border-bottom: 1px solid var(--border);
 }
@@ -269,14 +269,14 @@ tbody tr:hover { background: var(--bg-soft); }
 .c-gate { width: 52px; }
 .c-text { white-space: nowrap; color: var(--text-soft); }
 .c-name { min-width: 128px; }
-.c-name small { display: block; font-size: 11.5px; color: var(--text-faint); }
+.c-name small { display: block; font-size: 12.5px; color: var(--text-faint); }
 .c-prob { min-width: 132px; }
 
 .gate {
   display: inline-grid; place-items: center;
   width: 24px; height: 24px; border-radius: 5px;
   background: var(--bg-sunken); border: 1px solid var(--border-strong);
-  font-size: 12.5px; font-weight: 700; font-variant-numeric: tabular-nums;
+  font-size: 13.5px; font-weight: 700; font-variant-numeric: tabular-nums;
 }
 
 /* 막대는 반드시 자기 칸 안에 머문다 — 트랙을 두고 그 안을 채운다 */
@@ -289,13 +289,13 @@ tbody tr:hover { background: var(--bg-soft); }
 .bar-top { background: var(--accent); }
 .bar-value {
   flex: none; text-align: right; min-width: 34px;
-  font-size: 13px; font-variant-numeric: tabular-nums; font-weight: 600;
+  font-size: 14px; font-variant-numeric: tabular-nums; font-weight: 600;
   color: var(--text-soft);
 }
 
 .ord {
   display: inline-block; min-width: 34px; text-align: center;
-  font-size: 11.5px; font-weight: 700; padding: 2px 7px; border-radius: 5px;
+  font-size: 12.5px; font-weight: 700; padding: 2px 7px; border-radius: 5px;
   background: var(--bg-sunken); color: var(--text-soft);
 }
 .ord-1 { background: var(--gold); color: var(--on-strong); }
@@ -304,7 +304,7 @@ tbody tr:hover { background: var(--bg-soft); }
 .ord-none { color: var(--text-faint); }
 
 .table-note, .panel-lead {
-  font-size: 12.5px; color: var(--text-faint); margin: 10px 2px 0; line-height: 1.6;
+  font-size: 13.5px; color: var(--text-faint); margin: 10px 2px 0; line-height: 1.6;
 }
 
 /* ------------------------------------------------------------- 통계 */
@@ -318,13 +318,13 @@ tbody tr:hover { background: var(--bg-soft); }
   border-radius: var(--radius-lg); padding: 18px 20px;
   display: flex; flex-direction: column; gap: 3px; box-shadow: var(--shadow);
 }
-.stat-label { font-size: 12px; color: var(--text-faint); font-weight: 600; }
+.stat-label { font-size: 13px; color: var(--text-faint); font-weight: 600; }
 .stat-value {
   font-size: 32px; font-weight: 700; letter-spacing: -.035em; line-height: 1.15;
   font-variant-numeric: tabular-nums;
 }
 .stat-value small { font-size: 17px; font-weight: 600; color: var(--text-soft); margin-left: 1px; }
-.stat-note { font-size: 12px; color: var(--text-faint); }
+.stat-note { font-size: 13px; color: var(--text-faint); }
 
 .panel {
   background: var(--surface); border: 1px solid var(--border);
@@ -332,13 +332,13 @@ tbody tr:hover { background: var(--bg-soft); }
   box-shadow: var(--shadow);
 }
 .panel h2 { font-size: 16px; margin: 0 0 8px; letter-spacing: -.02em; }
-.panel ul { margin: 10px 0 0; padding-left: 20px; color: var(--text-soft); font-size: 14px; }
+.panel ul { margin: 10px 0 0; padding-left: 20px; color: var(--text-soft); font-size: 15px; }
 .panel li { margin-bottom: 7px; }
 .panel-caution { border-left: 3px solid var(--gold); }
 
 .inline-stats { list-style: none; display: flex; gap: 30px; flex-wrap: wrap; margin: 14px 0 0; padding: 0; }
 .inline-stats li { display: flex; flex-direction: column; }
-.inline-stats span { font-size: 11.5px; color: var(--text-faint); }
+.inline-stats span { font-size: 12.5px; color: var(--text-faint); }
 .inline-stats b { font-size: 21px; letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
 
 /* -------------------------------------------------------------- 산문 */
@@ -390,11 +390,11 @@ tbody tr:hover { background: var(--bg-soft); }
   padding: 28px 0 40px; margin-top: 40px;
 }
 .disclaimer {
-  font-size: 12.5px; color: var(--text-faint); line-height: 1.75;
+  font-size: 13.5px; color: var(--text-faint); line-height: 1.75;
   max-width: 78ch; margin: 0 0 14px;
 }
 .disclaimer strong { color: var(--text-soft); }
-.footer-meta { font-size: 12.5px; color: var(--text-faint); margin: 0; }
+.footer-meta { font-size: 13.5px; color: var(--text-faint); margin: 0; }
 
 /* ------------------------------------------------------------- 모바일 */
 
@@ -403,7 +403,7 @@ tbody tr:hover { background: var(--bg-soft); }
   .wrap { padding: 0 16px; }
   .header-inner { min-height: 56px; padding-top: 8px; padding-bottom: 8px; }
   .nav { width: 100%; overflow-x: auto; }
-  .nav a { padding: 6px 10px; font-size: 13.5px; white-space: nowrap; }
+  .nav a { padding: 6px 10px; font-size: 14.5px; white-space: nowrap; }
   .race-grid { grid-template-columns: 1fr; }
   .race-header, .commentary, .pick-summary, .panel { padding: 16px 18px; }
   .race-facts { gap: 18px; }
@@ -433,14 +433,14 @@ tbody tr:hover { background: var(--bg-soft); }
 .pick-1 .pick-mark { color: var(--accent-text); }
 .mark-legend {
   margin: 14px 0 0; padding-top: 12px; border-top: 1px solid var(--border);
-  font-size: 12.5px; color: var(--text-faint);
+  font-size: 13.5px; color: var(--text-faint);
 }
-.mark-legend b { color: var(--text); font-size: 14px; margin-right: 1px; }
+.mark-legend b { color: var(--text); font-size: 15px; margin-right: 1px; }
 .mark-legend span { margin-left: 4px; }
 
 /* 각질 배지 — 선행/선입/추입은 색으로 즉시 구분되어야 한다 */
 .style {
-  display: inline-block; font-size: 11.5px; font-weight: 700;
+  display: inline-block; font-size: 12.5px; font-weight: 700;
   padding: 2px 7px; border-radius: 5px; white-space: nowrap;
   background: var(--bg-sunken); color: var(--text-soft);
 }
@@ -465,7 +465,7 @@ tbody tr:hover { background: var(--bg-soft); }
   padding: 11px 14px; background: var(--bg-sunken); border-radius: var(--radius);
 }
 .combo-label {
-  flex: none; width: 52px; font-size: 12px; font-weight: 700;
+  flex: none; width: 52px; font-size: 13px; font-weight: 700;
   color: var(--accent-text); background: var(--accent-soft);
   padding: 3px 0; border-radius: 5px; text-align: center;
 }
@@ -473,34 +473,34 @@ tbody tr:hover { background: var(--bg-soft); }
   font-size: 19px; font-weight: 700; letter-spacing: .01em;
   font-variant-numeric: tabular-nums;
 }
-.combo-note { font-size: 12.5px; color: var(--text-faint); margin-left: auto; }
+.combo-note { font-size: 13.5px; color: var(--text-faint); margin-left: auto; }
 .combo-disclaimer {
   margin: 14px 0 0; padding-top: 12px; border-top: 1px solid var(--border);
-  font-size: 12px; color: var(--text-faint); line-height: 1.6;
+  font-size: 13px; color: var(--text-faint); line-height: 1.6;
 }
 
 /* 예상 전개 — 지면의 코스 다이어그램 대신 3레인. 모바일에서도 안 무너진다 */
-.pace-lead { margin: 0 0 16px; font-size: 13px; color: var(--text-soft); line-height: 1.65; }
+.pace-lead { margin: 0 0 16px; font-size: 14px; color: var(--text-soft); line-height: 1.65; }
 .pace-track { display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(196px, 1fr)); }
 .pace-lane {
   background: var(--bg-sunken); border-radius: var(--radius); padding: 14px 16px;
   display: flex; flex-direction: column; gap: 9px;
 }
 .pace-lane-head { display: flex; align-items: center; gap: 8px; }
-.pace-count { font-size: 12px; color: var(--text-faint); font-variant-numeric: tabular-nums; }
+.pace-count { font-size: 13px; color: var(--text-faint); font-variant-numeric: tabular-nums; }
 .pace-gates { display: flex; gap: 6px; flex-wrap: wrap; min-height: 26px; }
 .pace-gate {
   display: inline-grid; place-items: center; min-width: 26px; height: 26px;
   padding: 0 6px; border-radius: 6px;
   background: var(--surface); border: 1px solid var(--border-strong);
-  font-size: 13px; font-weight: 700; font-variant-numeric: tabular-nums;
+  font-size: 14px; font-weight: 700; font-variant-numeric: tabular-nums;
 }
 .pace-gate.is-pick { background: var(--accent); color: var(--accent-on); border-color: transparent; }
-.pace-empty { font-size: 12.5px; color: var(--text-faint); }
-.pace-desc { margin: 0; font-size: 12px; color: var(--text-faint); line-height: 1.55; }
+.pace-empty { font-size: 13.5px; color: var(--text-faint); }
+.pace-desc { margin: 0; font-size: 13px; color: var(--text-faint); line-height: 1.55; }
 .pace-unknown {
   margin: 14px 0 0; padding-top: 12px; border-top: 1px solid var(--border);
-  font-size: 12.5px; color: var(--text-faint);
+  font-size: 13.5px; color: var(--text-faint);
   display: flex; align-items: center; gap: 6px; flex-wrap: wrap;
 }
 
@@ -508,7 +508,7 @@ tbody tr:hover { background: var(--bg-soft); }
 .focus-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 7px; }
 .focus-list li { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
 .focus-label {
-  flex: none; min-width: 104px; font-size: 12.5px; font-weight: 600; color: var(--text-soft);
+  flex: none; min-width: 104px; font-size: 13.5px; font-weight: 600; color: var(--text-soft);
 }
 .focus-gates { display: flex; gap: 5px; flex-wrap: wrap; }
 
@@ -517,7 +517,7 @@ tbody tr:hover { background: var(--bg-soft); }
 .tagchip {
   display: inline-block; margin: 1px 3px 1px 0; padding: 1px 6px;
   border-radius: 4px; background: var(--bg-sunken); color: var(--text-soft);
-  font-size: 11px; white-space: nowrap;
+  font-size: 12px; white-space: nowrap;
 }
 
 @media (max-width: 640px) {
@@ -548,29 +548,29 @@ tbody tr:hover { background: var(--bg-soft); }
 .cred-strip b {
   font-size: 22px; letter-spacing: -.03em; font-variant-numeric: tabular-nums;
 }
-.cred-strip span { font-size: 11.5px; color: var(--text-faint); }
+.cred-strip span { font-size: 12.5px; color: var(--text-faint); }
 .cred-edge b { color: var(--accent-text); }
 
 /* 경주 목록표 */
 /* 추천 5두가 들어가면서 폭이 빠듯하다. 이 표만 여백을 좁혀 한 화면에 담는다 —
    좌우로 밀어 보게 만드는 순간 예상지 구실을 못 한다. */
-.race-table { font-size: 13.5px; }
-.race-table thead th { font-size: 11.5px; padding: 9px 8px; }
+.race-table { font-size: 14.5px; }
+.race-table thead th { font-size: 12.5px; padding: 9px 8px; }
 .race-table tbody td { padding: 10px 8px; }
 .race-row { cursor: pointer; }
 .race-row:hover { background: var(--accent-soft); }
 .rr-no { white-space: nowrap; }
 .rr-no a { display: flex; align-items: center; gap: 6px; color: var(--text); }
-.rr-no b { font-size: 14px; font-variant-numeric: tabular-nums; }
+.rr-no b { font-size: 15px; font-variant-numeric: tabular-nums; }
 .rr-time { font-variant-numeric: tabular-nums; color: var(--text-soft); white-space: nowrap; }
 .rr-cond { white-space: nowrap; font-variant-numeric: tabular-nums; }
 .rr-cond small { color: var(--text-faint); margin-left: 3px; }
 .rr-grade {
   display: inline-block; margin-left: 3px; padding: 1px 5px; border-radius: 4px;
-  background: var(--bg-sunken); color: var(--text-soft); font-size: 11px;
+  background: var(--bg-sunken); color: var(--text-soft); font-size: 12px;
 }
 .rr-pick { white-space: nowrap; }
-.rr-pick .mark { font-size: 14px; margin-right: 2px; }
+.rr-pick .mark { font-size: 15px; margin-right: 2px; }
 /* 마명은 최대 12자까지 있다(아메리칸포스원 등). 긴 이름 하나가 표 전체를
    가로로 밀어내지 않도록 폭을 묶고 넘치면 줄인다. 전체 이름은 title 로 남는다. */
 .rr-name {
@@ -579,19 +579,19 @@ tbody tr:hover { background: var(--bg-soft); }
   text-overflow: ellipsis; white-space: nowrap; vertical-align: bottom;
 }
 .rr-prob {
-  color: var(--text-soft); font-variant-numeric: tabular-nums; font-size: 12.5px;
+  color: var(--text-soft); font-variant-numeric: tabular-nums; font-size: 13.5px;
 }
 .rr-empty { color: var(--text-faint); }
-.gate-sm { width: 21px; height: 21px; font-size: 11.5px; }
+.gate-sm { width: 21px; height: 21px; font-size: 12.5px; }
 
 /* 마필 전적표 */
-.form-table { font-size: 13px; }
-.form-table thead th { font-size: 11px; padding: 8px 10px; }
+.form-table { font-size: 14px; }
+.form-table thead th { font-size: 12px; padding: 8px 10px; }
 .form-table tbody td { padding: 9px 10px; }
-.form-table.is-compact { font-size: 12.5px; }
+.form-table.is-compact { font-size: 13.5px; }
 .form-win { background: #fbf6ea; }
 .form-date { white-space: nowrap; font-variant-numeric: tabular-nums; }
-.form-field { color: var(--text-faint); font-size: 11px; }
+.form-field { color: var(--text-faint); font-size: 12px; }
 
 /* 출주마별 전적 (접이식) */
 .form-section {
@@ -608,23 +608,23 @@ tbody tr:hover { background: var(--bg-soft); }
 }
 .form-item > summary::-webkit-details-marker { display: none; }
 .form-item > summary::after {
-  content: "▾"; margin-left: 6px; color: var(--text-faint); font-size: 11px;
+  content: "▾"; margin-left: 6px; color: var(--text-faint); font-size: 12px;
   transition: transform .15s ease;
 }
 .form-item[open] > summary::after { transform: rotate(180deg); }
 .form-item > summary:hover { background: var(--bg-soft); border-radius: var(--radius); }
 .form-item > summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .form-name { font-weight: 700; font-size: 15px; letter-spacing: -.02em; }
-.form-record { font-size: 12.5px; color: var(--text-soft); }
+.form-record { font-size: 13.5px; color: var(--text-soft); }
 .form-prob {
-  margin-left: auto; font-size: 13px; font-weight: 600;
+  margin-left: auto; font-size: 14px; font-weight: 600;
   color: var(--text-soft); font-variant-numeric: tabular-nums;
 }
-.form-more { margin: 9px 2px 14px; font-size: 12.5px; }
+.form-more { margin: 9px 2px 14px; font-size: 13.5px; }
 
 .stat-grid-sm .stat-value { font-size: 26px; }
 .method-panel { border-left: 3px solid var(--accent); }
-.panel-more { margin: 14px 0 0; font-size: 13px; }
+.panel-more { margin: 14px 0 0; font-size: 14px; }
 
 @media (max-width: 640px) {
   .cred-strip li { flex: 1 1 50%; border-bottom: 1px solid var(--border); }
@@ -657,7 +657,7 @@ tbody tr:hover { background: var(--bg-soft); }
 .board-mark { font-size: 17px; line-height: 1; color: var(--text-soft); }
 .board-1 .board-mark { color: var(--accent-text); }
 .board-name {
-  font-size: 12.5px; font-weight: 600; color: var(--text-soft);
+  font-size: 13.5px; font-weight: 600; color: var(--text-soft);
   max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
 .board-gate {
@@ -665,7 +665,7 @@ tbody tr:hover { background: var(--bg-soft); }
   font-variant-numeric: tabular-nums;
 }
 .board-1 .board-gate { color: var(--accent-text); }
-.board-meta { display: flex; align-items: center; gap: 6px; font-size: 12px; }
+.board-meta { display: flex; align-items: center; gap: 6px; font-size: 13px; }
 .board-meta b { font-variant-numeric: tabular-nums; }
 /* 확률 바로 아래 붙으면 같은 값의 연장처럼 읽힌다. 결과는 예상과
    성격이 다르므로 한 칸 띄운다. */
@@ -675,11 +675,11 @@ tbody tr:hover { background: var(--bg-soft); }
   border-left: 1px solid var(--border); background: var(--bg-sunken);
   padding: 12px 14px; display: flex; flex-direction: column; gap: 10px;
 }
-.board-combo { width: 100%; font-size: 13px; }
+.board-combo { width: 100%; font-size: 14px; }
 .board-combo tr + tr th, .board-combo tr + tr td { border-top: 1px solid var(--border); }
 .board-combo th {
   text-align: left; padding: 5px 8px 5px 0; width: 48px;
-  font-size: 11.5px; font-weight: 700; color: var(--accent-text);
+  font-size: 12.5px; font-weight: 700; color: var(--accent-text);
   background: none; position: static; border-bottom: none;
 }
 .board-combo td {
@@ -690,7 +690,7 @@ tbody tr:hover { background: var(--bg-soft); }
 .board-style-row { display: flex; align-items: center; gap: 7px; }
 .board-style-gates { display: flex; gap: 4px; flex-wrap: wrap; }
 .board-style-gates i {
-  font-style: normal; font-size: 12px; font-weight: 700;
+  font-style: normal; font-size: 13px; font-weight: 700;
   font-variant-numeric: tabular-nums; color: var(--text-soft);
 }
 
@@ -710,12 +710,12 @@ tbody tr:hover { background: var(--bg-soft); }
 }
 .hb-dl {
   display: grid; grid-template-columns: auto 1fr; gap: 3px 12px;
-  margin: 0 0 10px; font-size: 12.5px;
+  margin: 0 0 10px; font-size: 13.5px;
 }
 .hb-dl dt { color: var(--text-faint); }
 .hb-dl dd { margin: 0; font-weight: 600; font-variant-numeric: tabular-nums; }
 
-.hb-person, .hb-lines { width: 100%; font-size: 12px; }
+.hb-person, .hb-lines { width: 100%; font-size: 13px; }
 .hb-person thead th, .hb-lines thead th {
   position: static; background: none; padding: 3px 6px;
   font-size: 10.5px; border-bottom: 1px solid var(--border-strong);
@@ -732,7 +732,7 @@ tbody tr:hover { background: var(--bg-soft); }
 .hb-alt th { color: var(--text-faint); padding-left: 10px; }
 
 .hb-last-head {
-  font-size: 12px; color: var(--text-soft); margin-bottom: 8px;
+  font-size: 13px; color: var(--text-soft); margin-bottom: 8px;
   display: flex; align-items: center; gap: 5px; flex-wrap: wrap;
 }
 .hb-last-head b { font-variant-numeric: tabular-nums; color: var(--text); }
@@ -764,7 +764,7 @@ tbody tr:hover { background: var(--bg-soft); }
 
 /* 신뢰도 배지 — 강승부일수록 진하게 */
 .conf {
-  font-size: 12px; font-weight: 700; padding: 3px 9px; border-radius: 5px;
+  font-size: 13px; font-weight: 700; padding: 3px 9px; border-radius: 5px;
   background: var(--bg-sunken); color: var(--text-soft);
 }
 .conf-강승부 { background: var(--accent); color: var(--accent-on); }
@@ -773,9 +773,9 @@ tbody tr:hover { background: var(--bg-soft); }
 /* 목록·카드용 축소판. 등급은 표의 흐름을 끊지 않을 만큼만 작게 얹는다. */
 .conf-sm { font-size: 10.5px; padding: 1px 5px; margin-left: 4px; vertical-align: middle; }
 .conf-score {
-  font-size: 12px; color: var(--text-faint); font-variant-numeric: tabular-nums;
+  font-size: 13px; color: var(--text-faint); font-variant-numeric: tabular-nums;
 }
-.preview-note { font-size: 12.5px; color: var(--text-faint); margin-left: auto; }
+.preview-note { font-size: 13.5px; color: var(--text-faint); margin-left: auto; }
 
 .track-wrap {
   background: var(--bg-sunken); border-radius: var(--radius);
@@ -791,7 +791,7 @@ tbody tr:hover { background: var(--bg-soft); }
 .tk-btn {
   appearance: none; border: 1px solid transparent; border-radius: 8px;
   background: var(--accent); color: var(--accent-on);
-  font: inherit; font-size: 13.5px; font-weight: 600;
+  font: inherit; font-size: 14.5px; font-weight: 600;
   padding: 7px 14px; cursor: pointer; min-width: 88px;
 }
 .tk-btn:hover { filter: brightness(1.06); }
@@ -800,20 +800,20 @@ tbody tr:hover { background: var(--bg-soft); }
   background: var(--surface); color: var(--text-soft); border-color: var(--border-strong);
   min-width: 74px;
 }
-.tk-speed { font-size: 12.5px; color: var(--text-faint); display: flex; align-items: center; gap: 5px; }
+.tk-speed { font-size: 13.5px; color: var(--text-faint); display: flex; align-items: center; gap: 5px; }
 .tk-speed select {
-  font: inherit; font-size: 12.5px; padding: 4px 6px; border-radius: 6px;
+  font: inherit; font-size: 13.5px; padding: 4px 6px; border-radius: 6px;
   border: 1px solid var(--border-strong); background: var(--surface); color: var(--text);
 }
 .tk-clock {
-  font-size: 13px; font-variant-numeric: tabular-nums; color: var(--text-soft);
+  font-size: 14px; font-variant-numeric: tabular-nums; color: var(--text-soft);
   min-width: 54px;
 }
 .tk-seek { flex: 1 1 160px; min-width: 120px; accent-color: var(--accent); }
 
 .preview-foot {
   margin: 12px 0 0; padding-top: 12px; border-top: 1px solid var(--border);
-  font-size: 12px; color: var(--text-faint); line-height: 1.65;
+  font-size: 13px; color: var(--text-faint); line-height: 1.65;
 }
 .preview-foot strong { color: var(--text-soft); }
 
@@ -834,7 +834,7 @@ tbody tr:hover { background: var(--bg-soft); }
   font-size: 17px; letter-spacing: -.02em; margin: 0 0 12px;
   padding-bottom: 8px; border-bottom: 2px solid var(--accent);
 }
-.featured-heading small { font-size: 12.5px; font-weight: 400; color: var(--text-faint); }
+.featured-heading small { font-size: 13.5px; font-weight: 400; color: var(--text-faint); }
 .featured-grid {
   display: grid; gap: 10px;
   grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
@@ -851,16 +851,16 @@ tbody tr:hover { background: var(--bg-soft); }
 }
 .featured-top {
   display: flex; align-items: center; gap: 6px; flex-wrap: wrap;
-  font-size: 13.5px; margin-bottom: 9px;
+  font-size: 14.5px; margin-bottom: 9px;
 }
-.featured-top small { color: var(--text-faint); font-size: 12px; }
+.featured-top small { color: var(--text-faint); font-size: 13px; }
 .featured-top .conf { margin-left: auto; }
 .featured-pick { display: flex; align-items: center; gap: 7px; margin-bottom: 5px; }
 .featured-pick strong { font-size: 16px; letter-spacing: -.02em; }
-.featured-meta { font-size: 12.5px; color: var(--text-soft); }
+.featured-meta { font-size: 13.5px; color: var(--text-soft); }
 .featured-meta b { color: var(--accent-text); font-variant-numeric: tabular-nums; }
 .featured-note {
-  margin: 11px 0 0; font-size: 12.5px; color: var(--text-faint); max-width: 72ch;
+  margin: 11px 0 0; font-size: 13.5px; color: var(--text-faint); max-width: 72ch;
 }
 
 /* ── 결과 페이지 ────────────────────────────────────────── */
@@ -878,18 +878,18 @@ tbody tr:hover { background: var(--bg-soft); }
   font-size: 24px; letter-spacing: -.03em; color: var(--accent-text);
   font-variant-numeric: tabular-nums; line-height: 1.15;
 }
-.res-stat span { font-size: 13px; color: var(--text-soft); }
-.res-stat small { display: block; font-size: 11.5px; color: var(--text-faint); }
+.res-stat span { font-size: 14px; color: var(--text-soft); }
+.res-stat small { display: block; font-size: 12.5px; color: var(--text-faint); }
 .res-stat-muted b { color: var(--text); }
 
-.res-table .res-date { color: var(--text-faint); font-size: 11.5px; margin-left: 5px; }
+.res-table .res-date { color: var(--text-faint); font-size: 12.5px; margin-left: 5px; }
 .res-table .rr-name { font-weight: 600; }
-.res-rank { color: var(--text-faint); font-size: 11.5px; margin-left: 5px; }
+.res-rank { color: var(--text-faint); font-size: 12.5px; margin-left: 5px; }
 .res-odds { font-variant-numeric: tabular-nums; color: var(--text-soft); }
 
 
 .hit {
-  display: inline-block; font-size: 11.5px; font-weight: 700;
+  display: inline-block; font-size: 12.5px; font-weight: 700;
   padding: 2px 8px; border-radius: 4px; white-space: nowrap;
 }
 .hit-win   { background: var(--accent); color: var(--accent-on); }
@@ -897,10 +897,10 @@ tbody tr:hover { background: var(--bg-soft); }
 .hit-miss  { background: var(--bg-sunken); color: var(--text-faint); }
 .hit-none  { background: var(--bg-sunken); color: var(--text-faint); }
 .res-cancel {
-  display: block; font-size: 11px; color: var(--text-faint); margin-top: 3px;
+  display: block; font-size: 12px; color: var(--text-faint); margin-top: 3px;
   cursor: help;
 }
-.res-note { margin-top: 14px; font-size: 13px; color: var(--text-faint); }
+.res-note { margin-top: 14px; font-size: 14px; color: var(--text-faint); }
 
 /* 적중률 페이지의 기호 표 — 기호가 본문 글자에 묻히지 않게 조금 키운다 */
 .stats-table .c-mark { text-align: center; }
@@ -937,7 +937,7 @@ tbody tr:hover { background: var(--bg-soft); }
   float: right; clear: both;
   margin-top: 11px; padding: 8px 15px;
   border: 1px solid var(--accent); border-radius: 9px;
-  font-size: 13.5px; font-weight: 700; color: var(--accent);
+  font-size: 14.5px; font-weight: 700; color: var(--accent);
   background: var(--surface); transition: background .12s, color .12s;
 }
 .ri-go b { font-weight: 700; display: inline-block; transition: transform .12s; }
@@ -948,7 +948,7 @@ tbody tr:hover { background: var(--bg-soft); }
 
 .ri-head {
   display: flex; align-items: center; gap: 9px; flex-wrap: wrap;
-  font-size: 14px; margin-bottom: 10px;
+  font-size: 15px; margin-bottom: 10px;
 }
 .ri-no { font-size: 17px; font-variant-numeric: tabular-nums; letter-spacing: -.02em; }
 .ri-time {
@@ -979,29 +979,29 @@ tbody tr:hover { background: var(--bg-soft); }
   background: none; border: none; width: auto; height: auto;
 }
 .ri-pick .rr-name {
-  font-size: 13px; font-weight: 600; color: var(--text-soft); max-width: 100%;
+  font-size: 14px; font-weight: 600; color: var(--text-soft); max-width: 100%;
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
 .ri-pick .rr-prob {
-  font-size: 14px; font-weight: 700; font-variant-numeric: tabular-nums;
+  font-size: 15px; font-weight: 700; font-variant-numeric: tabular-nums;
   color: var(--accent-text);
 }
 /* 시행 후에는 착순이 확률 자리를 대신한다 */
 .ri-picks.is-done .rr-prob { display: none; }
 .ri-pick .ri-ord {
-  font-size: 14px; font-weight: 700; font-variant-numeric: tabular-nums;
+  font-size: 15px; font-weight: 700; font-variant-numeric: tabular-nums;
   color: var(--text-soft);
 }
 .ri-pick.is-winner .ri-ord { color: var(--gold); }
 
 @media (max-width: 640px) {
   .race-item { padding: 11px 12px 12px; }
-  .ri-head { gap: 6px; font-size: 12.5px; }
+  .ri-head { gap: 6px; font-size: 13.5px; }
   .ri-pick { padding: 9px 3px 10px; gap: 2px; }
-  .ri-pick .mark { font-size: 13px; }
+  .ri-pick .mark { font-size: 14px; }
   .ri-pick .gate-sm { font-size: 20px; }
-  .ri-pick .rr-name { font-size: 11px; }
-  .ri-pick .rr-prob, .ri-pick .ri-ord { font-size: 12px; }
+  .ri-pick .rr-name { font-size: 12px; }
+  .ri-pick .rr-prob, .ri-pick .ri-ord { font-size: 13px; }
 }
 
 
@@ -1011,7 +1011,7 @@ tbody tr:hover { background: var(--bg-soft); }
 @media (max-width: 640px) {
   .res-table thead th:nth-child(2), .res-table tbody td:nth-child(2),
   .res-table thead th:nth-child(6), .res-table tbody td:nth-child(6) { display: none; }
-  .res-table { font-size: 12.5px; }
+  .res-table { font-size: 13.5px; }
   .res-table .rr-name { max-width: 5.5em; }
   .res-rank { display: block; margin-left: 0; }
 }
@@ -1025,7 +1025,7 @@ tbody tr:hover { background: var(--bg-soft); }
 
 /* 시행이 끝난 경주 카드 — 승률 자리에 착순이 들어간다 */
 .ri-ord {
-  font-variant-numeric: tabular-nums; font-size: 12.5px;
+  font-variant-numeric: tabular-nums; font-size: 13.5px;
   color: var(--text-faint); font-weight: 600;
 }
 .ri-pick.is-winner .ri-ord { color: var(--accent-text); }
@@ -1034,7 +1034,7 @@ tbody tr:hover { background: var(--bg-soft); }
 
 /* 적중률 페이지의 축별 소제목 */
 .axis-title {
-  margin: 20px 0 8px; font-size: 14px; letter-spacing: -.01em;
+  margin: 20px 0 8px; font-size: 15px; letter-spacing: -.01em;
   color: var(--text-soft); font-weight: 700;
 }
 .axis-title:first-of-type { margin-top: 4px; }
@@ -1051,7 +1051,7 @@ tbody tr:hover { background: var(--bg-soft); }
 .tk-speed { display: inline-flex; gap: 2px; }
 .tk-rate {
   border: 1px solid var(--border); background: var(--surface);
-  color: var(--text-soft); font-size: 12.5px; font-weight: 600;
+  color: var(--text-soft); font-size: 13.5px; font-weight: 600;
   padding: 5px 9px; cursor: pointer; font-variant-numeric: tabular-nums;
 }
 .tk-rate:first-child { border-radius: 6px 0 0 6px; }
@@ -1071,7 +1071,7 @@ tbody tr:hover { background: var(--bg-soft); }
   list-style: none; margin: 0; padding: 0;
   position: absolute; left: 12px; top: 10px; right: 12px;
   display: flex; flex-wrap: wrap; justify-content: flex-start; gap: 4px 6px;
-  font-size: 12.5px; font-variant-numeric: tabular-nums;
+  font-size: 13.5px; font-variant-numeric: tabular-nums;
   pointer-events: none;
 }
 .tk-order li {
@@ -1089,13 +1089,13 @@ tbody tr:hover { background: var(--bg-soft); }
   list-style: none; margin: 8px 0 0; padding: 8px 0 0;
   border-top: 1px solid var(--border);
   display: flex; flex-wrap: wrap; gap: 4px 12px;
-  font-size: 12px; color: var(--text-soft);
+  font-size: 13px; color: var(--text-soft);
 }
 .tk-legend li { display: inline-flex; align-items: center; gap: 5px; }
 .tk-cap {
   width: 18px; height: 18px; border-radius: 50%;
   display: inline-flex; align-items: center; justify-content: center;
-  font-size: 11px; font-weight: 700; border: 1px solid rgba(0,0,0,.3);
+  font-size: 12px; font-weight: 700; border: 1px solid rgba(0,0,0,.3);
   font-variant-numeric: tabular-nums;
 }
 
@@ -1138,16 +1138,16 @@ tbody tr:hover { background: var(--bg-soft); }
 .res-picks { white-space: normal; line-height: 1.9; }
 .res-picks .rp {
   display: inline-flex; align-items: baseline; gap: 4px;
-  margin-right: 14px; font-size: 13px;
+  margin-right: 14px; font-size: 14px;
 }
-.res-picks .rp-mark { font-style: normal; font-size: 11.5px; color: var(--text-faint); }
+.res-picks .rp-mark { font-style: normal; font-size: 12.5px; color: var(--text-faint); }
 .res-picks .rp-gate {
   font-variant-numeric: tabular-nums; font-weight: 700; color: var(--text-faint);
   min-width: 14px; text-align: right;
 }
 .res-picks .rp-name { color: var(--text-faint); }
 .res-picks .rp-ord {
-  font-style: normal; font-size: 12px; font-variant-numeric: tabular-nums;
+  font-style: normal; font-size: 13px; font-variant-numeric: tabular-nums;
   color: var(--text-faint); min-width: 13px;
 }
 /* 입상마는 테두리로만 두른다. 색면을 쓰면 글자가 바탕에 묻히고, 한 줄에
@@ -1174,13 +1174,13 @@ tbody tr:hover { background: var(--bg-soft); }
 .hit-meter i { width: 5px; height: 14px; border-radius: 1px; background: var(--border); }
 .hit-meter i.on { background: var(--accent); }
 .hit-meter b {
-  margin-left: 8px; font-size: 12.5px; font-variant-numeric: tabular-nums;
+  margin-left: 8px; font-size: 13.5px; font-variant-numeric: tabular-nums;
   color: var(--text-soft);
 }
 .hit-meter b span { color: var(--text-faint); font-weight: 500; }
 
 @media (max-width: 640px) {
-  .res-picks .rp { margin-right: 10px; font-size: 12.5px; }
+  .res-picks .rp { margin-right: 10px; font-size: 13.5px; }
   .res-picks .rp-name { max-width: 5.5em; overflow: hidden;
     text-overflow: ellipsis; white-space: nowrap; }
 }
@@ -1195,20 +1195,20 @@ tbody tr:hover { background: var(--bg-soft); }
   h1 { font-size: 24px; line-height: 1.35; }
   h2 { font-size: 18.5px; }
   .panel-lead, .hero-sub { font-size: 14.5px; line-height: 1.75; }
-  .panel-more { font-size: 13.5px; line-height: 1.7; }
+  .panel-more { font-size: 14.5px; line-height: 1.7; }
 
   /* 표는 손가락으로 훑는다 — 줄 높이와 글자를 함께 올린다 */
-  .stats-table { font-size: 13.5px; }
+  .stats-table { font-size: 14.5px; }
   .stats-table th, .stats-table td { padding: 10px 9px; }
-  .runners { font-size: 13.5px; }
+  .runners { font-size: 14.5px; }
   .runners th, .runners td { padding: 10px 7px; }
 
   /* 결과 목록의 추천 다섯은 두 줄로 흘러도 읽히게 */
   .res-picks { line-height: 2.1; }
-  .res-picks .rp { font-size: 13px; margin-right: 12px; }
+  .res-picks .rp { font-size: 14px; margin-right: 12px; }
 
   /* 경주일별·승식별 숫자는 표의 핵심이라 더 키운다 */
-  .stats-table .c-num { font-size: 14px; }
+  .stats-table .c-num { font-size: 15px; }
 }
 
 /* 아주 좁은 화면 — 여백을 먼저 줄이고 글자는 지킨다 */
@@ -1220,7 +1220,7 @@ tbody tr:hover { background: var(--bg-soft); }
 /* 순위 목록의 마번 배지 — 범례와 같은 모양이라 눈이 바로 잇는다 */
 .tk-order .tk-cap {
   display: inline-grid; place-items: center; min-width: 19px; height: 19px;
-  padding: 0 4px; border-radius: 5px; font-size: 12px; font-weight: 700;
+  padding: 0 4px; border-radius: 5px; font-size: 13px; font-weight: 700;
   font-variant-numeric: tabular-nums; border: 1px solid rgba(0,0,0,.18);
 }
 
@@ -1251,13 +1251,13 @@ tbody tr:hover { background: var(--bg-soft); }
   font-variant-numeric: tabular-nums; color: var(--gold);
 }
 .win-odds i { font-size: 15px; font-weight: 700; font-style: normal; margin-left: 2px; }
-.win-bet { font-size: 14px; font-weight: 700; color: var(--text); }
+.win-bet { font-size: 15px; font-weight: 700; color: var(--text); }
 .win-race {
   display: flex; align-items: center; gap: 5px; margin-top: 3px;
-  font-size: 12.5px; color: var(--text-soft); font-variant-numeric: tabular-nums;
+  font-size: 13.5px; color: var(--text-soft); font-variant-numeric: tabular-nums;
 }
 .win-race small { color: var(--text-faint); }
-.win-also { font-size: 11.5px; color: var(--accent-text); font-weight: 600; }
+.win-also { font-size: 12.5px; color: var(--accent-text); font-weight: 600; }
 
 @media (max-width: 640px) {
   .wins-row { grid-template-columns: repeat(auto-fill, minmax(132px, 1fr)); gap: 8px; }
