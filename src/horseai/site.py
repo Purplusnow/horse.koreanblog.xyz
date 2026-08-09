@@ -684,6 +684,12 @@ def build(db: str, out_dir: Path, config: Dict, template_dir: Path,
         for r in upcoming + past:
             r["picks"] = picks.get(r["race_key"], [])
             r["outcome"] = outcomes.get(r["race_key"])
+            # 당일 경주는 결과를 그리지 않는다. 착순은 경주마다 들어오지만
+            # 배당은 그날 밤에 한 번 받으므로, 낮 동안 '착순은 있는데 적중은
+            # 모름' 이라는 어중간한 화면이 된다. 게재한 예상 그대로 두고 밤에
+            # 한 번 갱신한다.
+            r["show_result"] = bool(r["has_result"]
+                                    and r["date_obj"] and r["date_obj"] < today)
 
         # 추천경주 — 시뮬레이션이 결과를 좁게 몰아준 경주만 따로 세운다.
         # 매 경주를 똑같은 자신감으로 내미는 예상지는 신뢰를 얻지 못한다.
@@ -742,9 +748,8 @@ def build(db: str, out_dir: Path, config: Dict, template_dir: Path,
             for r in detail_pages
         ], ensure_ascii=False))
 
-        # 정산 워크플로가 헛돌지 않게 오늘 진척을 남긴다. 10분마다 도는 정산은
-        # 게재본의 이 파일을 먼저 읽어, 오늘 경주가 없거나 이미 다 정산됐으면
-        # 아무것도 하지 않고 끝낸다.
+        # 갱신 상태 표식. 10분 정산을 걷어내면서 쓰는 곳이 없어졌지만, 배포된
+        # 사이트가 어느 날짜까지 반영됐는지 밖에서 확인할 수 있어 남겨 둔다.
         today_races = [r for r in races if r["date_obj"] == today]
         write(out_dir / "settle.json", json.dumps({
             "date": today.isoformat(),

@@ -70,6 +70,14 @@
    가로 스크롤이 생겼다. 카드는 폭이 모자라면 추천이 다음 줄로 흐르므로 어떤
    화면에서도 넘치지 않는다. 예상지를 좌우로 밀어 가며 읽게 할 수는 없다. #}
 {% macro race_card(race) %}
+{# 결과를 그릴지는 site.py 가 정해 준다(race.show_result).
+   당일 경주는 그리지 않는다 — 착순은 경주마다 들어오는데 배당은 그날 밤에
+   한 번 받으므로, 낮 동안 화면이 '착순은 있는데 적중은 모름' 이라는 어중간한
+   상태로 남는다. 예상지는 게재한 그대로 두고 밤에 한 번 갱신하는 편이 읽는
+   사람에게도 정직하다.
+   매크로는 {% raw %}{% from %}{% endraw %} 로 불러오면 상위 컨텍스트를 못 받으므로 여기서
+   today 를 참조할 수 없다. #}
+{% set show = race.show_result %}
 <a class="race-item" href="{{ race.url }}">
   <div class="ri-head">
     <span class="meet meet-{{ race.meet }}">{{ race.meet }}</span>
@@ -83,18 +91,18 @@
     {# 시행 후에도 신뢰도 등급을 남긴다. '약승부라고 했는데 불발' 이 나란히
        보여야 그 지표가 검증되고, 등급만 지우면 사후에 유리한 것만 남기는 셈이다. #}
     {{ conf_badge(race.conf_label, race.conf_score) }}
-    {% if race.has_result %}{{ hit_badge(race.outcome) }}{% endif %}
+    {% if show %}{{ hit_badge(race.outcome) }}{% endif %}
   </div>
   {# 시행 전에는 우승 확률을, 시행 후에는 실제 착순을 같은 자리에 보여 준다.
      끝난 경주를 목록 아래로 빼면 그날 카드가 앞뒤로 갈려 시간표를 이어서
      볼 수 없다. 자리를 그대로 두고 값만 바꾼다. #}
-  <div class="ri-picks{% if race.has_result %} is-done{% endif %}">
+  <div class="ri-picks{% if show %} is-done{% endif %}">
     {% for p in race.picks[:5] %}
     <span class="ri-pick{% if p.is_win %} is-winner{% endif %}">
       <span class="mark{% if p.mark == "★" %} is-star{% endif %}">{{ p.mark }}</span>
       <span class="gate gate-sm">{{ p.chul_no }}</span>
       <span class="rr-name" title="{{ p.hr_name }}">{{ p.hr_name }}</span>
-      {% if race.has_result %}
+      {% if show %}
       {# 경주 직후에는 1~3착만 먼저 공시된다. 나머지를 '-' 로 찍으면 고장처럼
          보이므로, 착순이 아직 없으면 아무것도 쓰지 않는다. #}
       {% if p.ord_text %}<span class="ri-ord">{{ p.ord_text }}</span>{% endif %}
@@ -109,7 +117,7 @@
   {# 카드 전체가 링크지만 그렇게 보이지 않아 아무도 누르지 않는다. 안에 버튼을
      넣으면 터치 영역이 쪼개지고 링크가 중첩되므로, 눌리는 것처럼 보이게만
      한다 — 이 줄 자체는 별도 링크가 아니다. #}
-  <span class="ri-go">{% if race.has_result %}경주 결과{% else %}상세 예상{% endif %} <b>›</b></span>
+  <span class="ri-go">{% if show %}경주 결과{% else %}상세 예상{% endif %} <b>›</b></span>
 </a>
 {% endmacro %}
 
