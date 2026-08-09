@@ -29,7 +29,8 @@ import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
-from horseai import site  # noqa: E402
+# 함수 안에 marks 라는 지역 변수가 있어 모듈 이름을 가린다. 별칭으로 피한다.
+from horseai import marks as marks_mod  # noqa: E402
 from horseai.features import build_training_frame  # noqa: E402
 from horseai.model import walk_forward  # noqa: E402
 
@@ -37,18 +38,23 @@ MARKS = ["★", "◎", "○", "△", "※"]
 
 
 def apply_marks(pred: pd.DataFrame, star: float) -> pd.Series:
-    """기호 부여는 site.assign_marks 를 그대로 쓴다.
+    """기호 부여는 marks_mod.assign_marks 를 그대로 쓴다.
+
+    **패치 대상은 marks 모듈이다.** 규칙이 site 에서 marks 로 옮겨진 뒤에도
+    site.MARK_THRESHOLDS 를 고치고 있었는데, assign_marks 는 자기 모듈의 값을
+    읽으므로 아무 효과가 없었다 — 기준을 바꿔도 여섯 후보가 전부 같은 숫자로
+    나왔다. 피처 A/B 에서 겪은 것과 같은 종류의 실수다.
 
     규칙을 여기에 다시 구현하면 언젠가 사이트와 갈리고, 그때 이 검증 결과는
     화면에서 실제로 벌어지는 일과 무관한 숫자가 된다.
     """
-    site.MARK_THRESHOLDS = {"star": star}
+    marks_mod.MARK_THRESHOLDS = {"star": star}
     marks = pd.Series("", index=pred.index, dtype=object)
     for _, g in pred.groupby("race_key", sort=False):
         rows = [{"pred_rank": r.pred_rank,
                  "p_top2": getattr(r, "p_top2_norm", 0) or 0,
                  "_idx": r.Index} for r in g.itertuples()]
-        site.assign_marks(rows)
+        marks_mod.assign_marks(rows)
         for row in rows:
             marks.at[row["_idx"]] = row["mark"]
     return marks
