@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% from "_macros.html" import ad, race_card %}
+
+{# 날짜별 페이지.
+   '8월 15일 경마 예상' 처럼 날짜를 붙여 검색하는 사람이 많은데 그 검색어를
+   받을 자리가 없었다. 홈은 날짜가 없고, 경주 페이지는 한 경주씩이라 '그날
+   전체' 를 찾는 사람과 맞지 않는다. 매일 새로 생기는 검색어라 경쟁도 적다. #}
+{# 그날 실제로 열린 경마장만 적는다. 셋을 늘 적으면 서울만 열린 날에도
+   제주가 있다고 말하는 셈이다. 부산경남은 팬들이 '부경' 으로 검색한다. #}
+{% block title %}{{ label }} 경마 예상 · 출주표 — {{ meets_kw }} | {{ site.name }}{% endblock %}
+{% block description %}
+{{ label }} 경마 예상. {{ meets }} {{ races|length }}개 경주의 출주마별 우승 확률과
+추천 5두를 발주 전에 공개합니다. 결과는 경주 후 착순·배당과 대조해 그대로 싣습니다.
+{% endblock %}
+
+{% block content %}
+<nav class="breadcrumb" aria-label="탐색 경로">
+  <a href="/">오늘의 예상</a> <span>›</span> <b>{{ label }}</b>
+</nav>
+
+<header class="page-header">
+  <h1>{{ label }} 경마 예상</h1>
+  <p class="page-lead">
+    {{ meets }} <b>{{ races|length }}개 경주</b>의 예상입니다.
+    출주마별 우승 확률을 산출해 <b>발주 전에</b> 게재하고 이후 수정하지 않습니다.
+    결과는 <a href="/accuracy/">적중률</a>에 그대로 대조해 싣습니다.
+  </p>
+</header>
+
+{{ ad(adsense, 'slot_top') }}
+
+<section class="day-section">
+  <div class="race-list">
+    {% for race in races %}
+    {{ race_card(race) }}
+    {% endfor %}
+  </div>
+</section>
+
+{{ ad(adsense, 'slot_bottom') }}
+{% endblock %}

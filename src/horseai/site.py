@@ -589,7 +589,7 @@ def build(db: str, out_dir: Path, config: Dict, template_dir: Path,
     # 이전 빌드의 잔여 페이지를 지운다. 남겨 두면 삭제된 경주가 사이트에 계속
     # 살아 있고, sitemap 과 실제 페이지가 어긋난다.
     # about 은 페이지를 없앤 뒤에도 이전 빌드 산출물이 남아 있으면 계속 살아 있다
-    for stale in ("race", "horse", "about"):
+    for stale in ("race", "horse", "about", "day"):
         if (out_dir / stale).exists():
             shutil.rmtree(out_dir / stale)
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -742,6 +742,30 @@ def build(db: str, out_dir: Path, config: Dict, template_dir: Path,
                       summary=form_summary(form), page_url=horse["url"]))
             horse_pages.append(horse)
 
+        # 날짜별 페이지. '8월 15일 경마 예상' 처럼 날짜를 붙여 검색하는 사람이
+        # 많은데 그 검색어를 받을 자리가 없었다 — 홈은 날짜가 없고 경주 페이지는
+        # 한 경주씩이다. 지난 경주일도 만든다: 검색은 그날이 지난 뒤에도 계속된다.
+        day_map: Dict[str, List[Dict]] = {}
+        for r in upcoming + past:
+            if r["rc_date"]:
+                day_map.setdefault(r["rc_date"], []).append(r)
+        day_pages = []
+        for day, rows in day_map.items():
+            rows = sorted(rows, key=_post_order)
+            d = rows[0]["date_obj"]
+            label = f"{d.month}월 {d.day}일" if d else day
+            names = sorted({r["meet"] for r in rows if r["meet"]})
+            meets = " · ".join(names)
+            # 제목용 — 팬들이 실제로 치는 '부경' 을 함께 담는다
+            meets_kw = " · ".join(f"{n}(부경)" if n == "부산경남" else n for n in names)
+            url = f"/day/{day}/"
+            write(out_dir / "day" / day / "index.html",
+                  env.get_template("day.html").render(
+                      **ctx_base, races=rows, label=label, meets=meets,
+                      meets_kw=meets_kw,
+                      page_url=url))
+            day_pages.append({"url": url, "date": day, "n": len(rows)})
+
         # 클라이언트 측 검색/필터용 인덱스
         write(out_dir / "races.json", json.dumps([
             {"k": r["race_key"], "u": r["url"], "m": r["meet"], "d": r["rc_date"],
@@ -762,6 +786,7 @@ def build(db: str, out_dir: Path, config: Dict, template_dir: Path,
         # sitemap / robots
         base = config["site"]["url"].rstrip("/")
         urls = (["/", "/accuracy/", "/results/"]
+                + [d["url"] for d in day_pages]
                 + [r["url"] for r in detail_pages]
                 + [h["url"] for h in horse_pages])
         write(out_dir / "sitemap.xml", env.get_template("sitemap.xml").render(

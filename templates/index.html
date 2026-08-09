@@ -52,8 +52,6 @@
 
 {{ ad(adsense, 'slot_top') }}
 
-{% if upcoming_by_day %}
-{% for date, races in upcoming_by_day %}
 {% set hl = accuracy.highlights %}
 {% if hl.recent or hl.top %}
 {# 적중률 표는 성실하지만 눈에 걸리지 않는다. 처음 온 사람이 한 번 더 볼
@@ -94,6 +92,9 @@
   {% endif %}
 </section>
 {% endif %}
+
+{% if upcoming_by_day %}
+{% for date, races in upcoming_by_day %}
 
 <section class="day-section">
   <h2 class="day-heading">
