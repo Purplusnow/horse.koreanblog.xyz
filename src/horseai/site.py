@@ -626,7 +626,7 @@ def build(db: str, out_dir: Path, config: Dict, template_dir: Path,
         # 없으면 브라우저가 예전 track.js·style.css 를 계속 쓴다. 실제로 레인
         # 간격을 고쳐 배포하고도 화면이 그대로여서 한참 딴 데를 짚었다.
         assets = {}
-        for f in ("track.js", "style.css"):
+        for f in ("track.js", "style.css", "clock.js"):
             src = static_dir / f
             if src.exists():
                 assets[f] = hashlib.md5(src.read_bytes()).hexdigest()[:8]

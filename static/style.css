@@ -1262,3 +1262,13 @@ tbody tr:hover { background: var(--bg-soft); }
 }
 .win-also.is-perfect { color: var(--gold); font-weight: 700; }
 
+
+/* 발주 시각이 지난 경주. 목록에서 빼지는 않는다 — 그날 시간표를 이어서 볼 수
+   있어야 하고, 무엇을 밀었는지도 남아야 한다. 다만 앞으로 뛸 경주와 같은
+   낯으로 두면 어디를 봐야 할지 흐려진다. */
+.race-item.is-past { opacity: .55; }
+.race-item.is-past:hover { opacity: 1; }
+.race-item.is-past .ri-time::after {
+  content: "발주 종료"; margin-left: 6px; font-size: 11px;
+  color: var(--text-faint); font-weight: 500;
+}
