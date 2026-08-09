@@ -369,15 +369,11 @@ tbody tr:hover { background: var(--bg-soft); }
 /* -------------------------------------------------------------- 광고 */
 
 /* 광고 자리.
-   min-height 로 자리를 미리 잡아 두면 광고가 안 채워졌을 때 그만큼이 빈칸으로
-   남는다. 새 사이트는 채워지지 않는 노출이 많으므로, **채워졌을 때만 자리를
-   차지하게** 둔다. 애드센스는 결과를 ins 의 data-ad-status 로 알려 준다. */
-.ad-slot { margin: 26px 0; text-align: center; }
-.ad-slot ins { display: block; }
-.ad-slot ins[data-ad-status="unfilled"] { display: none !important; }
-/* 라벨과 바깥 여백까지 걷어야 빈칸이 남지 않는다 */
-.ad-slot:has(ins[data-ad-status="unfilled"]) { margin: 0; }
-.ad-slot:has(ins[data-ad-status="unfilled"]) .ad-label { display: none; }
+   **CSS 로 ins 를 건드리지 않는다.** 빈칸을 없애려고 display:none 을 걸었더니
+   애드센스에는 노출이 잡히는데 화면에는 아무것도 안 보이는 상태가 됐다. 광고가
+   실제로 로드되고 있었는데 우리가 가리고 있었던 것이다. 크기와 표시 여부는
+   애드센스가 인라인 스타일로 직접 관리하므로 그대로 둔다. */
+.ad-slot { margin: 26px 0; min-height: 90px; text-align: center; }
 .ad-label {
   display: block; font-size: 10.5px; color: var(--text-faint);
   letter-spacing: .08em; margin-bottom: 5px; text-transform: uppercase;
