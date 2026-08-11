@@ -9,10 +9,12 @@
    빽빽해서 밝은 배경에서 훨씬 빨리 읽히고, 도박 사이트 특유의 어두운 화면과도
    거리를 둘 수 있다. 팔레트는 전부 토큰으로만 정의해 한 곳에서 조정한다. */
 :root {
-  /* 팔레트는 밝은 값 하나로만 정의한다. 그 사실을 브라우저에 알리지 않으면
-     다크 모드 브라우저가 강제 반전을 걸어 **배경만** 검게 뒤집고 우리가 지정한
-     글자색은 그대로 둔다. 그러면 검은 바탕에 어두운 글자가 얹힌다. */
-  color-scheme: light;
+  /* 밝은 화면 기본값. 어두운 화면은 아래에서 토큰만 바꾼다 — 색을 쓰는 곳이
+     전부 토큰을 거치므로 화면마다 손볼 필요가 없다.
+
+     color-scheme 을 둘 다 선언해야 브라우저가 스크롤바·폼 요소를 맞춰 준다.
+     이걸 밝은 쪽으로만 두면 어두운 화면에서 흰 스크롤바가 튄다. */
+  color-scheme: light dark;
   --bg: #ffffff;
   --bg-soft: #f6f7f9;
   --bg-sunken: #eef0f3;
@@ -96,6 +98,47 @@ a:hover { text-decoration: underline; }
   background: var(--accent-soft);
 }
 .nav a.is-here:hover { background: var(--accent-soft); color: var(--accent); }
+
+/* 어두운 화면.
+   앞서 밝은 팔레트만 두고 브라우저 강제 반전에 맡겼더니, 배경만 검게 뒤집히고
+   글자색은 그대로 남아 회색 위에 회색이 되는 화면이 나왔다. 토큰을 직접
+   뒤집어 대비를 우리가 정한다.
+
+   글자색은 밝은 화면보다 한 단 더 밝게 잡는다 — 어두운 바탕에서는 같은 회색이
+   더 흐리게 보인다. 강조색도 채도를 올려야 살아난다. */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #12151a;
+    --bg-soft: #0f1216;
+    --bg-sunken: #1b1f26;
+    --surface: #171b21;
+    --border: #2a3038;
+    --border-strong: #3a424d;
+    --text: #e7ebf0;
+    --text-soft: #b3bcc7;      /* 밝은 화면의 #5a6472 대응 — 한 단 밝게 */
+    --text-faint: #8590a0;     /* 밝은 화면의 #8b95a3 대응 */
+    --accent: #3fa276;
+    --accent-soft: #172b22;
+    --accent-text: #6ecfa0;
+    --accent-on: #0d1a14;
+    --on-strong: #0d1014;
+    --gold: #d9a441;
+    --silver: #9aa4b0;
+    --bronze: #c08a53;
+    --danger: #e06a6a;
+    --meet-seoul-bg: #1a2438;   --meet-seoul-fg: #9dbcf0;
+    --meet-busan-bg: #33231a;   --meet-busan-fg: #e0a878;
+    --meet-jeju-bg: #16291f;    --meet-jeju-fg: #7fd3a6;
+    --shadow: 0 1px 2px rgba(0, 0, 0, .4), 0 1px 3px rgba(0, 0, 0, .3);
+  }
+  /* 각질 배지는 밝은 배경을 직접 쓴다 — 토큰을 안 거치므로 따로 뒤집는다 */
+  .style-front { background: #3a2418; color: #f0b98d; }
+  .style-stalk { background: #1c2740; color: #9dbcf0; }
+  .style-close { background: #172b22; color: #7fd3a6; }
+  .style-unknown { background: var(--bg-sunken); color: var(--text-faint); }
+  /* 흰 바탕을 못 박아 둔 곳들 */
+  .tk-order li { background: rgba(23, 27, 33, .92); }
+}
 
 /* --------------------------------------------------------- 신뢰 배너 */
 
