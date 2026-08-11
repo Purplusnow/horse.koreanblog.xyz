@@ -184,7 +184,10 @@ def fetch_day(
         if e.fatal:
             raise
         log.warning("%s %s %s 수집 실패: %s", kind, MEETS.get(meet, meet), ymd, redact(e))
-        return 0
+        # -2 는 '실패'. 0(자료 없음)과 반드시 구분해야 한다 — 세션 한도나 포털
+        # 장애로 응답을 못 받은 것을 '그날 경주가 없다' 로 세면, 실제로 열린
+        # 경주일을 통째로 놓치고도 정상 종료로 보인다.
+        return -2
 
     n = _ingest(conn, records, kind=kind)
     log_fetch(conn, ep_key, str(meet), ymd, len(records))
@@ -206,19 +209,26 @@ def run_range(
 ) -> Dict[str, int]:
     meets = list(meets or ACTIVE_MEETS)
     days = race_days(start, end)
-    total, skipped, empty = 0, 0, 0
+    total, skipped, empty, failed = 0, 0, 0, 0
     log.info("%s 수집: %s ~ %s, 시행일 %d일 × 경마장 %d곳",
              kind, start, end, len(days), len(meets))
     for day in days:
         for meet in meets:
             n = fetch_day(client, conn, kind=kind, meet=meet, day=day, force=force)
-            if n < 0:
+            if n == -2:
+                failed += 1
+            elif n < 0:
                 skipped += 1
             elif n == 0:
                 empty += 1
             else:
                 total += n
-    return {"ingested": total, "skipped": skipped, "empty": empty, "days": len(days)}
+    out = {"ingested": total, "skipped": skipped, "empty": empty,
+           "failed": failed, "days": len(days)}
+    if failed:
+        log.warning("  ⚠ %d건 응답을 받지 못했다 — '자료 없음' 과 다르다. "
+                    "그날 경주가 있었는지 아직 알 수 없다", failed)
+    return out
 
 
 MEET_CODE = {"서울": 1, "제주": 2, "부산경남": 3}
