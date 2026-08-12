@@ -655,6 +655,20 @@ def main(argv: Optional[List[str]] = None) -> int:
                               meets=args.meets, force=True)
 
         log.info("완료: %s", stats)
+
+        # 응답을 하나도 못 받았으면 실패로 끝낸다.
+        #
+        # 8/12 에 출전표 수집 15건이 전부 ConnectTimeout 이었는데 continue-on-error
+        # 때문에 단계가 초록으로 넘어갔고, 이후 예측·빌드가 빈 자료로 돌아 정상
+        # 완료처럼 보였다. 경주 이틀 전이라 우연히 발견했지만, 금요일 새벽에
+        # 같은 일이 나면 경주 당일까지 빈 사이트가 된다.
+        #
+        # '자료가 아직 없다'(empty)와는 다르다 — 그건 정상이다. 여기서 막는 것은
+        # **물어보지도 못한** 경우뿐이다.
+        if stats.get("failed") and not stats.get("ingested"):
+            log.error("✗ %d건 모두 응답을 받지 못했다 — 수집분이 없다",
+                      stats["failed"])
+            return 1
     return 0
 
 

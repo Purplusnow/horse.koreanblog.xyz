@@ -106,8 +106,10 @@ jobs:
           KRA_SERVICE_KEY: ${{ secrets.KRA_SERVICE_KEY }}
         run: PYTHONPATH=src python -m horseai.kra.collect results --days 21 --db "$DB"
 
+      # continue-on-error 를 뗀다. 다른 수집(성적·배당·조교)은 하루 빠져도
+      # 다음 실행에서 메우면 되지만, 출전표가 없으면 그날 예상 자체가 없다.
+      # 전량 실패면 collect 가 1 로 끝나므로 워크플로가 빨갛게 뜬다.
       - name: 출전표 수집
-        continue-on-error: true
         timeout-minutes: 12
         env:
           KRA_SERVICE_KEY: ${{ secrets.KRA_SERVICE_KEY }}
