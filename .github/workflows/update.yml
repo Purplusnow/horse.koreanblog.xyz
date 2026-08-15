@@ -109,11 +109,27 @@ jobs:
       # continue-on-error 를 뗀다. 다른 수집(성적·배당·조교)은 하루 빠져도
       # 다음 실행에서 메우면 되지만, 출전표가 없으면 그날 예상 자체가 없다.
       # 전량 실패면 collect 가 1 로 끝나므로 워크플로가 빨갛게 뜬다.
+      #
+      # 단계 전체를 시간 두고 다시 시도한다. 클라이언트에도 호출당 재시도가
+      # 있지만(max_retries=4), 8/12·8/15 처럼 포털이 몇 분간 통째로 응답하지
+      # 않으면 그 안에서 다 소진된다 — 15건이 전부 ConnectTimeout 이었다.
+      # 5분 뒤에 다시 물어보면 두 번 다 풀렸으므로, 그 간격을 코드에 넣는다.
       - name: 출전표 수집
-        timeout-minutes: 12
+        timeout-minutes: 25
         env:
           KRA_SERVICE_KEY: ${{ secrets.KRA_SERVICE_KEY }}
-        run: PYTHONPATH=src python -m horseai.kra.collect entries --ahead 10 --db "$DB"
+        run: |
+          for attempt in 1 2 3; do
+            if PYTHONPATH=src python -m horseai.kra.collect entries --ahead 10 --db "$DB"; then
+              exit 0
+            fi
+            if [ "$attempt" -lt 3 ]; then
+              echo "→ ${attempt}차 실패. 5분 뒤 다시 시도한다"
+              sleep 300
+            fi
+          done
+          echo "✗ 세 번 모두 실패 — 포털이 계속 응답하지 않는다"
+          exit 1
 
       # 조교·마체중·출주취소는 '그 날에만' 값이 실리는 API 다. 하루를 놓치면
       # 그 하루는 영구히 복구할 수 없으므로, 실패해도 배포를 막지 않되(continue-on-error)
