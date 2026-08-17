@@ -49,6 +49,8 @@ jobs:
           gh release download "$DB_RELEASE_TAG" -p "horseai.sqlite.zst" -D /tmp
           zstd -d /tmp/horseai.sqlite.zst -o "$DB"
           gh release download "$DB_RELEASE_TAG" -p "metrics.json" -D models 2>/dev/null || true
+          # 복병 모델. 없으면 복병 표기만 빠지고 나머지는 그대로 돈다.
+          gh release download "$DB_RELEASE_TAG" -p "longshot.joblib" -D models 2>/dev/null || true
           echo "복원 완료 ($(du -h "$DB" | cut -f1))"
 
       # 보관된 DB 의 미리보기 대본이 옛 형식일 수 있다. 대본 형식이 바뀌어도

@@ -75,6 +75,8 @@ jobs:
           fi
           gh release download "$DB_RELEASE_TAG" -p "model.joblib" -D models 2>/dev/null || true
           gh release download "$DB_RELEASE_TAG" -p "metrics.json" -D models 2>/dev/null || true
+          # 복병 모델. 없으면 복병 표기만 빠지고 나머지는 그대로 돈다.
+          gh release download "$DB_RELEASE_TAG" -p "longshot.joblib" -D models 2>/dev/null || true
 
       # 진단 단계다. 예상 갱신에 필요한 건 아니고, 어떤 API 가 죽었는지 로그에
       # 남기는 용도다. 그런데 응답 없는 엔드포인트에서 재시도를 반복하며 22분을
@@ -275,6 +277,7 @@ jobs:
           gh release upload "$DB_RELEASE_TAG" /tmp/horseai.sqlite.zst --clobber
           [ -f models/model.joblib ] && gh release upload "$DB_RELEASE_TAG" models/model.joblib --clobber || true
           [ -f models/metrics.json ] && gh release upload "$DB_RELEASE_TAG" models/metrics.json --clobber || true
+          [ -f models/longshot.joblib ] && gh release upload "$DB_RELEASE_TAG" models/longshot.joblib --clobber || true
           echo "저장 완료 ($(du -h /tmp/horseai.sqlite.zst | cut -f1) 압축)"
 
       - name: 요약
