@@ -76,6 +76,7 @@ SELECT e.chul_no, e.hr_name, e.hr_no, e.sex, e.age, e.origin, e.burden, e.rating
        e.jk_no, e.jk_name, e.tr_no, e.tr_name, e.ow_name,
        e.career_1st, e.career_2nd, e.career_3rd, e.career_starts,
        p.p_win, p.p_place, p.p_top2, p.pred_rank, p.style_code, p.tags,
+       COALESCE(p.longshot, 0) AS longshot, p.p_longshot,
        res.ord, res.win_odds, res.place_odds
 FROM predictions p
 JOIN entries e ON e.race_key = p.race_key AND e.hr_no = p.hr_no
@@ -402,11 +403,13 @@ def form_summary(form: List[Dict]) -> Dict:
 
 PICKS_SQL = """
 SELECT p.race_key, p.pred_rank, p.p_win, p.p_place, p.p_top2, p.style_code,
+       COALESCE(p.longshot, 0) AS longshot, p.p_longshot,
        e.chul_no, e.hr_name, res.ord
 FROM predictions p
 JOIN entries e ON e.race_key = p.race_key AND e.hr_no = p.hr_no
 LEFT JOIN results res ON res.race_key = p.race_key AND res.hr_no = p.hr_no
-WHERE p.pred_rank <= 5
+-- 복병은 5두 밖이므로 순위 조건에 걸리지 않는다. 따로 통과시킨다.
+WHERE p.pred_rank <= 5 OR COALESCE(p.longshot, 0) = 1
 """
 
 
@@ -430,9 +433,17 @@ def load_picks(conn: sqlite3.Connection) -> Dict[str, List[Dict]]:
         d["ord_text"] = (ORD_STATUS.get(o) or f"{o}착") if o else ""
         d["is_win"] = o == 1
         out.setdefault(d["race_key"], []).append(d)
-    # 기호는 경주 단위로 정해진다 — 한 마리만 보고는 붙일 수 없다
-    for picks in out.values():
-        assign_marks(picks)
+    # 복병은 5두와 섞지 않는다. 기호도 주지 않는다 — 추천 6두가 아니라
+    # 참고 정보이고, 섞으면 '우리가 미는 말'이 흐려진다.
+    for key, picks in out.items():
+        main = [d for d in picks if (d.get("pred_rank") or 99) <= 5]
+        assign_marks(main)
+        for d in picks:
+            if d.get("longshot"):
+                d["mark"] = ""
+                d["mark_meaning"] = "추천 5두 밖에서 깜짝 입상이 기대되는 말"
+        out[key] = main + [d for d in picks if d.get("longshot")
+                           and (d.get("pred_rank") or 99) > 5]
     return out
 
 

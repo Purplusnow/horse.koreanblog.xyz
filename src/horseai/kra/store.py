@@ -258,6 +258,9 @@ MIGRATIONS = [
     # 예상 기호가 '2착 이내 수준'을 뜻하므로 그 확률을 예측과 함께 동결한다.
     # 나중에 다시 계산하면 공개 당시 화면과 기호가 달라질 수 있다.
     ("predictions", "p_top2", "REAL"),
+    # 복병 표시. 추천 5두 밖에서 뽑은 한 마리이며 예측과 함께 동결한다.
+    ("predictions", "longshot", "INTEGER"),
+    ("predictions", "p_longshot", "REAL"),
     # 일별훈련 상세(API18_1) — 마필 단위. 기존 서울 전용 조교표(API329)보다
     # 넓고 깊어서 이쪽을 주 자료로 삼는다.
     ("daily_training", "hr_no", "TEXT"),

@@ -119,6 +119,18 @@
     <span class="rr-empty">{% if race.missed %}예상 미게재{% else %}예상 준비 중{% endif %}</span>
     {% endfor %}
   </div>
+  {# 복병 — 5두 밖에서 뽑은 한 마리. 자신 없는 경주에는 없다.
+     기호를 주지 않고 한 줄 떼어 둬야 '추천 6두'로 읽히지 않는다. #}
+  {% set ls = race.picks | selectattr('longshot') | list | first %}
+  {% if ls %}
+  <div class="ri-longshot">
+    <span class="ls-tag">복병</span>
+    <b class="ls-gate">{{ ls.chul_no }}</b>
+    <span class="ls-name">{{ ls.hr_name }}</span>
+    {% if show %}{% if ls.ord_text %}<span class="ls-ord">{{ ls.ord_text }}</span>{% endif %}
+    {% else %}<span class="ls-note">깜짝 입상 주의</span>{% endif %}
+  </div>
+  {% endif %}
   {# 카드 전체가 링크지만 그렇게 보이지 않아 아무도 누르지 않는다. 안에 버튼을
      넣으면 터치 영역이 쪼개지고 링크가 중첩되므로, 눌리는 것처럼 보이게만
      한다 — 이 줄 자체는 별도 링크가 아니다. #}

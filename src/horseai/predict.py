@@ -22,6 +22,7 @@ import pandas as pd
 
 from .clock import now_kst, today_kst
 from .features import build_prediction_frame
+from . import longshot
 from .kra.store import session, upsert
 from .model import MODEL_VERSION, load, predict_frame
 from dataclasses import replace
@@ -246,6 +247,23 @@ def generate(conn: sqlite3.Connection, race_keys: Optional[List[str]] = None,
     pred = predict_frame(bundle["models"], target)
 
     rows = build_rows(pred)
+
+    # 복병 — 추천 5두 밖에서 깜짝 입상할 말 하나. 자신 없는 경주에는 내지
+    # 않으므로 없는 경주가 더 많다. 5두 자리는 건드리지 않는다.
+    ls_bundle = longshot.load()
+    if ls_bundle:
+        mark = {}
+        for key, race in pred.groupby("race_key"):
+            hit = longshot.pick(ls_bundle, race)
+            if hit:
+                mark[(key, str(hit["hr_no"]))] = hit["p_top3"]
+        for r in rows:
+            p_ls = mark.get((r["race_key"], str(r["hr_no"])))
+            r["longshot"] = 1 if p_ls is not None else 0
+            r["p_longshot"] = p_ls
+        if mark:
+            log.info("복병 %d경주 선정", len(mark))
+
     upsert(conn, "predictions", rows, ["race_key", "hr_no", "model_version"])
     upsert(conn, "simulations",
            build_simulations(pred, pars=par_times(conn),
