@@ -114,7 +114,9 @@
       {% endif %}
     </span>
     {% else %}
-    <span class="rr-empty">예상 준비 중</span>
+    {# 예상이 없는 경주. 발주가 지났으면 낼 기회 자체가 없었던 것이므로
+       '준비 중' 이라고 하면 사실과 다르다. #}
+    <span class="rr-empty">{% if race.missed %}예상 미게재{% else %}예상 준비 중{% endif %}</span>
     {% endfor %}
   </div>
   {# 카드 전체가 링크지만 그렇게 보이지 않아 아무도 누르지 않는다. 안에 버튼을

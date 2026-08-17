@@ -64,7 +64,11 @@ SELECT r.race_key, r.meet, r.rc_date, r.rc_no, r.rc_name, r.distance, r.grade,
 FROM races r
 LEFT JOIN commentaries c ON c.race_key = r.race_key
 LEFT JOIN simulations s ON s.race_key = r.race_key
-WHERE EXISTS (SELECT 1 FROM predictions p WHERE p.race_key = r.race_key)
+-- 예측이 없는 경주도 싣는다. 예전에는 EXISTS 로 걸렀는데, 그러면 예상을 내지
+-- 못한 경주가 시간표에서 통째로 사라져 그날 경주가 몇 개인지조차 알 수 없다.
+-- 2026-08-17 에 요일 제한으로 출전표를 늦게 받아 서울 1~3경주가 그렇게 됐다.
+-- 예상을 못 낸 사실은 감출 것이 아니라 그대로 적는 편이 낫다.
+WHERE EXISTS (SELECT 1 FROM entries e WHERE e.race_key = r.race_key)
 """
 
 DETAIL_SQL = """
@@ -608,6 +612,7 @@ def build(db: str, out_dir: Path, config: Dict, template_dir: Path,
         metrics = load_metrics()
 
         today = today_kst()
+        now_hm = now_kst().strftime("%H:%M")
         # 오늘 이후 경주는 이미 시행된 것도 그날 목록에 함께 싣는다.
         # 끝난 경주를 아래로 빼면 그날 카드가 앞뒤로 갈려, 방문자가 시간표를
         # 이어서 볼 수 없다. 시행된 경주는 승률 대신 착순이 찍힌다.
@@ -691,6 +696,12 @@ def build(db: str, out_dir: Path, config: Dict, template_dir: Path,
             # 한 번 갱신한다.
             r["show_result"] = bool(r["has_result"]
                                     and r["date_obj"] and r["date_obj"] < today)
+            # 발주가 지났는데 예상이 없으면 '준비 중'이 아니라 못 낸 것이다.
+            # 수집이 늦어 발주 전에 게재하지 못한 경주가 여기 해당한다.
+            r["missed"] = bool(not r["picks"] and r["post_time"]
+                               and r["date_obj"] and r["date_obj"] <= today
+                               and (r["date_obj"] < today
+                                    or str(r["post_time"]) <= now_hm))
 
         # 추천경주 — 시뮬레이션이 결과를 좁게 몰아준 경주만 따로 세운다.
         # 매 경주를 똑같은 자신감으로 내미는 예상지는 신뢰를 얻지 못한다.
