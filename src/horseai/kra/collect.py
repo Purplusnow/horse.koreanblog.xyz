@@ -38,7 +38,13 @@ from .store import DEFAULT_DB, dumps, already_fetched, log_fetch, session, upser
 
 log = logging.getLogger(__name__)
 
-RACE_WEEKDAYS = (4, 5, 6)  # 금·토·일
+# 평상시 시행일은 금·토·일이지만 공휴일에는 월요일에도 열린다(실제로
+# 2026-08-17 광복절 대체공휴일에 시행됐다). 요일로 거르면 그런 날을 통째로
+# 놓치고, 놓쳤다는 사실조차 드러나지 않는다 — 조회를 안 했으니 실패도 아니다.
+#
+# 매일 물어보는 비용은 작다. 경주가 없는 날은 빈 응답 한 건으로 끝나고,
+# 그 편이 '있는데 안 물어보는' 것보다 훨씬 낫다.
+RACE_WEEKDAYS = tuple(range(7))
 
 
 # 이 일수 안의 날짜는 수집 기록이 있어도 다시 받는다. 결과는 경주가 끝나는 대로
@@ -47,7 +53,7 @@ RESETTLE_DAYS = 2
 
 
 def race_days(start: dt.date, end: dt.date) -> List[dt.date]:
-    """구간 내 경마 시행 가능일(금·토·일)."""
+    """구간 내 경마 시행 가능일. 공휴일 시행이 있어 모든 요일을 훑는다."""
     out, d = [], start
     while d <= end:
         if d.weekday() in RACE_WEEKDAYS:

@@ -191,14 +191,19 @@ def frozen_race_keys(conn: sqlite3.Connection) -> set:
 
     발주 시각이 비어 있는 경주는 그 날의 마지막 경주가 끝났다고 볼 수 없으므로
     날짜만으로 판단한다(당일이면 열어 둔다).
+
+    **예측이 있는 경주만 보면 안 된다.** 예전에는 predictions 를 기준으로
+    훑었는데, 그러면 아직 예측이 없는 경주는 목록에 아예 없어 발주가 지났어도
+    새로 만들어졌다. 2026-08-17(공휴일 시행)에 요일 제한 때문에 출전표를 늦게
+    받아, 이미 뛴 서울 1~3경주에 사후 예측이 생성됐다 — '발주 전에 게재' 라는
+    전제가 깨지는 자리다. races 를 기준으로 잠근다.
     """
     now = now_kst()
     today = now.date().isoformat()
     rows = conn.execute(
-        "SELECT DISTINCT p.race_key, r.rc_date, r.post_time, "
+        "SELECT r.race_key, r.rc_date, r.post_time, "
         "       COALESCE(r.has_result, 0) AS has_result "
-        "FROM predictions p JOIN races r ON r.race_key = p.race_key "
-        "WHERE r.rc_date <= ? OR COALESCE(r.has_result,0) = 1",
+        "FROM races r WHERE r.rc_date <= ? OR COALESCE(r.has_result,0) = 1",
         (today,),
     ).fetchall()
 
