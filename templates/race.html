@@ -93,6 +93,19 @@
     {% endfor %}
   </div>
 
+  {# 복병 — 5두 판과 나란히 두지 않는다. 추천 6두가 아니라 참고다. #}
+  {% set ls = runners | selectattr('longshot') | list | first %}
+  {% if ls %}
+  <div class="board-ls">
+    <span class="ls-tag">복병</span>
+    <b class="ls-gate">{{ ls.chul_no }}</b>
+    <span class="ls-name">{{ ls.hr_name }}</span>
+    <span class="ls-note">
+      예상 {{ ls.pred_rank }}순위 · 추천 5두 밖에서 깜짝 입상이 기대되는 말입니다
+    </span>
+  </div>
+  {% endif %}
+
   <div class="board-side">
     {% if combos %}
     <table class="board-combo">
@@ -283,8 +296,14 @@
       </thead>
       <tbody>
         {% for r in runners %}
-        <tr{% if loop.index == 1 %} class="row-top"{% endif %}>
-          <td class="c-mark"><span class="mark{% if r.mark == "★" %} is-star{% endif %}" title="{{ r.mark_meaning }}">{{ r.mark }}</span></td>
+        <tr{% if loop.index == 1 %} class="row-top"{% elif r.longshot %} class="row-ls"{% endif %}>
+          <td class="c-mark">
+            {% if r.longshot %}
+            <span class="ls-tag" title="추천 5두 밖에서 깜짝 입상이 기대되는 말">복병</span>
+            {% else %}
+            <span class="mark{% if r.mark == "★" %} is-star{% endif %}" title="{{ r.mark_meaning }}">{{ r.mark }}</span>
+            {% endif %}
+          </td>
           <td class="c-gate"><span class="gate">{{ r.chul_no }}</span></td>
           <td class="c-name">
             <a href="{{ r.horse_url }}">{{ r.hr_name }}</a>
