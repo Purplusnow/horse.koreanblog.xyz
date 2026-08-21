@@ -1,130 +1,130 @@
 {
   "overall": {
-    "n_races": 84,
-    "hit_win": 0.2857142857142857,
-    "hit_place": 0.5952380952380952,
-    "hit_top3_has_winner": 0.5833333333333334,
-    "hit_quinella": 0.09523809523809523,
-    "hit_exacta": 0.07142857142857142,
-    "hit_quinella_place": 0.2619047619047619,
-    "hit_trio": 0.11904761904761904,
-    "hit_trifecta": 0.023809523809523808,
-    "hit_quinella_b3": 0.34523809523809523,
-    "hit_quinella_b5": 0.6071428571428571,
-    "hit_trio_b4": 0.2619047619047619,
-    "hit_trio_b5": 0.47619047619047616,
-    "hit_top5_winner": 0.7619047619047619,
-    "roi_win": 0.7253012048192771,
-    "avg_win_odds": 2.5083333333333333,
+    "n_races": 117,
+    "hit_win": 0.29914529914529914,
+    "hit_place": 0.6153846153846154,
+    "hit_top3_has_winner": 0.5982905982905983,
+    "hit_quinella": 0.1111111111111111,
+    "hit_exacta": 0.09401709401709402,
+    "hit_quinella_place": 0.29914529914529914,
+    "hit_trio": 0.1111111111111111,
+    "hit_trifecta": 0.02564102564102564,
+    "hit_quinella_b3": 0.3247863247863248,
+    "hit_quinella_b5": 0.5982905982905983,
+    "hit_trio_b4": 0.28205128205128205,
+    "hit_trio_b5": 0.452991452991453,
+    "hit_top5_winner": 0.7521367521367521,
+    "roi_win": 0.9854700854700854,
+    "avg_win_odds": 3.2942857142857145,
     "first_date": "2026-08-08",
-    "last_date": "2026-08-16"
+    "last_date": "2026-08-21"
   },
   "last_90d": {
-    "n_races": 84,
-    "hit_win": 0.2857142857142857,
-    "hit_place": 0.5952380952380952,
-    "hit_top3_has_winner": 0.5833333333333334,
-    "hit_quinella": 0.09523809523809523,
-    "hit_exacta": 0.07142857142857142,
-    "hit_quinella_place": 0.2619047619047619,
-    "hit_trio": 0.11904761904761904,
-    "hit_trifecta": 0.023809523809523808,
-    "hit_quinella_b3": 0.34523809523809523,
-    "hit_quinella_b5": 0.6071428571428571,
-    "hit_trio_b4": 0.2619047619047619,
-    "hit_trio_b5": 0.47619047619047616,
-    "hit_top5_winner": 0.7619047619047619,
-    "roi_win": 0.7253012048192771,
-    "avg_win_odds": 2.5083333333333333,
+    "n_races": 117,
+    "hit_win": 0.29914529914529914,
+    "hit_place": 0.6153846153846154,
+    "hit_top3_has_winner": 0.5982905982905983,
+    "hit_quinella": 0.1111111111111111,
+    "hit_exacta": 0.09401709401709402,
+    "hit_quinella_place": 0.29914529914529914,
+    "hit_trio": 0.1111111111111111,
+    "hit_trifecta": 0.02564102564102564,
+    "hit_quinella_b3": 0.3247863247863248,
+    "hit_quinella_b5": 0.5982905982905983,
+    "hit_trio_b4": 0.28205128205128205,
+    "hit_trio_b5": 0.452991452991453,
+    "hit_top5_winner": 0.7521367521367521,
+    "roi_win": 0.9854700854700854,
+    "avg_win_odds": 3.2942857142857145,
     "first_date": "2026-08-08",
-    "last_date": "2026-08-16"
+    "last_date": "2026-08-21"
   },
   "monthly": [
     {
-      "n_races": 84,
-      "hit_win": 0.2857142857142857,
-      "hit_place": 0.5952380952380952,
-      "hit_top3_has_winner": 0.5833333333333334,
-      "hit_quinella": 0.09523809523809523,
-      "hit_exacta": 0.07142857142857142,
-      "hit_quinella_place": 0.2619047619047619,
-      "hit_trio": 0.11904761904761904,
-      "hit_trifecta": 0.023809523809523808,
-      "hit_quinella_b3": 0.34523809523809523,
-      "hit_quinella_b5": 0.6071428571428571,
-      "hit_trio_b4": 0.2619047619047619,
-      "hit_trio_b5": 0.47619047619047616,
-      "hit_top5_winner": 0.7619047619047619,
-      "roi_win": 0.7253012048192771,
-      "avg_win_odds": 2.5083333333333333,
+      "n_races": 117,
+      "hit_win": 0.29914529914529914,
+      "hit_place": 0.6153846153846154,
+      "hit_top3_has_winner": 0.5982905982905983,
+      "hit_quinella": 0.1111111111111111,
+      "hit_exacta": 0.09401709401709402,
+      "hit_quinella_place": 0.29914529914529914,
+      "hit_trio": 0.1111111111111111,
+      "hit_trifecta": 0.02564102564102564,
+      "hit_quinella_b3": 0.3247863247863248,
+      "hit_quinella_b5": 0.5982905982905983,
+      "hit_trio_b4": 0.28205128205128205,
+      "hit_trio_b5": 0.452991452991453,
+      "hit_top5_winner": 0.7521367521367521,
+      "roi_win": 0.9854700854700854,
+      "avg_win_odds": 3.2942857142857145,
       "first_date": "2026-08-08",
-      "last_date": "2026-08-16",
+      "last_date": "2026-08-21",
       "month": "2026-08"
     }
   ],
   "by_bet": [
     {
       "name": "단승",
-      "n_races": 84,
+      "n_races": 117,
       "tickets": 1,
-      "hit_rate": 0.2857142857142857,
-      "roi": 0.7166666666666668,
+      "hit_rate": 0.29914529914529914,
+      "roi": 0.9854700854700854,
       "best": null
     },
     {
       "name": "연승",
-      "n_races": 84,
+      "n_races": 117,
       "tickets": 1,
-      "hit_rate": 0.5952380952380952,
-      "roi": 0.854761904761905,
+      "hit_rate": 0.6153846153846154,
+      "roi": 0.9136752136752134,
       "best": null
     },
     {
       "name": "복승",
-      "n_races": 84,
+      "n_races": 117,
       "tickets": 1,
-      "hit_rate": 0.09523809523809523,
-      "roi": 0.6690476190476191,
+      "hit_rate": 0.1111111111111111,
+      "roi": 0.8324786324786325,
       "best": null
     },
     {
       "name": "쌍승",
-      "n_races": 84,
+      "n_races": 117,
       "tickets": 1,
-      "hit_rate": 0.07142857142857142,
-      "roi": 0.8380952380952381,
+      "hit_rate": 0.09401709401709402,
+      "roi": 1.4059829059829057,
       "best": null
     },
     {
       "name": "복연승",
-      "n_races": 84,
+      "n_races": 117,
       "tickets": 1,
-      "hit_rate": 0.2619047619047619,
-      "roi": 0.7809523809523811,
+      "hit_rate": 0.29914529914529914,
+      "roi": 0.8769230769230771,
       "best": null
     },
     {
       "name": "삼복승",
-      "n_races": 84,
+      "n_races": 117,
       "tickets": 1,
-      "hit_rate": 0.11904761904761904,
-      "roi": 1.8047619047619048,
+      "hit_rate": 0.1111111111111111,
+      "roi": 1.5504273504273502,
       "best": null
     },
     {
       "name": "삼쌍승",
-      "n_races": 84,
+      "n_races": 117,
       "tickets": 1,
-      "hit_rate": 0.023809523809523808,
-      "roi": 4.3999999999999995,
+      "hit_rate": 0.02564102564102564,
+      "roi": 4.523076923076922,
       "best": null
     },
     {
       "name": "전체 통합",
-      "n_races": 84,
+      "n_races": 117,
       "tickets": 7,
-      "hit_rate": 0.20748299319727892,
-      "roi": 1.4377551020408166,
+      "hit_rate": 0.2222222222222222,
+      "roi": 1.584004884004884,
       "best": null,
       "is_total": true
     }
@@ -142,6 +142,16 @@
         "odds": 350.2
       },
       {
+        "n_hit": 4,
+        "n_bet": 7,
+        "race_key": "부산경남-20260809-07",
+        "date": "2026-08-09",
+        "meet": "부산경남",
+        "rc_no": 7,
+        "bet": "삼복승",
+        "odds": 20.5
+      },
+      {
         "n_hit": 7,
         "n_bet": 7,
         "race_key": "서울-20260809-09",
@@ -150,19 +160,39 @@
         "rc_no": 9,
         "bet": "삼쌍승",
         "odds": 19.4
+      }
+    ],
+    "recent": [
+      {
+        "n_hit": 7,
+        "n_bet": 7,
+        "race_key": "부산경남-20260821-07",
+        "date": "2026-08-21",
+        "meet": "부산경남",
+        "rc_no": 7,
+        "bet": "삼쌍승",
+        "odds": 159.6
       },
       {
         "n_hit": 5,
         "n_bet": 7,
-        "race_key": "서울-20260808-07",
-        "date": "2026-08-08",
-        "meet": "서울",
-        "rc_no": 7,
+        "race_key": "부산경남-20260821-02",
+        "date": "2026-08-21",
+        "meet": "부산경남",
+        "rc_no": 2,
         "bet": "쌍승",
-        "odds": 13.6
-      }
-    ],
-    "recent": [
+        "odds": 34.9
+      },
+      {
+        "n_hit": 5,
+        "n_bet": 7,
+        "race_key": "부산경남-20260821-06",
+        "date": "2026-08-21",
+        "meet": "부산경남",
+        "rc_no": 6,
+        "bet": "쌍승",
+        "odds": 21.7
+      },
       {
         "n_hit": 4,
         "n_bet": 7,
@@ -192,47 +222,107 @@
         "rc_no": 8,
         "bet": "쌍승",
         "odds": 12.6
-      },
-      {
-        "n_hit": 3,
-        "n_bet": 7,
-        "race_key": "서울-20260815-03",
-        "date": "2026-08-15",
-        "meet": "서울",
-        "rc_no": 3,
-        "bet": "삼복승",
-        "odds": 11.7
-      },
-      {
-        "n_hit": 5,
-        "n_bet": 7,
-        "race_key": "제주-20260814-06",
-        "date": "2026-08-14",
-        "meet": "제주",
-        "rc_no": 6,
-        "bet": "쌍승",
-        "odds": 13.5
-      },
-      {
-        "n_hit": 4,
-        "n_bet": 7,
-        "race_key": "부산경남-20260809-07",
-        "date": "2026-08-09",
-        "meet": "부산경남",
-        "rc_no": 7,
-        "bet": "삼복승",
-        "odds": 20.5
       }
     ]
   },
   "daily": [
+    {
+      "date": "2026-08-21",
+      "n_races": 16,
+      "tickets": 112,
+      "hits": 30,
+      "hit_rate": 0.26785714285714285,
+      "roi": 3.4,
+      "by_bet": [
+        {
+          "name": "단승",
+          "hit": 7,
+          "n": 16
+        },
+        {
+          "name": "연승",
+          "hit": 10,
+          "n": 16
+        },
+        {
+          "name": "복승",
+          "hit": 3,
+          "n": 16
+        },
+        {
+          "name": "쌍승",
+          "hit": 3,
+          "n": 16
+        },
+        {
+          "name": "복연승",
+          "hit": 5,
+          "n": 16
+        },
+        {
+          "name": "삼복승",
+          "hit": 1,
+          "n": 16
+        },
+        {
+          "name": "삼쌍승",
+          "hit": 1,
+          "n": 16
+        }
+      ]
+    },
+    {
+      "date": "2026-08-17",
+      "n_races": 17,
+      "tickets": 119,
+      "hits": 30,
+      "hit_rate": 0.25210084033613445,
+      "roi": 0.5974789915966388,
+      "by_bet": [
+        {
+          "name": "단승",
+          "hit": 4,
+          "n": 17
+        },
+        {
+          "name": "연승",
+          "hit": 12,
+          "n": 17
+        },
+        {
+          "name": "복승",
+          "hit": 2,
+          "n": 17
+        },
+        {
+          "name": "쌍승",
+          "hit": 2,
+          "n": 17
+        },
+        {
+          "name": "복연승",
+          "hit": 8,
+          "n": 17
+        },
+        {
+          "name": "삼복승",
+          "hit": 2,
+          "n": 17
+        },
+        {
+          "name": "삼쌍승",
+          "hit": 0,
+          "n": 17
+        }
+      ]
+    },
     {
       "date": "2026-08-16",
       "n_races": 17,
       "tickets": 119,
       "hits": 24,
       "hit_rate": 0.20168067226890757,
-      "roi": 0.5848739495798317,
+      "roi": 0.584873949579832,
       "by_bet": [
         {
           "name": "단승",
@@ -277,7 +367,7 @@
       "tickets": 119,
       "hits": 28,
       "hit_rate": 0.23529411764705882,
-      "roi": 0.89327731092437,
+      "roi": 0.8932773109243697,
       "by_bet": [
         {
           "name": "단승",
@@ -367,7 +457,7 @@
       "tickets": 119,
       "hits": 24,
       "hit_rate": 0.20168067226890757,
-      "roi": 0.8949579831932772,
+      "roi": 0.8949579831932774,
       "by_bet": [
         {
           "name": "단승",
@@ -454,213 +544,276 @@
   ],
   "by_meet": [
     {
-      "n_races": 22,
-      "hit_win": 0.18181818181818182,
-      "hit_place": 0.5909090909090909,
-      "hit_top3_has_winner": 0.36363636363636365,
-      "hit_quinella": 0.045454545454545456,
-      "hit_exacta": 0.0,
-      "hit_quinella_place": 0.22727272727272727,
-      "hit_trio": 0.13636363636363635,
-      "hit_trifecta": 0.0,
-      "hit_quinella_b3": 0.13636363636363635,
-      "hit_quinella_b5": 0.3181818181818182,
-      "hit_trio_b4": 0.13636363636363635,
-      "hit_trio_b5": 0.3181818181818182,
-      "hit_top5_winner": 0.5909090909090909,
-      "roi_win": 0.34545454545454546,
-      "avg_win_odds": 1.9,
+      "n_races": 30,
+      "hit_win": 0.26666666666666666,
+      "hit_place": 0.6,
+      "hit_top3_has_winner": 0.43333333333333335,
+      "hit_quinella": 0.13333333333333333,
+      "hit_exacta": 0.1,
+      "hit_quinella_place": 0.26666666666666666,
+      "hit_trio": 0.13333333333333333,
+      "hit_trifecta": 0.03333333333333333,
+      "hit_quinella_b3": 0.23333333333333334,
+      "hit_quinella_b5": 0.43333333333333335,
+      "hit_trio_b4": 0.2,
+      "hit_trio_b5": 0.3333333333333333,
+      "hit_top5_winner": 0.6666666666666666,
+      "roi_win": 1.19,
+      "avg_win_odds": 4.4625,
       "first_date": "2026-08-09",
-      "last_date": "2026-08-16",
+      "last_date": "2026-08-21",
       "meet": "부산경남"
     },
     {
-      "n_races": 40,
-      "hit_win": 0.325,
-      "hit_place": 0.675,
-      "hit_top3_has_winner": 0.65,
-      "hit_quinella": 0.1,
-      "hit_exacta": 0.1,
-      "hit_quinella_place": 0.325,
-      "hit_trio": 0.125,
-      "hit_trifecta": 0.025,
-      "hit_quinella_b3": 0.375,
-      "hit_quinella_b5": 0.7,
-      "hit_trio_b4": 0.275,
-      "hit_trio_b5": 0.5,
-      "hit_top5_winner": 0.825,
-      "roi_win": 0.7725,
-      "avg_win_odds": 2.376923076923077,
+      "n_races": 51,
+      "hit_win": 0.3137254901960784,
+      "hit_place": 0.7058823529411765,
+      "hit_top3_has_winner": 0.6862745098039216,
+      "hit_quinella": 0.09803921568627451,
+      "hit_exacta": 0.09803921568627451,
+      "hit_quinella_place": 0.35294117647058826,
+      "hit_trio": 0.13725490196078433,
+      "hit_trifecta": 0.0196078431372549,
+      "hit_quinella_b3": 0.35294117647058826,
+      "hit_quinella_b5": 0.6862745098039216,
+      "hit_trio_b4": 0.3137254901960784,
+      "hit_trio_b5": 0.5098039215686274,
+      "hit_top5_winner": 0.8235294117647058,
+      "roi_win": 0.7294117647058824,
+      "avg_win_odds": 2.325,
       "first_date": "2026-08-08",
-      "last_date": "2026-08-16",
+      "last_date": "2026-08-17",
       "meet": "서울"
     },
     {
-      "n_races": 22,
-      "hit_win": 0.3181818181818182,
-      "hit_place": 0.45454545454545453,
-      "hit_top3_has_winner": 0.6818181818181818,
-      "hit_quinella": 0.13636363636363635,
-      "hit_exacta": 0.09090909090909091,
-      "hit_quinella_place": 0.18181818181818182,
-      "hit_trio": 0.09090909090909091,
-      "hit_trifecta": 0.045454545454545456,
-      "hit_quinella_b3": 0.5,
-      "hit_quinella_b5": 0.7272727272727273,
-      "hit_trio_b4": 0.36363636363636365,
-      "hit_trio_b5": 0.5909090909090909,
-      "hit_top5_winner": 0.8181818181818182,
-      "roi_win": 1.0333333333333332,
-      "avg_win_odds": 3.1,
+      "n_races": 36,
+      "hit_win": 0.3055555555555556,
+      "hit_place": 0.5,
+      "hit_top3_has_winner": 0.6111111111111112,
+      "hit_quinella": 0.1111111111111111,
+      "hit_exacta": 0.08333333333333333,
+      "hit_quinella_place": 0.25,
+      "hit_trio": 0.05555555555555555,
+      "hit_trifecta": 0.027777777777777776,
+      "hit_quinella_b3": 0.3611111111111111,
+      "hit_quinella_b5": 0.6111111111111112,
+      "hit_trio_b4": 0.3055555555555556,
+      "hit_trio_b5": 0.4722222222222222,
+      "hit_top5_winner": 0.7222222222222222,
+      "roi_win": 1.1777777777777778,
+      "avg_win_odds": 3.854545454545455,
       "first_date": "2026-08-08",
-      "last_date": "2026-08-15",
+      "last_date": "2026-08-21",
       "meet": "제주"
     }
   ],
   "by_conf": [
     {
-      "n_races": 45,
-      "hit_win": 0.15555555555555556,
-      "hit_place": 0.4888888888888889,
-      "hit_top3_has_winner": 0.5111111111111111,
-      "hit_quinella": 0.044444444444444446,
-      "hit_exacta": 0.022222222222222223,
-      "hit_quinella_place": 0.17777777777777778,
-      "hit_trio": 0.1111111111111111,
-      "hit_trifecta": 0.0,
-      "hit_quinella_b3": 0.28888888888888886,
-      "hit_quinella_b5": 0.5555555555555556,
-      "hit_trio_b4": 0.2222222222222222,
-      "hit_trio_b5": 0.4444444444444444,
-      "hit_top5_winner": 0.7333333333333333,
-      "roi_win": 0.5431818181818181,
-      "avg_win_odds": 3.414285714285714,
+      "n_races": 44,
+      "hit_win": 0.4318181818181818,
+      "hit_place": 0.7272727272727273,
+      "hit_top3_has_winner": 0.6363636363636364,
+      "hit_quinella": 0.1590909090909091,
+      "hit_exacta": 0.13636363636363635,
+      "hit_quinella_place": 0.36363636363636365,
+      "hit_trio": 0.09090909090909091,
+      "hit_trifecta": 0.045454545454545456,
+      "hit_quinella_b3": 0.2727272727272727,
+      "hit_quinella_b5": 0.5,
+      "hit_trio_b4": 0.2727272727272727,
+      "hit_trio_b5": 0.38636363636363635,
+      "hit_top5_winner": 0.7045454545454546,
+      "roi_win": 1.134090909090909,
+      "avg_win_odds": 2.6263157894736846,
       "first_date": "2026-08-08",
-      "last_date": "2026-08-16",
+      "last_date": "2026-08-21",
+      "label": "중승부"
+    },
+    {
+      "n_races": 58,
+      "hit_win": 0.1724137931034483,
+      "hit_place": 0.5,
+      "hit_top3_has_winner": 0.5517241379310345,
+      "hit_quinella": 0.06896551724137931,
+      "hit_exacta": 0.05172413793103448,
+      "hit_quinella_place": 0.22413793103448276,
+      "hit_trio": 0.1206896551724138,
+      "hit_trifecta": 0.017241379310344827,
+      "hit_quinella_b3": 0.29310344827586204,
+      "hit_quinella_b5": 0.603448275862069,
+      "hit_trio_b4": 0.2413793103448276,
+      "hit_trio_b5": 0.43103448275862066,
+      "hit_top5_winner": 0.7586206896551724,
+      "roi_win": 0.8965517241379309,
+      "avg_win_odds": 5.2,
+      "first_date": "2026-08-08",
+      "last_date": "2026-08-21",
       "label": "약승부"
     }
   ],
   "by_mark": [
     {
       "mark": "◎",
-      "n": 162,
-      "hit_win": 0.21604938271604937,
-      "hit_top2": 0.4012345679012346,
-      "hit_top3": 0.5185185185185185
+      "n": 223,
+      "hit_win": 0.2242152466367713,
+      "hit_top2": 0.40358744394618834,
+      "hit_top3": 0.5381165919282511
     },
     {
       "mark": "○",
-      "n": 84,
-      "hit_win": 0.13095238095238096,
-      "hit_top2": 0.3333333333333333,
-      "hit_top3": 0.5119047619047619
+      "n": 117,
+      "hit_win": 0.13675213675213677,
+      "hit_top2": 0.3162393162393162,
+      "hit_top3": 0.47863247863247865
     },
     {
       "mark": "△",
-      "n": 84,
-      "hit_win": 0.11904761904761904,
-      "hit_top2": 0.2261904761904762,
-      "hit_top3": 0.35714285714285715
+      "n": 117,
+      "hit_win": 0.11965811965811966,
+      "hit_top2": 0.23931623931623933,
+      "hit_top3": 0.36752136752136755
     },
     {
       "mark": "※",
-      "n": 84,
-      "hit_win": 0.05952380952380952,
-      "hit_top2": 0.20238095238095238,
-      "hit_top3": 0.36904761904761907
+      "n": 117,
+      "hit_win": 0.03418803418803419,
+      "hit_top2": 0.1623931623931624,
+      "hit_top3": 0.29914529914529914
     }
   ],
   "by_distance": [
     {
-      "n_races": 38,
-      "hit_win": 0.18421052631578946,
-      "hit_place": 0.42105263157894735,
-      "hit_top3_has_winner": 0.5789473684210527,
-      "hit_quinella": 0.10526315789473684,
+      "n_races": 57,
+      "hit_win": 0.21052631578947367,
+      "hit_place": 0.45614035087719296,
+      "hit_top3_has_winner": 0.5964912280701754,
+      "hit_quinella": 0.08771929824561403,
       "hit_exacta": 0.05263157894736842,
-      "hit_quinella_place": 0.21052631578947367,
-      "hit_trio": 0.10526315789473684,
-      "hit_trifecta": 0.02631578947368421,
-      "hit_quinella_b3": 0.3684210526315789,
-      "hit_quinella_b5": 0.5789473684210527,
-      "hit_trio_b4": 0.2631578947368421,
-      "hit_trio_b5": 0.5263157894736842,
+      "hit_quinella_place": 0.22807017543859648,
+      "hit_trio": 0.08771929824561403,
+      "hit_trifecta": 0.017543859649122806,
+      "hit_quinella_b3": 0.2982456140350877,
+      "hit_quinella_b5": 0.5614035087719298,
+      "hit_trio_b4": 0.24561403508771928,
+      "hit_trio_b5": 0.45614035087719296,
       "hit_top5_winner": 0.7368421052631579,
-      "roi_win": 0.47297297297297297,
-      "avg_win_odds": 2.5,
+      "roi_win": 0.7105263157894737,
+      "avg_win_odds": 3.375,
       "first_date": "2026-08-08",
-      "last_date": "2026-08-16",
+      "last_date": "2026-08-21",
       "band": "단거리 (~1200m)"
     },
     {
-      "n_races": 37,
-      "hit_win": 0.40540540540540543,
-      "hit_place": 0.7297297297297297,
-      "hit_top3_has_winner": 0.5945945945945946,
-      "hit_quinella": 0.10810810810810811,
-      "hit_exacta": 0.10810810810810811,
-      "hit_quinella_place": 0.32432432432432434,
-      "hit_trio": 0.16216216216216217,
-      "hit_trifecta": 0.02702702702702703,
-      "hit_quinella_b3": 0.3783783783783784,
-      "hit_quinella_b5": 0.7027027027027027,
-      "hit_trio_b4": 0.2972972972972973,
-      "hit_trio_b5": 0.4594594594594595,
-      "hit_top5_winner": 0.8108108108108109,
-      "roi_win": 1.0621621621621622,
-      "avg_win_odds": 2.6199999999999997,
+      "n_races": 47,
+      "hit_win": 0.40425531914893614,
+      "hit_place": 0.7659574468085106,
+      "hit_top3_has_winner": 0.5957446808510638,
+      "hit_quinella": 0.14893617021276595,
+      "hit_exacta": 0.14893617021276595,
+      "hit_quinella_place": 0.3829787234042553,
+      "hit_trio": 0.1702127659574468,
+      "hit_trifecta": 0.0425531914893617,
+      "hit_quinella_b3": 0.3829787234042553,
+      "hit_quinella_b5": 0.6808510638297872,
+      "hit_trio_b4": 0.3404255319148936,
+      "hit_trio_b5": 0.44680851063829785,
+      "hit_top5_winner": 0.7872340425531915,
+      "roi_win": 1.3936170212765957,
+      "avg_win_odds": 3.4473684210526314,
       "first_date": "2026-08-08",
-      "last_date": "2026-08-16",
+      "last_date": "2026-08-21",
       "band": "중거리 (1300~1700m)"
     }
   ],
   "by_field": [
     {
-      "n_races": 76,
-      "hit_win": 0.27631578947368424,
-      "hit_place": 0.6052631578947368,
-      "hit_top3_has_winner": 0.5526315789473685,
-      "hit_quinella": 0.09210526315789473,
-      "hit_exacta": 0.06578947368421052,
-      "hit_quinella_place": 0.2631578947368421,
-      "hit_trio": 0.11842105263157894,
-      "hit_trifecta": 0.013157894736842105,
-      "hit_quinella_b3": 0.3026315789473684,
-      "hit_quinella_b5": 0.5657894736842105,
-      "hit_trio_b4": 0.2631578947368421,
-      "hit_trio_b5": 0.4342105263157895,
-      "hit_top5_winner": 0.7368421052631579,
-      "roi_win": 0.6933333333333335,
-      "avg_win_odds": 2.4761904761904767,
+      "n_races": 104,
+      "hit_win": 0.2980769230769231,
+      "hit_place": 0.625,
+      "hit_top3_has_winner": 0.5769230769230769,
+      "hit_quinella": 0.11538461538461539,
+      "hit_exacta": 0.09615384615384616,
+      "hit_quinella_place": 0.2980769230769231,
+      "hit_trio": 0.10576923076923077,
+      "hit_trifecta": 0.019230769230769232,
+      "hit_quinella_b3": 0.2980769230769231,
+      "hit_quinella_b5": 0.5865384615384616,
+      "hit_trio_b4": 0.28846153846153844,
+      "hit_trio_b5": 0.4326923076923077,
+      "hit_top5_winner": 0.7403846153846154,
+      "roi_win": 1.0009615384615385,
+      "avg_win_odds": 3.358064516129032,
       "first_date": "2026-08-08",
-      "last_date": "2026-08-16",
+      "last_date": "2026-08-21",
       "band": "중두수 (9~11두)"
     }
   ],
   "by_grade": [
     {
-      "n_races": 64,
-      "hit_win": 0.25,
-      "hit_place": 0.546875,
-      "hit_top3_has_winner": 0.546875,
-      "hit_quinella": 0.0625,
-      "hit_exacta": 0.046875,
-      "hit_quinella_place": 0.234375,
-      "hit_trio": 0.109375,
-      "hit_trifecta": 0.015625,
-      "hit_quinella_b3": 0.28125,
-      "hit_quinella_b5": 0.5625,
-      "hit_trio_b4": 0.203125,
-      "hit_trio_b5": 0.421875,
-      "hit_top5_winner": 0.734375,
-      "roi_win": 0.6428571428571429,
-      "avg_win_odds": 2.53125,
+      "n_races": 26,
+      "hit_win": 0.4230769230769231,
+      "hit_place": 0.8076923076923077,
+      "hit_top3_has_winner": 0.6538461538461539,
+      "hit_quinella": 0.15384615384615385,
+      "hit_exacta": 0.11538461538461539,
+      "hit_quinella_place": 0.38461538461538464,
+      "hit_trio": 0.15384615384615385,
+      "hit_trifecta": 0.038461538461538464,
+      "hit_quinella_b3": 0.4230769230769231,
+      "hit_quinella_b5": 0.6153846153846154,
+      "hit_trio_b4": 0.4230769230769231,
+      "hit_trio_b5": 0.5384615384615384,
+      "hit_top5_winner": 0.7692307692307693,
+      "roi_win": 1.0192307692307692,
+      "avg_win_odds": 2.409090909090909,
       "first_date": "2026-08-08",
-      "last_date": "2026-08-16",
+      "last_date": "2026-08-21",
+      "band": "상위 등급"
+    },
+    {
+      "n_races": 89,
+      "hit_win": 0.2696629213483146,
+      "hit_place": 0.5617977528089888,
+      "hit_top3_has_winner": 0.5842696629213483,
+      "hit_quinella": 0.10112359550561797,
+      "hit_exacta": 0.0898876404494382,
+      "hit_quinella_place": 0.2808988764044944,
+      "hit_trio": 0.10112359550561797,
+      "hit_trifecta": 0.02247191011235955,
+      "hit_quinella_b3": 0.29213483146067415,
+      "hit_quinella_b5": 0.5955056179775281,
+      "hit_trio_b4": 0.24719101123595505,
+      "hit_trio_b5": 0.42696629213483145,
+      "hit_top5_winner": 0.7528089887640449,
+      "roi_win": 0.9977528089887642,
+      "avg_win_odds": 3.7000000000000006,
+      "first_date": "2026-08-08",
+      "last_date": "2026-08-21",
       "band": "하위 등급"
     }
   ],
   "by_weekday": [
+    {
+      "n_races": 32,
+      "hit_win": 0.34375,
+      "hit_place": 0.5625,
+      "hit_top3_has_winner": 0.59375,
+      "hit_quinella": 0.125,
+      "hit_exacta": 0.125,
+      "hit_quinella_place": 0.25,
+      "hit_trio": 0.0625,
+      "hit_trifecta": 0.03125,
+      "hit_quinella_b3": 0.3125,
+      "hit_quinella_b5": 0.46875,
+      "hit_trio_b4": 0.1875,
+      "hit_trio_b5": 0.28125,
+      "hit_top5_winner": 0.6875,
+      "roi_win": 1.75,
+      "avg_win_odds": 5.09090909090909,
+      "first_date": "2026-08-14",
+      "last_date": "2026-08-21",
+      "band": "금"
+    },
     {
       "n_races": 34,
       "hit_win": 0.23529411764705882,
@@ -673,10 +826,10 @@
       "hit_trifecta": 0.029411764705882353,
       "hit_quinella_b3": 0.29411764705882354,
       "hit_quinella_b5": 0.6176470588235294,
-      "hit_trio_b4": 0.20588235294117646,
+      "hit_trio_b4": 0.23529411764705882,
       "hit_trio_b5": 0.5294117647058824,
       "hit_top5_winner": 0.7941176470588235,
-      "roi_win": 0.45294117647058824,
+      "roi_win": 0.4529411764705882,
       "avg_win_odds": 1.925,
       "first_date": "2026-08-09",
       "last_date": "2026-08-16",
@@ -697,8 +850,8 @@
       "hit_trio_b4": 0.3235294117647059,
       "hit_trio_b5": 0.47058823529411764,
       "hit_top5_winner": 0.7352941176470589,
-      "roi_win": 1.0176470588235296,
-      "avg_win_odds": 2.883333333333334,
+      "roi_win": 1.0176470588235293,
+      "avg_win_odds": 2.8833333333333333,
       "first_date": "2026-08-08",
       "last_date": "2026-08-15",
       "band": "토"
@@ -716,21 +869,553 @@
       "hit_trio": 0.09090909090909091,
       "hit_trifecta": 0.045454545454545456,
       "hit_quinella_b3": 0.2727272727272727,
-      "hit_quinella_b5": 0.4318181818181818,
+      "hit_quinella_b5": 0.45454545454545453,
       "hit_trio_b4": 0.22727272727272727,
       "hit_trio_b5": 0.36363636363636365,
       "hit_top5_winner": 0.7045454545454546,
-      "roi_win": 0.6045454545454545,
+      "roi_win": 0.6045454545454546,
       "avg_win_odds": 2.2166666666666663,
       "first_date": "2026-08-08",
       "last_date": "2026-08-14",
       "band": "건조 (2%)"
+    },
+    {
+      "n_races": 21,
+      "hit_win": 0.23809523809523808,
+      "hit_place": 0.7142857142857143,
+      "hit_top3_has_winner": 0.8095238095238095,
+      "hit_quinella": 0.047619047619047616,
+      "hit_exacta": 0.047619047619047616,
+      "hit_quinella_place": 0.38095238095238093,
+      "hit_trio": 0.19047619047619047,
+      "hit_trifecta": 0.0,
+      "hit_quinella_b3": 0.38095238095238093,
+      "hit_quinella_b5": 0.7619047619047619,
+      "hit_trio_b4": 0.3333333333333333,
+      "hit_trio_b5": 0.5714285714285714,
+      "hit_top5_winner": 0.9047619047619048,
+      "roi_win": 0.5523809523809524,
+      "avg_win_odds": 2.3200000000000003,
+      "first_date": "2026-08-16",
+      "last_date": "2026-08-17",
+      "band": "다습 (13%)"
     }
   ],
   "star": {
-    "n_races": 6
+    "n_races": 11
   },
   "recent": [
+    {
+      "race_key": "부산경남-20260821-08",
+      "date": "2026-08-21",
+      "meet": "부산경남",
+      "rc_no": 8,
+      "pick": "슈퍼에어로",
+      "ord": 1,
+      "odds": 2.3,
+      "hit_win": true,
+      "hit_place": true,
+      "hit_bets": [
+        "단승",
+        "연승"
+      ],
+      "n_bets": 7
+    },
+    {
+      "race_key": "제주-20260821-08",
+      "date": "2026-08-21",
+      "meet": "제주",
+      "rc_no": 8,
+      "pick": "힐링대륙",
+      "ord": 3,
+      "odds": 3.7,
+      "hit_win": false,
+      "hit_place": true,
+      "hit_bets": [
+        "연승",
+        "복연승"
+      ],
+      "n_bets": 7
+    },
+    {
+      "race_key": "부산경남-20260821-07",
+      "date": "2026-08-21",
+      "meet": "부산경남",
+      "rc_no": 7,
+      "pick": "오케이베이비",
+      "ord": 1,
+      "odds": 7.8,
+      "hit_win": true,
+      "hit_place": true,
+      "hit_bets": [
+        "단승",
+        "연승",
+        "복승",
+        "쌍승",
+        "복연승",
+        "삼복승",
+        "삼쌍승"
+      ],
+      "n_bets": 7
+    },
+    {
+      "race_key": "제주-20260821-07",
+      "date": "2026-08-21",
+      "meet": "제주",
+      "rc_no": 7,
+      "pick": "청룡챔프",
+      "ord": 3,
+      "odds": 2.2,
+      "hit_win": false,
+      "hit_place": true,
+      "hit_bets": [
+        "연승"
+      ],
+      "n_bets": 7
+    },
+    {
+      "race_key": "부산경남-20260821-06",
+      "date": "2026-08-21",
+      "meet": "부산경남",
+      "rc_no": 6,
+      "pick": "파워풀배틀",
+      "ord": 1,
+      "odds": 4.4,
+      "hit_win": true,
+      "hit_place": true,
+      "hit_bets": [
+        "단승",
+        "연승",
+        "복승",
+        "쌍승",
+        "복연승"
+      ],
+      "n_bets": 7
+    },
+    {
+      "race_key": "제주-20260821-06",
+      "date": "2026-08-21",
+      "meet": "제주",
+      "rc_no": 6,
+      "pick": "새벽천하",
+      "ord": 5,
+      "odds": 3.5,
+      "hit_win": false,
+      "hit_place": false,
+      "hit_bets": [],
+      "n_bets": 7
+    },
+    {
+      "race_key": "부산경남-20260821-05",
+      "date": "2026-08-21",
+      "meet": "부산경남",
+      "rc_no": 5,
+      "pick": "판타스틱보스",
+      "ord": 6,
+      "odds": 2.5,
+      "hit_win": false,
+      "hit_place": false,
+      "hit_bets": [],
+      "n_bets": 7
+    },
+    {
+      "race_key": "제주-20260821-05",
+      "date": "2026-08-21",
+      "meet": "제주",
+      "rc_no": 5,
+      "pick": "강철빛",
+      "ord": 1,
+      "odds": 6.7,
+      "hit_win": true,
+      "hit_place": true,
+      "hit_bets": [
+        "단승",
+        "연승",
+        "복연승"
+      ],
+      "n_bets": 7
+    },
+    {
+      "race_key": "부산경남-20260821-04",
+      "date": "2026-08-21",
+      "meet": "부산경남",
+      "rc_no": 4,
+      "pick": "퀸윈드",
+      "ord": 2,
+      "odds": 2.7,
+      "hit_win": false,
+      "hit_place": true,
+      "hit_bets": [
+        "연승"
+      ],
+      "n_bets": 7
+    },
+    {
+      "race_key": "제주-20260821-04",
+      "date": "2026-08-21",
+      "meet": "제주",
+      "rc_no": 4,
+      "pick": "타이산",
+      "ord": 1,
+      "odds": 1.7,
+      "hit_win": true,
+      "hit_place": true,
+      "hit_bets": [
+        "단승",
+        "연승"
+      ],
+      "n_bets": 7
+    },
+    {
+      "race_key": "부산경남-20260821-03",
+      "date": "2026-08-21",
+      "meet": "부산경남",
+      "rc_no": 3,
+      "pick": "닥터케세라",
+      "ord": 6,
+      "odds": 3.3,
+      "hit_win": false,
+      "hit_place": false,
+      "hit_bets": [],
+      "n_bets": 7
+    },
+    {
+      "race_key": "제주-20260821-03",
+      "date": "2026-08-21",
+      "meet": "제주",
+      "rc_no": 3,
+      "pick": "육탄시대",
+      "ord": 1,
+      "odds": 9.3,
+      "hit_win": true,
+      "hit_place": true,
+      "hit_bets": [
+        "단승",
+        "연승"
+      ],
+      "n_bets": 7
+    },
+    {
+      "race_key": "부산경남-20260821-02",
+      "date": "2026-08-21",
+      "meet": "부산경남",
+      "rc_no": 2,
+      "pick": "오버레인보우",
+      "ord": 1,
+      "odds": 13.6,
+      "hit_win": true,
+      "hit_place": true,
+      "hit_bets": [
+        "단승",
+        "연승",
+        "복승",
+        "쌍승",
+        "복연승"
+      ],
+      "n_bets": 7
+    },
+    {
+      "race_key": "제주-20260821-02",
+      "date": "2026-08-21",
+      "meet": "제주",
+      "rc_no": 2,
+      "pick": "센돌이",
+      "ord": 4,
+      "odds": 2.7,
+      "hit_win": false,
+      "hit_place": false,
+      "hit_bets": [],
+      "n_bets": 7
+    },
+    {
+      "race_key": "부산경남-20260821-01",
+      "date": "2026-08-21",
+      "meet": "부산경남",
+      "rc_no": 1,
+      "pick": "장고킹",
+      "ord": 9,
+      "odds": 5.5,
+      "hit_win": false,
+      "hit_place": false,
+      "hit_bets": [],
+      "n_bets": 7
+    },
+    {
+      "race_key": "제주-20260821-01",
+      "date": "2026-08-21",
+      "meet": "제주",
+      "rc_no": 1,
+      "pick": "루비황제",
+      "ord": 7,
+      "odds": 2.5,
+      "hit_win": false,
+      "hit_place": false,
+      "hit_bets": [],
+      "n_bets": 7
+    },
+    {
+      "race_key": "서울-20260817-11",
+      "date": "2026-08-17",
+      "meet": "서울",
+      "rc_no": 11,
+      "pick": "스마일링프린스",
+      "ord": 2,
+      "odds": 3.6,
+      "hit_win": false,
+      "hit_place": true,
+      "hit_bets": [
+        "연승",
+        "복연승",
+        "삼복승"
+      ],
+      "n_bets": 7
+    },
+    {
+      "race_key": "서울-20260817-10",
+      "date": "2026-08-17",
+      "meet": "서울",
+      "rc_no": 10,
+      "pick": "무초마초라피도",
+      "ord": 3,
+      "odds": 6.5,
+      "hit_win": false,
+      "hit_place": true,
+      "hit_bets": [
+        "연승"
+      ],
+      "n_bets": 7
+    },
+    {
+      "race_key": "서울-20260817-09",
+      "date": "2026-08-17",
+      "meet": "서울",
+      "rc_no": 9,
+      "pick": "연희히어로",
+      "ord": 3,
+      "odds": 3.3,
+      "hit_win": false,
+      "hit_place": true,
+      "hit_bets": [
+        "연승"
+      ],
+      "n_bets": 7
+    },
+    {
+      "race_key": "서울-20260817-08",
+      "date": "2026-08-17",
+      "meet": "서울",
+      "rc_no": 8,
+      "pick": "클러치매직",
+      "ord": 1,
+      "odds": 1.5,
+      "hit_win": true,
+      "hit_place": true,
+      "hit_bets": [
+        "단승",
+        "연승",
+        "복연승"
+      ],
+      "n_bets": 7
+    },
+    {
+      "race_key": "서울-20260817-07",
+      "date": "2026-08-17",
+      "meet": "서울",
+      "rc_no": 7,
+      "pick": "리플렉트",
+      "ord": 3,
+      "odds": 1.6,
+      "hit_win": false,
+      "hit_place": true,
+      "hit_bets": [
+        "연승",
+        "복연승"
+      ],
+      "n_bets": 7
+    },
+    {
+      "race_key": "서울-20260817-06",
+      "date": "2026-08-17",
+      "meet": "서울",
+      "rc_no": 6,
+      "pick": "감사의힘",
+      "ord": 1,
+      "odds": 3.0,
+      "hit_win": true,
+      "hit_place": true,
+      "hit_bets": [
+        "단승",
+        "연승"
+      ],
+      "n_bets": 7
+    },
+    {
+      "race_key": "제주-20260817-06",
+      "date": "2026-08-17",
+      "meet": "제주",
+      "rc_no": 6,
+      "pick": "선봉여명",
+      "ord": 6,
+      "odds": 4.7,
+      "hit_win": false,
+      "hit_place": false,
+      "hit_bets": [],
+      "n_bets": 7
+    },
+    {
+      "race_key": "서울-20260817-05",
+      "date": "2026-08-17",
+      "meet": "서울",
+      "rc_no": 5,
+      "pick": "천지탱크",
+      "ord": 3,
+      "odds": 5.8,
+      "hit_win": false,
+      "hit_place": true,
+      "hit_bets": [
+        "연승"
+      ],
+      "n_bets": 7
+    },
+    {
+      "race_key": "제주-20260817-05",
+      "date": "2026-08-17",
+      "meet": "제주",
+      "rc_no": 5,
+      "pick": "별빛천하",
+      "ord": 1,
+      "odds": 3.0,
+      "hit_win": true,
+      "hit_place": true,
+      "hit_bets": [
+        "단승",
+        "연승",
+        "복승",
+        "쌍승",
+        "복연승"
+      ],
+      "n_bets": 7
+    },
+    {
+      "race_key": "서울-20260817-04",
+      "date": "2026-08-17",
+      "meet": "서울",
+      "rc_no": 4,
+      "pick": "클러치더비",
+      "ord": 1,
+      "odds": 1.8,
+      "hit_win": true,
+      "hit_place": true,
+      "hit_bets": [
+        "단승",
+        "연승",
+        "복승",
+        "쌍승",
+        "복연승"
+      ],
+      "n_bets": 7
+    },
+    {
+      "race_key": "제주-20260817-04",
+      "date": "2026-08-17",
+      "meet": "제주",
+      "rc_no": 4,
+      "pick": "청풍위너",
+      "ord": 2,
+      "odds": 2.5,
+      "hit_win": false,
+      "hit_place": true,
+      "hit_bets": [
+        "연승",
+        "복연승"
+      ],
+      "n_bets": 7
+    },
+    {
+      "race_key": "서울-20260817-03",
+      "date": "2026-08-17",
+      "meet": "서울",
+      "rc_no": 3,
+      "pick": "걸작티아라",
+      "ord": 4,
+      "odds": 4.5,
+      "hit_win": false,
+      "hit_place": false,
+      "hit_bets": [],
+      "n_bets": 7
+    },
+    {
+      "race_key": "제주-20260817-03",
+      "date": "2026-08-17",
+      "meet": "제주",
+      "rc_no": 3,
+      "pick": "팔팔호",
+      "ord": 3,
+      "odds": 2.9,
+      "hit_win": false,
+      "hit_place": true,
+      "hit_bets": [
+        "연승",
+        "복연승"
+      ],
+      "n_bets": 7
+    },
+    {
+      "race_key": "서울-20260817-02",
+      "date": "2026-08-17",
+      "meet": "서울",
+      "rc_no": 2,
+      "pick": "스터닝스킷",
+      "ord": 3,
+      "odds": 4.0,
+      "hit_win": false,
+      "hit_place": true,
+      "hit_bets": [
+        "연승",
+        "복연승",
+        "삼복승"
+      ],
+      "n_bets": 7
+    },
+    {
+      "race_key": "제주-20260817-02",
+      "date": "2026-08-17",
+      "meet": "제주",
+      "rc_no": 2,
+      "pick": "스마트",
+      "ord": 5,
+      "odds": 2.1,
+      "hit_win": false,
+      "hit_place": false,
+      "hit_bets": [],
+      "n_bets": 7
+    },
+    {
+      "race_key": "서울-20260817-01",
+      "date": "2026-08-17",
+      "meet": "서울",
+      "rc_no": 1,
+      "pick": "샤프가이",
+      "ord": 5,
+      "odds": 34.1,
+      "hit_win": false,
+      "hit_place": false,
+      "hit_bets": [],
+      "n_bets": 7
+    },
+    {
+      "race_key": "제주-20260817-01",
+      "date": "2026-08-17",
+      "meet": "제주",
+      "rc_no": 1,
+      "pick": "만광",
+      "ord": 6,
+      "odds": 6.2,
+      "hit_win": false,
+      "hit_place": false,
+      "hit_bets": [],
+      "n_bets": 7
+    },
     {
       "race_key": "서울-20260816-10",
       "date": "2026-08-16",
@@ -1137,508 +1822,6 @@
         "복연승",
         "삼복승"
       ],
-      "n_bets": 7
-    },
-    {
-      "race_key": "제주-20260815-04",
-      "date": "2026-08-15",
-      "meet": "제주",
-      "rc_no": 4,
-      "pick": "황해바람",
-      "ord": 8,
-      "odds": 5.1,
-      "hit_win": false,
-      "hit_place": false,
-      "hit_bets": [],
-      "n_bets": 7
-    },
-    {
-      "race_key": "서울-20260815-03",
-      "date": "2026-08-15",
-      "meet": "서울",
-      "rc_no": 3,
-      "pick": "비카델라",
-      "ord": 3,
-      "odds": 3.3,
-      "hit_win": false,
-      "hit_place": true,
-      "hit_bets": [
-        "연승",
-        "복연승",
-        "삼복승"
-      ],
-      "n_bets": 7
-    },
-    {
-      "race_key": "제주-20260815-03",
-      "date": "2026-08-15",
-      "meet": "제주",
-      "rc_no": 3,
-      "pick": "강풍여제",
-      "ord": 7,
-      "odds": 3.0,
-      "hit_win": false,
-      "hit_place": false,
-      "hit_bets": [],
-      "n_bets": 7
-    },
-    {
-      "race_key": "서울-20260815-02",
-      "date": "2026-08-15",
-      "meet": "서울",
-      "rc_no": 2,
-      "pick": "클레어프리덤",
-      "ord": 2,
-      "odds": 1.9,
-      "hit_win": false,
-      "hit_place": true,
-      "hit_bets": [
-        "연승"
-      ],
-      "n_bets": 7
-    },
-    {
-      "race_key": "제주-20260815-02",
-      "date": "2026-08-15",
-      "meet": "제주",
-      "rc_no": 2,
-      "pick": "타잔",
-      "ord": 2,
-      "odds": 1.7,
-      "hit_win": false,
-      "hit_place": true,
-      "hit_bets": [
-        "연승",
-        "복승",
-        "복연승",
-        "삼복승"
-      ],
-      "n_bets": 7
-    },
-    {
-      "race_key": "서울-20260815-01",
-      "date": "2026-08-15",
-      "meet": "서울",
-      "rc_no": 1,
-      "pick": "화이트선더",
-      "ord": 1,
-      "odds": 2.1,
-      "hit_win": true,
-      "hit_place": true,
-      "hit_bets": [
-        "단승",
-        "연승",
-        "복연승"
-      ],
-      "n_bets": 7
-    },
-    {
-      "race_key": "제주-20260815-01",
-      "date": "2026-08-15",
-      "meet": "제주",
-      "rc_no": 1,
-      "pick": "새벽강자",
-      "ord": 1,
-      "odds": 1.2,
-      "hit_win": true,
-      "hit_place": true,
-      "hit_bets": [
-        "단승",
-        "연승"
-      ],
-      "n_bets": 7
-    },
-    {
-      "race_key": "부산경남-20260814-08",
-      "date": "2026-08-14",
-      "meet": "부산경남",
-      "rc_no": 8,
-      "pick": "골든엠파이어",
-      "ord": 7,
-      "odds": 3.4,
-      "hit_win": false,
-      "hit_place": false,
-      "hit_bets": [],
-      "n_bets": 7
-    },
-    {
-      "race_key": "제주-20260814-08",
-      "date": "2026-08-14",
-      "meet": "제주",
-      "rc_no": 8,
-      "pick": "화중지왕",
-      "ord": 9,
-      "odds": 3.8,
-      "hit_win": false,
-      "hit_place": false,
-      "hit_bets": [],
-      "n_bets": 7
-    },
-    {
-      "race_key": "부산경남-20260814-07",
-      "date": "2026-08-14",
-      "meet": "부산경남",
-      "rc_no": 7,
-      "pick": "골드포켓",
-      "ord": 3,
-      "odds": 2.2,
-      "hit_win": false,
-      "hit_place": true,
-      "hit_bets": [
-        "연승",
-        "복연승",
-        "삼복승"
-      ],
-      "n_bets": 7
-    },
-    {
-      "race_key": "제주-20260814-07",
-      "date": "2026-08-14",
-      "meet": "제주",
-      "rc_no": 7,
-      "pick": "행복덩어리",
-      "ord": 1,
-      "odds": 3.0,
-      "hit_win": true,
-      "hit_place": true,
-      "hit_bets": [
-        "단승",
-        "연승"
-      ],
-      "n_bets": 7
-    },
-    {
-      "race_key": "부산경남-20260814-06",
-      "date": "2026-08-14",
-      "meet": "부산경남",
-      "rc_no": 6,
-      "pick": "오아시스환희",
-      "ord": 3,
-      "odds": 3.1,
-      "hit_win": false,
-      "hit_place": true,
-      "hit_bets": [
-        "연승",
-        "복연승"
-      ],
-      "n_bets": 7
-    },
-    {
-      "race_key": "제주-20260814-06",
-      "date": "2026-08-14",
-      "meet": "제주",
-      "rc_no": 6,
-      "pick": "천하무적",
-      "ord": 1,
-      "odds": 3.3,
-      "hit_win": true,
-      "hit_place": true,
-      "hit_bets": [
-        "단승",
-        "연승",
-        "복승",
-        "쌍승",
-        "복연승"
-      ],
-      "n_bets": 7
-    },
-    {
-      "race_key": "부산경남-20260814-05",
-      "date": "2026-08-14",
-      "meet": "부산경남",
-      "rc_no": 5,
-      "pick": "제이드팰리스",
-      "ord": 3,
-      "odds": 3.5,
-      "hit_win": false,
-      "hit_place": true,
-      "hit_bets": [
-        "연승"
-      ],
-      "n_bets": 7
-    },
-    {
-      "race_key": "제주-20260814-05",
-      "date": "2026-08-14",
-      "meet": "제주",
-      "rc_no": 5,
-      "pick": "무림통일",
-      "ord": 5,
-      "odds": 2.5,
-      "hit_win": false,
-      "hit_place": false,
-      "hit_bets": [],
-      "n_bets": 7
-    },
-    {
-      "race_key": "부산경남-20260814-04",
-      "date": "2026-08-14",
-      "meet": "부산경남",
-      "rc_no": 4,
-      "pick": "여운",
-      "ord": 2,
-      "odds": 2.5,
-      "hit_win": false,
-      "hit_place": true,
-      "hit_bets": [
-        "연승"
-      ],
-      "n_bets": 7
-    },
-    {
-      "race_key": "제주-20260814-04",
-      "date": "2026-08-14",
-      "meet": "제주",
-      "rc_no": 4,
-      "pick": "천추왕후",
-      "ord": 94,
-      "odds": null,
-      "hit_win": false,
-      "hit_place": false,
-      "hit_bets": [],
-      "n_bets": 7
-    },
-    {
-      "race_key": "부산경남-20260814-03",
-      "date": "2026-08-14",
-      "meet": "부산경남",
-      "rc_no": 3,
-      "pick": "로드투넘버원",
-      "ord": 5,
-      "odds": 2.0,
-      "hit_win": false,
-      "hit_place": false,
-      "hit_bets": [],
-      "n_bets": 7
-    },
-    {
-      "race_key": "제주-20260814-03",
-      "date": "2026-08-14",
-      "meet": "제주",
-      "rc_no": 3,
-      "pick": "디아즈",
-      "ord": 4,
-      "odds": 2.2,
-      "hit_win": false,
-      "hit_place": false,
-      "hit_bets": [],
-      "n_bets": 7
-    },
-    {
-      "race_key": "부산경남-20260814-02",
-      "date": "2026-08-14",
-      "meet": "부산경남",
-      "rc_no": 2,
-      "pick": "필승위너",
-      "ord": 1,
-      "odds": 2.4,
-      "hit_win": true,
-      "hit_place": true,
-      "hit_bets": [
-        "단승",
-        "연승"
-      ],
-      "n_bets": 7
-    },
-    {
-      "race_key": "제주-20260814-02",
-      "date": "2026-08-14",
-      "meet": "제주",
-      "rc_no": 2,
-      "pick": "무주영웅",
-      "ord": 1,
-      "odds": 1.5,
-      "hit_win": true,
-      "hit_place": true,
-      "hit_bets": [
-        "단승",
-        "연승"
-      ],
-      "n_bets": 7
-    },
-    {
-      "race_key": "부산경남-20260814-01",
-      "date": "2026-08-14",
-      "meet": "부산경남",
-      "rc_no": 1,
-      "pick": "브리도그린",
-      "ord": 10,
-      "odds": 2.5,
-      "hit_win": false,
-      "hit_place": false,
-      "hit_bets": [],
-      "n_bets": 7
-    },
-    {
-      "race_key": "제주-20260814-01",
-      "date": "2026-08-14",
-      "meet": "제주",
-      "rc_no": 1,
-      "pick": "우공이산",
-      "ord": 5,
-      "odds": 2.2,
-      "hit_win": false,
-      "hit_place": false,
-      "hit_bets": [],
-      "n_bets": 7
-    },
-    {
-      "race_key": "서울-20260809-10",
-      "date": "2026-08-09",
-      "meet": "서울",
-      "rc_no": 10,
-      "pick": "한센브레이싱",
-      "ord": 2,
-      "odds": 2.6,
-      "hit_win": false,
-      "hit_place": true,
-      "hit_bets": [
-        "연승",
-        "복연승"
-      ],
-      "n_bets": 7
-    },
-    {
-      "race_key": "서울-20260809-09",
-      "date": "2026-08-09",
-      "meet": "서울",
-      "rc_no": 9,
-      "pick": "캐치레이스",
-      "ord": 1,
-      "odds": 1.3,
-      "hit_win": true,
-      "hit_place": true,
-      "hit_bets": [
-        "단승",
-        "연승",
-        "복승",
-        "쌍승",
-        "복연승",
-        "삼복승",
-        "삼쌍승"
-      ],
-      "n_bets": 7
-    },
-    {
-      "race_key": "서울-20260809-08",
-      "date": "2026-08-09",
-      "meet": "서울",
-      "rc_no": 8,
-      "pick": "라이브스타",
-      "ord": 2,
-      "odds": 1.4,
-      "hit_win": false,
-      "hit_place": true,
-      "hit_bets": [
-        "연승"
-      ],
-      "n_bets": 7
-    },
-    {
-      "race_key": "부산경남-20260809-07",
-      "date": "2026-08-09",
-      "meet": "부산경남",
-      "rc_no": 7,
-      "pick": "파차마마",
-      "ord": 2,
-      "odds": 9.2,
-      "hit_win": false,
-      "hit_place": true,
-      "hit_bets": [
-        "연승",
-        "복승",
-        "복연승",
-        "삼복승"
-      ],
-      "n_bets": 7
-    },
-    {
-      "race_key": "서울-20260809-07",
-      "date": "2026-08-09",
-      "meet": "서울",
-      "rc_no": 7,
-      "pick": "블랙사탕",
-      "ord": 2,
-      "odds": 4.1,
-      "hit_win": false,
-      "hit_place": true,
-      "hit_bets": [
-        "연승"
-      ],
-      "n_bets": 7
-    },
-    {
-      "race_key": "부산경남-20260809-06",
-      "date": "2026-08-09",
-      "meet": "부산경남",
-      "rc_no": 6,
-      "pick": "대길의꿈",
-      "ord": 10,
-      "odds": 4.0,
-      "hit_win": false,
-      "hit_place": false,
-      "hit_bets": [],
-      "n_bets": 7
-    },
-    {
-      "race_key": "서울-20260809-06",
-      "date": "2026-08-09",
-      "meet": "서울",
-      "rc_no": 6,
-      "pick": "타이거불패",
-      "ord": 1,
-      "odds": 1.7,
-      "hit_win": true,
-      "hit_place": true,
-      "hit_bets": [
-        "단승",
-        "연승",
-        "복연승"
-      ],
-      "n_bets": 7
-    },
-    {
-      "race_key": "부산경남-20260809-05",
-      "date": "2026-08-09",
-      "meet": "부산경남",
-      "rc_no": 5,
-      "pick": "인디타이거",
-      "ord": 1,
-      "odds": 1.2,
-      "hit_win": true,
-      "hit_place": true,
-      "hit_bets": [
-        "단승",
-        "연승"
-      ],
-      "n_bets": 7
-    },
-    {
-      "race_key": "서울-20260809-05",
-      "date": "2026-08-09",
-      "meet": "서울",
-      "rc_no": 5,
-      "pick": "파사퀸",
-      "ord": 3,
-      "odds": 3.9,
-      "hit_win": false,
-      "hit_place": true,
-      "hit_bets": [
-        "연승"
-      ],
-      "n_bets": 7
-    },
-    {
-      "race_key": "부산경남-20260809-04",
-      "date": "2026-08-09",
-      "meet": "부산경남",
-      "rc_no": 4,
-      "pick": "경복아토스",
-      "ord": 7,
-      "odds": 1.9,
-      "hit_win": false,
-      "hit_place": false,
-      "hit_bets": [],
       "n_bets": 7
     }
   ]
