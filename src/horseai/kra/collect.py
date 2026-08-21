@@ -51,6 +51,10 @@ RACE_WEEKDAYS = tuple(range(7))
 # 순차 게시되고, 배당 확정이나 심판 판정으로 뒤늦게 바뀌기도 한다.
 RESETTLE_DAYS = 2
 
+# 이만큼 연달아 응답을 못 받으면 포털이 죽은 것으로 보고 끊는다.
+# 끝까지 밀어붙여 봐야 시간만 태우고 결과는 같다.
+NETWORK_FAIL_STREAK = 6
+
 
 def race_days(start: dt.date, end: dt.date) -> List[dt.date]:
     """구간 내 경마 시행 가능일. 공휴일 시행이 있어 모든 요일을 훑는다."""
@@ -218,12 +222,26 @@ def run_range(
     total, skipped, empty, failed = 0, 0, 0, 0
     log.info("%s 수집: %s ~ %s, 시행일 %d일 × 경마장 %d곳",
              kind, start, end, len(days), len(meets))
+    # 포털이 죽으면 한 건마다 40초씩 태우다 배치가 통째로 타임아웃된다. 요일
+    # 제한을 푼 뒤 조회가 9건에서 33건으로 늘어 실제로 그렇게 죽었다(8/18~21
+    # 나흘 연속). 연달아 실패하면 나머지는 물어봐야 결과가 뻔하므로 끊는다 —
+    # 남는 시간은 상위의 재시도가 쓴다.
+    streak = 0
     for day in days:
+        if streak >= NETWORK_FAIL_STREAK:
+            break
         for meet in meets:
             n = fetch_day(client, conn, kind=kind, meet=meet, day=day, force=force)
             if n == -2:
                 failed += 1
-            elif n < 0:
+                streak += 1
+                if streak >= NETWORK_FAIL_STREAK:
+                    log.warning("  ⚠ %d건 연속 실패 — 포털이 응답하지 않는다. "
+                                "남은 조회를 중단한다", streak)
+                    break
+                continue
+            streak = 0
+            if n < 0:
                 skipped += 1
             elif n == 0:
                 empty += 1
