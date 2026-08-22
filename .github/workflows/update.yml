@@ -314,27 +314,35 @@ jobs:
       # --- 상태 저장 --------------------------------------------------------
       # 반드시 마지막에. 앞 단계가 실패했어도 수집분은 보존해야 다음 실행이
       # 처음부터 다시 긁지 않는다 (always()).
-      # 실패하면 휴대폰으로 알린다.
+      # 돌 때마다 결과를 보고한다.
       #
-      # 성공은 알리지 않는다 — 매일 오는 알림은 사흘이면 안 읽게 되고, 그러면
-      # 정작 실패한 날도 지나친다. 8/18~22 닷새를 놓친 것이 그런 종류의 문제였다.
+      # '성공했습니다' 만 보내면 사흘이면 안 읽게 되고, 그러면 정작 실패한 날도
+      # 지나친다. 매번 **무엇이 달라졌는지**를 담아야 읽을 이유가 생긴다 —
+      # 몇 경주를 게재했고, 어디까지 정산했고, 누적 성적이 얼마인지.
       #
-      # 비밀값이 없으면 조용히 넘어간다. 알림은 곁다리지 파이프라인의 조건이 아니다.
-      - name: 실패 알림
-        if: failure()
+      # 비밀값이 없으면 조용히 넘어간다. 보고는 곁다리지 파이프라인의 조건이 아니다.
+      - name: 텔레그램 보고
+        if: always()
         continue-on-error: true
         env:
           TG_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
           TG_CHAT: ${{ secrets.TELEGRAM_CHAT_ID }}
           RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          OK: ${{ job.status }}
         run: |
-          [ -n "$TG_TOKEN" ] && [ -n "$TG_CHAT" ] || { echo "알림 설정 없음 — 넘어간다"; exit 0; }
-          NOW=$(TZ=Asia/Seoul date '+%m/%d %H:%M')
-          TEXT=$(printf '경마 파이프라인 실패\n\n%s KST\n%s\n\n30분 뒤 자동으로 다시 시도합니다.' "$NOW" "$RUN_URL")
+          [ -n "$TG_TOKEN" ] && [ -n "$TG_CHAT" ] || { echo "보고 설정 없음 — 넘어간다"; exit 0; }
+          if [ "$OK" = "success" ]; then
+            BODY=$(PYTHONPATH=src python -m horseai.report --db "$DB" 2>/dev/null) \
+              || BODY="갱신은 끝났지만 보고문을 만들지 못했습니다."
+          else
+            NOW=$(TZ=Asia/Seoul date '+%m/%d %H:%M')
+            BODY=$(printf '경마연구소 · %s KST\n\n■ 실패\n  %s\n\n30분 뒤 자동으로 다시 시도합니다.' \
+                     "$NOW" "$RUN_URL")
+          fi
           curl -sS --max-time 20 -X POST \
             "https://api.telegram.org/bot${TG_TOKEN}/sendMessage" \
             --data-urlencode "chat_id=${TG_CHAT}" \
-            --data-urlencode "text=${TEXT}" \
+            --data-urlencode "text=${BODY}" \
             -o /dev/null -w "  텔레그램 %{http_code}\n" || true
 
       - name: DB 저장
