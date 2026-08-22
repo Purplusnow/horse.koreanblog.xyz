@@ -39,3 +39,33 @@ jobs:
               || echo "  실패"
             head -c 120 /tmp/o 2>/dev/null | tr -d '\n'; echo
           done
+
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12" }
+      - name: 파이썬 클라이언트로 같은 요청
+        env:
+          KRA_SERVICE_KEY: ${{ secrets.KRA_SERVICE_KEY }}
+        run: |
+          pip -q install requests
+          python - <<'PY'
+          import os, time, requests
+          key = os.environ["KRA_SERVICE_KEY"]
+          url = "https://apis.data.go.kr/B551015/API26_2/entrySheet_2"
+          q = {"serviceKey": key, "pageNo": 1, "numOfRows": 1,
+               "_type": "json", "rc_date": "20260822"}
+          for label, kw in (("Session 기본", {}),
+                            ("trust_env=False", {"trust_env": False})):
+              s = requests.Session()
+              for k, v in kw.items():
+                  setattr(s, k, v)
+              t = time.time()
+              try:
+                  r = s.get(url, params=q, timeout=(6, 20))
+                  print(f"  {label:<18} HTTP {r.status_code} · {time.time()-t:.2f}s "
+                        f"· {r.text[:60]!r}")
+              except Exception as e:
+                  print(f"  {label:<18} 실패 {type(e).__name__} · {time.time()-t:.2f}s")
+          print("  프록시 환경변수:",
+                {k: v for k, v in os.environ.items() if "proxy" in k.lower()} or "없음")
+          PY
