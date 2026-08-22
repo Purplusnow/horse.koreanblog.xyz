@@ -11,13 +11,17 @@ name: 예상 갱신 및 배포
 # 6시간마다 돌던 이전 설정은 근거가 없었다 — 같은 데이터를 하루 네 번 받았다.
 on:
   schedule:
-    - cron: "0 0 * * *"        # 매일 09:00 KST — 조교 축적 · 출전표 · 예상 갱신
-    # 예비 실행. 포털이 간헐적으로 응답하지 않아 아침 실행이 통째로 실패하는
-    # 일이 있었다(8/18~22 닷새 연속). 한 창이 막히면 그날을 잃는 구조라,
-    # 두 시간 간격으로 두 번 더 두드린다. 이미 받아 뒀으면 몇 분이면 끝난다.
-    - cron: "0 2 * * *"        # 11:00 KST
-    - cron: "0 4 * * *"        # 13:00 KST
-    - cron: "0 12 * * 5,6,0"   # 금·토·일 21:00 KST — 경주 결과 정산
+    # 매일 09:00 KST 부터 13:30 까지 30분마다.
+    #
+    # 포털이 간헐적으로 응답하지 않아 아침 실행이 통째로 실패하는 일이 있었다
+    # (8/18~22 닷새 연속). 한 창이 막히면 그날을 잃는 구조였다.
+    #
+    # **오늘 이미 성공했으면 아래 gate 에서 몇 초 만에 끝난다.** 그러니 자주
+    # 걸어 두는 비용이 거의 없고, 실패한 날에만 30분마다 다시 두드리는 셈이 된다.
+    - cron: "*/30 0-4 * * *"
+    # 경주일 저녁 정산. 21:00~23:30 KST 30분마다 — 아침과 같은 이유로 창을 넓게
+    # 둔다. 그날 성적·배당이 다 들어와 집계까지 끝났으면 gate 에서 끝난다.
+    - cron: "*/30 12-14 * * 5,6,0"
   workflow_dispatch:
     inputs:
       retrain:
@@ -42,7 +46,49 @@ env:
   DB_RELEASE_TAG: db-state       # DB 스냅샷을 담아두는 릴리스 태그
 
 jobs:
+  # 오늘 이 워크플로가 이미 성공했는지만 본다. 성공했으면 30분마다 도는 예비
+  # 실행이 같은 일을 반복할 이유가 없다 — 저장소도 받지 않고 몇 초로 끝낸다.
+  # 수동 실행(workflow_dispatch)과 저녁 정산은 언제나 통과시킨다.
+  gate:
+    runs-on: ubuntu-latest
+    outputs:
+      go: ${{ steps.check.outputs.go }}
+    steps:
+      - id: check
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+        run: |
+          if [ "${{ github.event_name }}" != "schedule" ]; then
+            echo "수동 실행 — 진행한다"; echo "go=true" >> "$GITHUB_OUTPUT"; exit 0
+          fi
+          # 아침(예상 게재)과 저녁(결과 정산)은 하는 일이 다르다. 아침에
+          # 성공했다고 저녁 정산을 막으면 결과가 영영 안 올라간다. 창을 나눠
+          # 각각 '그 창에서 성공했는지'만 본다.
+          hour=$(TZ=Asia/Seoul date +%H)
+          today=$(TZ=Asia/Seoul date +%F)
+          if [ "$hour" -ge 20 ]; then LO=20; HI=24; WIN="저녁 정산"
+          else                        LO=0;  HI=20; WIN="아침 게재"; fi
+
+          ok=$(gh run list --repo "$REPO" --workflow=update.yml --limit 40 \
+                 --json createdAt,conclusion \
+                 --jq "[.[] | select(.conclusion==\"success\")
+                        | (.createdAt | fromdate + 32400) as \$k
+                        | select((\$k | strftime(\"%Y-%m-%d\")) == \"$today\")
+                        | select((\$k | strftime(\"%H\") | tonumber) >= $LO)
+                        | select((\$k | strftime(\"%H\") | tonumber) < $HI)]
+                       | length")
+          if [ "${ok:-0}" -gt 0 ]; then
+            echo "$WIN 창에서 오늘 이미 성공했다 — 건너뛴다"
+            echo "go=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "$WIN 창에 성공 기록이 없다 — 진행한다"
+            echo "go=true" >> "$GITHUB_OUTPUT"
+          fi
+
   update:
+    needs: gate
+    if: needs.gate.outputs.go == 'true'
     runs-on: ubuntu-latest
     # deploy-pages 액션은 github-pages 환경을 요구한다. 없으면 배포 단계에서 실패한다.
     environment:
