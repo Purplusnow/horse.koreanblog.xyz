@@ -314,6 +314,29 @@ jobs:
       # --- 상태 저장 --------------------------------------------------------
       # 반드시 마지막에. 앞 단계가 실패했어도 수집분은 보존해야 다음 실행이
       # 처음부터 다시 긁지 않는다 (always()).
+      # 실패하면 휴대폰으로 알린다.
+      #
+      # 성공은 알리지 않는다 — 매일 오는 알림은 사흘이면 안 읽게 되고, 그러면
+      # 정작 실패한 날도 지나친다. 8/18~22 닷새를 놓친 것이 그런 종류의 문제였다.
+      #
+      # 비밀값이 없으면 조용히 넘어간다. 알림은 곁다리지 파이프라인의 조건이 아니다.
+      - name: 실패 알림
+        if: failure()
+        continue-on-error: true
+        env:
+          TG_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
+          TG_CHAT: ${{ secrets.TELEGRAM_CHAT_ID }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          [ -n "$TG_TOKEN" ] && [ -n "$TG_CHAT" ] || { echo "알림 설정 없음 — 넘어간다"; exit 0; }
+          NOW=$(TZ=Asia/Seoul date '+%m/%d %H:%M')
+          TEXT=$(printf '경마 파이프라인 실패\n\n%s KST\n%s\n\n30분 뒤 자동으로 다시 시도합니다.' "$NOW" "$RUN_URL")
+          curl -sS --max-time 20 -X POST \
+            "https://api.telegram.org/bot${TG_TOKEN}/sendMessage" \
+            --data-urlencode "chat_id=${TG_CHAT}" \
+            --data-urlencode "text=${TEXT}" \
+            -o /dev/null -w "  텔레그램 %{http_code}\n" || true
+
       - name: DB 저장
         if: always()
         env:
