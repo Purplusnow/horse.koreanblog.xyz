@@ -1,0 +1,41 @@
+name: 포털 접근 진단
+
+# GitHub 러너에서 공공데이터포털에 왜 못 닿는지 확인한다. 8/18~22 닷새 연속
+# 출전표 수집이 ConnectTimeout 으로 죽었는데 같은 시각 로컬에서는 정상이다.
+# 프록시를 세우기 전에 우회할 조건이 있는지부터 본다 — 조건 하나만 바꿔 되면
+# 구조를 늘릴 이유가 없다.
+on:
+  workflow_dispatch:
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 네트워크 조건별 시도
+        env:
+          KEY: ${{ secrets.KRA_SERVICE_KEY }}
+        run: |
+          H=apis.data.go.kr
+          echo "── DNS ──"; getent hosts $H || echo "  해석 실패"
+          echo
+          echo "── TCP 443 ──"
+          timeout 10 bash -c "cat < /dev/null > /dev/tcp/$H/443" \
+            && echo "  연결 성공" || echo "  연결 실패"
+          echo
+          echo "── TCP 80 ──"
+          timeout 10 bash -c "cat < /dev/null > /dev/tcp/$H/80" \
+            && echo "  연결 성공" || echo "  연결 실패"
+          echo
+          U="https://$H/B551015/API26_2/entrySheet_2?serviceKey=$KEY&pageNo=1&numOfRows=1&_type=json&rc_date=20260822"
+          for label in "기본" "브라우저 UA" "HTTP/1.1 고정" "IPv4 강제"; do
+            case "$label" in
+              "기본")        OPT="" ;;
+              "브라우저 UA") OPT="-A Mozilla/5.0" ;;
+              "HTTP/1.1 고정") OPT="--http1.1" ;;
+              "IPv4 강제")   OPT="-4" ;;
+            esac
+            printf "── %s ── " "$label"
+            curl -sS $OPT --max-time 25 -o /tmp/o -w "HTTP %{http_code} · 연결 %{time_connect}s · 총 %{time_total}s\n" "$U" \
+              || echo "  실패"
+            head -c 120 /tmp/o 2>/dev/null | tr -d '\n'; echo
+          done
