@@ -164,6 +164,16 @@ def _ingest(conn: sqlite3.Connection, records: List[Dict], *, kind: str) -> int:
     return n
 
 
+def _has_entries(conn, meet: int, day: dt.date) -> bool:
+    """그 경마장·그날 출전표가 우리 DB 에 있는가."""
+    key = f"{MEETS.get(meet, meet)}-{day:%Y%m%d}-"
+    row = conn.execute(
+        "SELECT 1 FROM entries e JOIN races g ON g.race_key = e.race_key "
+        "WHERE g.rc_date = ? AND g.meet = ? LIMIT 1",
+        (day.isoformat(), MEETS.get(meet, meet))).fetchone()
+    return row is not None
+
+
 def fetch_day(
     client: KraClient,
     conn: sqlite3.Connection,
@@ -183,6 +193,18 @@ def fetch_day(
     # 진행 중일 때 받으면 1경주만 담긴 채 완료로 표시되고, 그 뒤 크론은 그날을
     # 통째로 건너뛴다 — 나머지 경주의 결과와 적중률이 영영 비게 된다.
     # 지난 날짜는 더 바뀔 것이 없으므로 기록을 그대로 믿는다.
+    # **성적은 출전표가 있는 날에만 받는다.**
+    #
+    # 경주가 없는 날짜를 물어보면 포털이 엉뚱한 날 자료를 그 날짜로 바꿔서
+    # 돌려준다. 응답 안의 rcDate 까지 바뀌어 오므로 날짜 대조로는 못 잡는다.
+    # 실제로 8/24(월, 시행 없음)를 물어보니 8/16(일) 결과가 그대로 왔고,
+    # 유령 경주 45개와 가짜 착순이 들어가 마필 전적까지 오염됐다.
+    #
+    # 출전표 API 는 없는 날에 정직하게 빈 응답을 준다. 그것을 시행 여부의
+    # 근거로 삼는다 — 출전표가 없으면 그날은 경주가 없었던 것이다.
+    if kind == "results" and not _has_entries(conn, meet, day):
+        return 0
+
     settled = day < today_kst() - dt.timedelta(days=RESETTLE_DAYS)
     if not force and settled and already_fetched(conn, ep_key, str(meet), ymd):
         return -1  # 이미 수집됨 (확정된 과거 날짜)
