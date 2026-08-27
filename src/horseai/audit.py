@@ -54,10 +54,12 @@ def check(conn, days: int) -> List[Dict]:
     def add(kind: str, rows: pd.DataFrame, note: str) -> None:
         if rows.empty:
             return
+        newest = max(str(r.rc_date)[:10] for r in rows.itertuples())
         issues.append({
             "kind": kind,
             "n": len(rows),
             "note": note,
+            "newest": newest,          # 가장 최근 결손일 — 막을지 판단하는 기준
             "races": [f"{r.meet} {int(r.rc_no)}R ({str(r.rc_date)[:10]})"
                       for r in rows.head(8).itertuples()],
         })
@@ -93,7 +95,9 @@ def main(argv=None) -> int:
     ap.add_argument("--db", default="data/horseai.sqlite")
     ap.add_argument("--days", type=int, default=14)
     ap.add_argument("--strict", action="store_true",
-                    help="결손이 있으면 1 로 끝낸다 (CI 에서 빨갛게 뜬다)")
+                    help="최근 결손이 있으면 1 로 끝낸다 (CI 에서 빨갛게 뜬다)")
+    ap.add_argument("--fresh-days", type=int, default=3,
+                    help="이 기간 안의 결손만 실패로 본다")
     args = ap.parse_args(argv)
 
     with session(args.db) as conn:
@@ -110,8 +114,24 @@ def main(argv=None) -> int:
             print(f"      {r}")
         if it["n"] > len(it["races"]):
             print(f"      … 외 {it['n'] - len(it['races'])}경주")
+    # 오래된 결손으로 파이프라인을 막지 않는다.
+    #
+    # 마사회가 끝내 채우지 않는 자료가 있다(8/24 서울 1·3·8·9R 은 사흘이 지나도
+    # 1~3착만 있고 배당이 안 왔다). 그런 것 하나가 남으면 --strict 가 매일
+    # 실패해 진짜 문제를 가린다 — 실제로 나흘 연속 그렇게 막혔다.
+    #
+    # 최근 결손만 막는다. 오래된 것은 계속 보고하되 통과시킨다.
+    # 경계는 배타적이다. fresh_days=3 이면 오늘·어제·그제 결손만 막고, 딱
+    # 사흘 전은 통과시킨다 — 마사회가 하루 이틀은 늦게 올리므로 그만큼 기다린
+    # 뒤에도 안 왔으면 끝내 안 오는 것으로 본다.
+    cutoff = (today_kst() - dt.timedelta(days=args.fresh_days)).isoformat()
+    fresh = [it for it in issues if it["newest"] > cutoff]
+    old = [it for it in issues if it["newest"] <= cutoff]
+    if old:
+        print(f"  ({len(old)}종은 {args.fresh_days}일보다 오래돼 통과시킨다 — "
+              f"자료가 끝내 안 올 수 있다)")
     print()
-    return 1 if args.strict else 0
+    return 1 if (args.strict and fresh) else 0
 
 
 if __name__ == "__main__":
