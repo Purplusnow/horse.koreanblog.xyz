@@ -434,11 +434,19 @@ def highlights(rl: pd.DataFrame, limit: int = 6) -> Dict[str, List[Dict]]:
     #   역대  — 오래돼도 남길 만한 기록. 시간이 지나면 최근 목록에서 밀려나는데,
     #          이 사이트가 무엇까지 맞혀 봤는지는 계속 말할 수 있어야 한다.
     #   최근  — 지금도 맞히고 있다는 증거. 옛 기록만 걸어 두면 과거형이 된다.
+    #
+    # **역대가 우선이다.** 예전에는 최근을 먼저 채우고 겹치는 것을 역대에서
+    # 뺐는데, 운영 3주차에 최근 6건이 상위 기록을 거의 다 차지해 역대가 한
+    # 칸으로 쪼그라들었다. 350배 다음이 뚝 끊겨 보여 '그 사이는 못 맞혔나'로
+    # 읽힌다 — 실제로는 159배가 최근 줄에 있었다.
+    #
+    # 그래서 역대를 먼저 온전히 채우고, 겹치는 것은 최근에서 뺀 뒤 다음
+    # 순위로 채운다. 역대 카드에도 날짜가 붙으므로 최신 기록이 역대로 가도
+    # '지금도 맞히고 있다'는 것은 그대로 읽힌다.
     top = sorted(rows, key=lambda h: -h["odds"])[:limit]
-    recent = sorted(rows, key=lambda h: (h["date"], h["odds"]), reverse=True)[:limit]
-    # 최근 목록에 이미 있는 것을 역대에 또 걸면 같은 카드가 두 번 나온다.
-    seen = {h["race_key"] for h in recent}
-    top = [h for h in top if h["race_key"] not in seen]
+    seen = {h["race_key"] for h in top}
+    recent = [h for h in sorted(rows, key=lambda h: (h["date"], h["odds"]),
+                                reverse=True) if h["race_key"] not in seen][:limit]
     return {"top": top, "recent": recent}
 
 
