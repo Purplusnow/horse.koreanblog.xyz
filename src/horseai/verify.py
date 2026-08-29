@@ -198,11 +198,18 @@ def race_level(df: pd.DataFrame, div: Optional[Dict] = None) -> pd.DataFrame:
         # '표에 없으면 불발'인데, 자료 자체가 안 들어온 경주까지 그렇게 세면
         # 맞힌 경주가 불발로 남는다. 실제로 8/8 서울 8~10R 처럼 1순위가 1착한
         # 경주가 0/7 로 찍혔다. 자료가 올 때까지 집계에서 빼는 것이 맞다.
+        #
+        # **승식마다 따로 본다.** 경주 단위로 '표가 있나'만 보면, 일곱 종 중
+        # 넷만 들어온 경주에서 나머지 셋이 통째로 불발이 된다(8/28 제주 8R).
+        # 같은 왜곡이 규모만 작아진 것이다. 그 승식의 자료가 실제로 있을
+        # 때만 판정하고, 없으면 집계에서 뺀다.
         bets = {}
         table = (div or {}).get(key)
         if table:
             for name, (pool, mine) in _combos(gates).items():
-                paid = sum(table.get(pool, {}).get(c) or 0.0 for c in mine)
+                if not table.get(pool):
+                    continue                  # 그 승식 자료가 아직 안 왔다
+                paid = sum(table[pool].get(c) or 0.0 for c in mine)
                 bets[name] = {"cost": len(mine), "payout": paid, "hit": paid > 0}
 
         rows.append({

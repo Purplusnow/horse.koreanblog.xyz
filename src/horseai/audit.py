@@ -27,6 +27,15 @@ from .kra.store import session
 # 승식 일곱 종이 모두 발매되므로, 시행된 경주에는 배당이 이만큼 있어야 한다.
 EXPECTED_POOLS = 7
 
+# 파이프라인을 멈춰 세울 만한 결손.
+#
+# '배당 일부'는 뺀다. 예전에는 넷만 들어온 경주에서 나머지 셋이 불발로
+# 집계돼 수치를 망가뜨렸지만, 이제 승식별로 자료가 있을 때만 판정하므로
+# 없는 승식은 그냥 집계에서 빠진다(verify.race_level). 수치가 틀리지 않는
+# 결손으로 매일 빨간 불을 켜면 진짜 문제를 가린다 — 실제로 8/28 제주 8R
+# 하나가 그날 실행 두 번을 다 막았다. 보고는 계속 하되 막지는 않는다.
+BLOCKING = ("배당 결손", "착순 결손", "예측 누락")
+
 
 def check(conn, days: int) -> List[Dict]:
     """최근 며칠을 훑어 결손을 찾는다. 반환값은 사람이 읽을 문제 목록이다."""
@@ -125,8 +134,12 @@ def main(argv=None) -> int:
     # 사흘 전은 통과시킨다 — 마사회가 하루 이틀은 늦게 올리므로 그만큼 기다린
     # 뒤에도 안 왔으면 끝내 안 오는 것으로 본다.
     cutoff = (today_kst() - dt.timedelta(days=args.fresh_days)).isoformat()
-    fresh = [it for it in issues if it["newest"] > cutoff]
-    old = [it for it in issues if it["newest"] <= cutoff]
+    blocking = [it for it in issues if it["kind"] in BLOCKING]
+    fresh = [it for it in blocking if it["newest"] > cutoff]
+    old = [it for it in blocking if it["newest"] <= cutoff]
+    if len(issues) > len(blocking):
+        print(f"  ({len(issues) - len(blocking)}종은 집계를 틀리게 하지 않아 "
+              f"통과시킨다 — 없는 승식은 판정에서 빠진다)")
     if old:
         print(f"  ({len(old)}종은 {args.fresh_days}일보다 오래돼 통과시킨다 — "
               f"자료가 끝내 안 올 수 있다)")
