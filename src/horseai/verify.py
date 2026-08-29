@@ -395,6 +395,12 @@ def highlights(rl: pd.DataFrame, limit: int = 6) -> Dict[str, List[Dict]]:
     적중률·환수율 표는 성실하지만 눈에 걸리지 않는다. 처음 온 사람이 이 사이트를
     한 번 더 볼 이유는 '어제 삼쌍승 350배가 터졌다' 같은 구체적인 장면이다.
     표에 이미 들어 있는 사실을 앞으로 꺼내는 것이므로 없는 말을 지어내지 않는다.
+
+    **역대 목록에는 기간을 걸지 않는다.** 명예의 전당이므로 몇 해가 지나도
+    남아야 한다. 지금은 load_verified 가 게재한 예측 전체를 읽고 prune 은
+    raw_json 만 비우므로 그대로 보존되는데, 여기나 load_verified 에 '최근
+    N일' 을 넣는 순간 최고 기록이 조용히 사라진다. 최근 구간이 필요하면
+    이 함수가 아니라 요약 쪽에서 잘라야 한다.
     """
     if rl.empty or "bets" not in rl:
         return {"top": [], "recent": []}

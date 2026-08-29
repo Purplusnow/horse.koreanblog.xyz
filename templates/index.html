@@ -63,7 +63,7 @@
    먼저 채우고 겹치는 것은 아래에서 뺀다 — 위가 온전한 순위표여야 350배
    다음 자리가 비어 보이지 않는다. 카드마다 날짜가 붙으므로 최신 적중이
    위로 가도 지금 맞히고 있다는 것은 그대로 읽힌다. #}
-{% macro win_cards(rows) %}
+{% macro win_cards(rows, today) %}
 <div class="wins-row">
   {% for h in rows %}
   <a class="win-card" href="{{ h.url }}">
@@ -71,7 +71,9 @@
     <span class="win-bet">{{ h.bet }}</span>
     <span class="win-race">
       <span class="meet meet-{{ h.meet }}">{{ h.meet }}</span>{{ h.rc_no }}R
-      <small>{{ h.date[5:] }}</small>
+      {# 명예의 전당은 몇 해가 지나도 남는다. 해가 바뀌면 연도를 붙여야
+         '08-08' 이 올해 것으로 잘못 읽히지 않는다. #}
+      <small>{{ h.date[5:] if h.date[:4] == today[:4] else h.date[2:] }}</small>
     </span>
     {% if h.n_hit and h.n_hit > 1 %}
     <small class="win-also{% if h.n_hit >= h.n_bet %} is-perfect{% endif %}">
@@ -85,12 +87,12 @@
 
 <section class="wins">
   {% if hl.top %}
-  <h2 class="wins-heading">고배당 적중 <a class="see-all" href="/results/">전체 결과 →</a></h2>
-  {{ win_cards(hl.top) }}
+  <h2 class="wins-heading">역대 고배당 <a class="see-all" href="/results/">전체 결과 →</a></h2>
+  {{ win_cards(hl.top, today) }}
   {% endif %}
   {% if hl.recent %}
   <h3 class="wins-sub">그 밖의 적중</h3>
-  {{ win_cards(hl.recent) }}
+  {{ win_cards(hl.recent, today) }}
   {% endif %}
 </section>
 {% endif %}
