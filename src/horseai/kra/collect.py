@@ -174,6 +174,66 @@ def _has_entries(conn, meet: int, day: dt.date) -> bool:
     return row is not None
 
 
+# 한 경주를 '그 날의 복제'로 볼 기준.
+REPLAY_MIN_HORSES = 5
+REPLAY_MIN_RATIO = 0.9
+# 날짜 전체를 복제로 볼 기준 — 이만큼의 경주가 **같은 하나의 날짜**를 가리켜야 한다.
+REPLAY_MIN_RACES = 3
+REPLAY_DAY_RATIO = 0.8
+
+
+def _is_replay(conn, records: List[Dict], *, kind: str) -> Optional[str]:
+    """받은 자료가 다른 날 출전표의 복제인가. 복제면 그 날짜를 돌려준다.
+
+    **포털은 경주가 없는 날짜를 물으면 다른 날 자료를 그 날짜로 바꿔 준다.**
+    8/24~26 때는 성적에서 당했고, 그때 '출전표가 있는 날만 성적을 받는다'로
+    막았다. 그런데 8/31(월)에는 **출전표 자체가** 8/23 서울 10경주의 통째
+    복제로 들어왔다 — 게이트가 딛고 선 바닥이 무너진 것이다. 응답 안의 날짜도
+    함께 바뀌므로 날짜 대조로는 잡히지 않는다.
+
+    그래서 내용을 본다. 다만 **날짜 단위로 본다.** 경주 하나만 보고 판정하면
+    실제 출전표를 버린다 — 같은 경마장·같은 경주번호에 2주 전과 같은 말이
+    다섯 마리 겹치는 일은 마필 풀이 작은 곳에서 실제로 일어난다(9/4 제주를
+    8/21 복제로 오인해 버렸다). 유령은 그런 모습이 아니라 **그날 편성 전체가
+    다른 한 날의 사본**이다. 여러 경주가 입을 모아 같은 날짜를 가리킬 때만
+    복제로 본다.
+    """
+    if kind != "entries" or not records:
+        return None
+    races: Dict[tuple, set] = {}
+    for rec in records:
+        norm = extract(rec, ENTRY_FIELDS)
+        if not (norm.get("meet") and norm.get("rc_date") and norm.get("rc_no") is not None):
+            continue
+        if norm.get("hr_no"):
+            races.setdefault((norm["meet"], norm["rc_date"], norm["rc_no"]),
+                             set()).add(norm["hr_no"])
+    if len(races) < REPLAY_MIN_RACES:
+        return None
+
+    votes: Dict[str, int] = {}
+    for (meet, rc_date, rc_no), horses in races.items():
+        if len(horses) < REPLAY_MIN_HORSES:
+            continue
+        marks = ",".join("?" * len(horses))
+        row = conn.execute(
+            f"SELECT g.rc_date, COUNT(DISTINCT e.hr_no) n FROM entries e "
+            f"JOIN races g ON g.race_key = e.race_key "
+            f"WHERE g.meet = ? AND g.rc_no = ? AND g.rc_date <> ? "
+            f"AND e.hr_no IN ({marks}) "
+            f"GROUP BY g.rc_date ORDER BY n DESC LIMIT 1",
+            (meet, rc_no, rc_date, *horses)).fetchone()
+        if row and row[1] >= REPLAY_MIN_HORSES and row[1] / len(horses) >= REPLAY_MIN_RATIO:
+            day = str(row[0])[:10]
+            votes[day] = votes.get(day, 0) + 1
+    if not votes:
+        return None
+    day, n = max(votes.items(), key=lambda kv: kv[1])
+    if n >= REPLAY_MIN_RACES and n / len(races) >= REPLAY_DAY_RATIO:
+        return day
+    return None
+
+
 def fetch_day(
     client: KraClient,
     conn: sqlite3.Connection,
@@ -220,6 +280,14 @@ def fetch_day(
         # 장애로 응답을 못 받은 것을 '그날 경주가 없다' 로 세면, 실제로 열린
         # 경주일을 통째로 놓치고도 정상 종료로 보인다.
         return -2
+
+    dup = _is_replay(conn, records, kind=kind)
+    if dup:
+        log.warning("  ⚠ %s %s 출전표가 %s 의 복제다 — 버린다 (그날은 경주가 없다)",
+                    MEETS.get(meet, meet), ymd, dup)
+        log_fetch(conn, ep_key, str(meet), ymd, 0)
+        conn.commit()
+        return 0
 
     n = _ingest(conn, records, kind=kind)
     log_fetch(conn, ep_key, str(meet), ymd, len(records))
