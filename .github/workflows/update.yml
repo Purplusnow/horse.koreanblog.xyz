@@ -11,17 +11,17 @@ name: 예상 갱신 및 배포
 # 6시간마다 돌던 이전 설정은 근거가 없었다 — 같은 데이터를 하루 네 번 받았다.
 on:
   schedule:
-    # 매일 09:00 KST 부터 13:30 까지 30분마다.
+    # 매일 09:00~23:30 KST, 30분마다.
     #
-    # 포털이 간헐적으로 응답하지 않아 아침 실행이 통째로 실패하는 일이 있었다
-    # (8/18~22 닷새 연속). 한 창이 막히면 그날을 잃는 구조였다.
+    # 창을 나누지 않는다. 예전에는 아침(예상 게재)과 저녁(정산)으로 갈라
+    # 두었는데 두 가지가 어긋났다. 경주는 저녁 8시까지 이어지는데 오후에
+    # 창이 없어 낮에 만든 집계가 여덟 시간 동안 걸려 있었고, GitHub 은 cron
+    # 을 몇 시간씩 밀어 실행하므로(UTC 04:30 예정이 08:42 에 도는 일이 매일
+    # 있었다) 창이라는 것 자체가 지켜지지 않았다.
     #
-    # **오늘 이미 성공했으면 아래 gate 에서 몇 초 만에 끝난다.** 그러니 자주
-    # 걸어 두는 비용이 거의 없고, 실패한 날에만 30분마다 다시 두드리는 셈이 된다.
-    - cron: "*/30 0-4 * * *"
-    # 경주일 저녁 정산. 21:00~23:30 KST 30분마다 — 아침과 같은 이유로 창을 넓게
-    # 둔다. 그날 성적·배당이 다 들어와 집계까지 끝났으면 gate 에서 끝난다.
-    - cron: "*/30 12-14 * * 5,6,0"
+    # **할 일이 없으면 gate 가 몇 초 만에 끝낸다.** 자주 걸어 두는 비용이
+    # 거의 없으니, 넓게 걸고 판단은 gate 에 맡긴다.
+    - cron: "*/30 0-14 * * *"
   workflow_dispatch:
     inputs:
       retrain:
@@ -46,9 +46,8 @@ env:
   DB_RELEASE_TAG: db-state       # DB 스냅샷을 담아두는 릴리스 태그
 
 jobs:
-  # 오늘 이 워크플로가 이미 성공했는지만 본다. 성공했으면 30분마다 도는 예비
-  # 실행이 같은 일을 반복할 이유가 없다 — 저장소도 받지 않고 몇 초로 끝낸다.
-  # 수동 실행(workflow_dispatch)과 저녁 정산은 언제나 통과시킨다.
+  # 할 일이 남았는지만 본다. 남지 않았으면 저장소도 받지 않고 몇 초로 끝내므로,
+  # 30분마다 걸어 두어도 비용이 거의 없다. 수동 실행은 언제나 통과시킨다.
   gate:
     runs-on: ubuntu-latest
     outputs:
@@ -62,29 +61,46 @@ jobs:
           if [ "${{ github.event_name }}" != "schedule" ]; then
             echo "수동 실행 — 진행한다"; echo "go=true" >> "$GITHUB_OUTPUT"; exit 0
           fi
-          # 아침(예상 게재)과 저녁(결과 정산)은 하는 일이 다르다. 아침에
-          # 성공했다고 저녁 정산을 막으면 결과가 영영 안 올라간다. 창을 나눠
-          # 각각 '그 창에서 성공했는지'만 본다.
-          hour=$(TZ=Asia/Seoul date +%H)
           today=$(TZ=Asia/Seoul date +%F)
-          if [ "$hour" -ge 20 ]; then LO=20; HI=24; WIN="저녁 정산"
-          else                        LO=0;  HI=20; WIN="아침 게재"; fi
 
+          # **시각이 아니라 남은 일로 판단한다.**
+          #
+          # 예전에는 '아침 창(0~20시)에 이미 성공했으면 건너뛴다' 였다. 그래서
+          # 12:52 에 성공하면 그날 저녁까지 다시 돌지 않았고, 경주가 한 판만
+          # 끝난 13:08 자 집계가 여덟 시간 동안 사이트에 걸려 있었다. 게다가
+          # GitHub 은 cron 을 몇 시간씩 밀어서 실행하므로(UTC 04:30 예정이
+          # 08:42 에 도는 일이 매일 있었다) 시각으로 창을 나누는 것 자체가
+          # 근거가 없다.
+          #
+          # 사이트가 스스로 말하는 상태를 본다 — 오늘 경주 중 아직 정산되지
+          # 않은 것이 있으면 할 일이 남은 것이다.
+          S=$(curl -fsS --max-time 20 "https://horse.koreanblog.xyz/settle.json?t=$(date +%s)" || echo "")
+          D=$(printf '%s' "$S" | jq -r '.date    // ""' 2>/dev/null || echo "")
+          T=$(printf '%s' "$S" | jq -r '.total   // 0'  2>/dev/null || echo 0)
+          N=$(printf '%s' "$S" | jq -r '.settled // 0'  2>/dev/null || echo 0)
+
+          # 오늘 성공 기록이 없으면 무조건 한 번은 돈다. 경주가 없는 날에도
+          # 다음 경주일 출전표를 받아야 하기 때문이다 — 정산할 것이 없다고
+          # 건너뛰면 그 수집이 통째로 빠진다.
           ok=$(gh run list --repo "$REPO" --workflow=update.yml --limit 40 \
                  --json createdAt,conclusion \
                  --jq "[.[] | select(.conclusion==\"success\")
-                        | (.createdAt | fromdate + 32400) as \$k
-                        | select((\$k | strftime(\"%Y-%m-%d\")) == \"$today\")
-                        | select((\$k | strftime(\"%H\") | tonumber) >= $LO)
-                        | select((\$k | strftime(\"%H\") | tonumber) < $HI)]
+                        | (.createdAt | fromdate + 32400)
+                        | select((. | strftime(\"%Y-%m-%d\")) == \"$today\")]
                        | length")
-          if [ "${ok:-0}" -gt 0 ]; then
-            echo "$WIN 창에서 오늘 이미 성공했다 — 건너뛴다"
-            echo "go=false" >> "$GITHUB_OUTPUT"
+
+          if [ "${ok:-0}" -eq 0 ]; then
+            echo "오늘 성공 기록이 없다 — 진행한다"; GO=true
+          elif [ -z "$S" ]; then
+            echo "사이트 상태를 읽지 못했다 — 모르면 진행한다"; GO=true
+          elif [ "$D" != "$today" ]; then
+            echo "사이트가 아직 오늘($today)을 모른다 (게재일 $D) — 진행한다"; GO=true
+          elif [ "$N" -lt "$T" ]; then
+            echo "오늘 $T 경주 중 $N 만 정산됐다 — 진행한다"; GO=true
           else
-            echo "$WIN 창에 성공 기록이 없다 — 진행한다"
-            echo "go=true" >> "$GITHUB_OUTPUT"
+            echo "오늘 $T 경주가 모두 정산됐다 — 건너뛴다"; GO=false
           fi
+          echo "go=$GO" >> "$GITHUB_OUTPUT"
 
   update:
     needs: gate
