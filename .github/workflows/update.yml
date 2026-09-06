@@ -78,6 +78,7 @@ jobs:
           D=$(printf '%s' "$S" | jq -r '.date    // ""' 2>/dev/null || echo "")
           T=$(printf '%s' "$S" | jq -r '.total   // 0'  2>/dev/null || echo 0)
           N=$(printf '%s' "$S" | jq -r '.settled // 0'  2>/dev/null || echo 0)
+          P=$(printf '%s' "$S" | jq -r '.pending // 0'  2>/dev/null || echo 0)
 
           # 오늘 성공 기록이 없으면 무조건 한 번은 돈다. 경주가 없는 날에도
           # 다음 경주일 출전표를 받아야 하기 때문이다 — 정산할 것이 없다고
@@ -97,8 +98,13 @@ jobs:
             echo "사이트가 아직 오늘($today)을 모른다 (게재일 $D) — 진행한다"; GO=true
           elif [ "$N" -lt "$T" ]; then
             echo "오늘 $T 경주 중 $N 만 정산됐다 — 진행한다"; GO=true
+          elif [ "${P:-0}" -gt 0 ]; then
+            # 자정을 넘기면 어제 미정산이 today/total 에서 사라진다. 9/6 은
+            # 열여섯 중 넷이 안 들어온 채 날짜가 바뀌었고, 이것이 없으면
+            # 그 넷은 영영 안 채워진다.
+            echo "지난 며칠 중 성적이 안 들어온 경주가 $P 개 있다 — 진행한다"; GO=true
           else
-            echo "오늘 $T 경주가 모두 정산됐다 — 건너뛴다"; GO=false
+            echo "오늘 $T 경주가 모두 정산됐고 밀린 것도 없다 — 건너뛴다"; GO=false
           fi
           echo "go=$GO" >> "$GITHUB_OUTPUT"
 
@@ -195,20 +201,27 @@ jobs:
       - name: 출전표 수집
         id: entries
         continue-on-error: true
-        timeout-minutes: 55
+        timeout-minutes: 12
         env:
           KRA_SERVICE_KEY: ${{ secrets.KRA_SERVICE_KEY }}
         run: |
-          for attempt in 1 2 3 4 5; do
+          # 재시도는 짧게 세 번만 한다.
+          #
+          # 예전에는 8분씩 다섯 번(최대 40분) 기다렸다. 출전표가 정산을 막던
+          # 시절에는 그렇게라도 붙들 이유가 있었지만, 이제 실패해도 뒤가
+          # 그대로 도니 오래 매달릴수록 **그날 결과 배포만 늦어진다.**
+          # 포털이 안 되는 동안 여기 묶여 있느니 빨리 넘기고, 다음 실행이
+          # 다시 받는 편이 낫다.
+          for attempt in 1 2 3; do
             if PYTHONPATH=src python -m horseai.kra.collect entries --ahead 5 --db "$DB"; then
               exit 0
             fi
-            if [ "$attempt" -lt 5 ]; then
-              echo "→ ${attempt}차 실패. 8분 뒤 다시 시도한다"
-              sleep 480
+            if [ "$attempt" -lt 3 ]; then
+              echo "→ ${attempt}차 실패. 3분 뒤 다시 시도한다"
+              sleep 180
             fi
           done
-          echo "✗ 다섯 번 모두 실패 — 아래 예비 실행이 다시 시도한다"
+          echo "✗ 세 번 모두 실패 — 정산은 계속 진행하고, 다음 실행이 다시 받는다"
           exit 1
 
       # 조교·마체중·출주취소는 '그 날에만' 값이 실리는 API 다. 하루를 놓치면

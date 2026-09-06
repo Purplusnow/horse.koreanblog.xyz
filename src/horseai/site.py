@@ -57,6 +57,12 @@ def race_slug(race_key: str) -> str:
 # 데이터 조회
 # ---------------------------------------------------------------------------
 
+# 지난 며칠까지 '아직 안 들어온 성적'을 찾을 것인가. 마사회가 하루
+# 이틀 늦게 올리는 일이 있어 넉넉히 잡되, 끝내 안 오는 것을 영원히
+# 물고 있지 않도록 한 주에서 끊는다.
+PENDING_DAYS = 7
+
+
 RACE_LIST_SQL = """
 SELECT r.race_key, r.meet, r.rc_date, r.rc_no, r.rc_name, r.distance, r.grade,
        r.post_time, r.field_size, r.has_result, c.headline,
@@ -795,13 +801,25 @@ def build(db: str, out_dir: Path, config: Dict, template_dir: Path,
             for r in detail_pages
         ], ensure_ascii=False))
 
-        # 갱신 상태 표식. 10분 정산을 걷어내면서 쓰는 곳이 없어졌지만, 배포된
-        # 사이트가 어느 날짜까지 반영됐는지 밖에서 확인할 수 있어 남겨 둔다.
+        # 갱신 상태 표식. 배포된 사이트가 어디까지 반영됐는지 밖에서 확인할 수
+        # 있고, 워크플로의 gate 가 '더 할 일이 있는가'를 이것으로 판단한다.
+        #
+        # **pending 이 핵심이다.** today/total/settled 만 있으면 자정을 넘긴
+        # 순간 어제의 미정산이 시야에서 사라진다 — 9/6 은 열여섯 중 넷이 안
+        # 들어온 채 날짜가 바뀌었고, 그러면 gate 는 '오늘(9/7)은 경주가 없다,
+        # 할 일 없음'으로 읽는다. 며칠이 지나도 그 넷은 안 채워진다.
+        # 그래서 최근 며칠 안에 **끝난 지 한참인데 성적이 없는** 경주를 따로 센다.
+        cutoff = today - dt.timedelta(days=PENDING_DAYS)
+        pending = [r for r in races
+                   if r["date_obj"] and cutoff <= r["date_obj"] < today
+                   and not r["has_result"]]
         today_races = [r for r in races if r["date_obj"] == today]
         write(out_dir / "settle.json", json.dumps({
             "date": today.isoformat(),
             "total": len(today_races),
             "settled": sum(1 for r in today_races if r["has_result"]),
+            "pending": len(pending),
+            "pending_days": sorted({r["rc_date"] for r in pending}),
             "built_at": now_kst().isoformat(timespec="seconds"),
         }, ensure_ascii=False))
 
