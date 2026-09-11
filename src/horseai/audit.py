@@ -36,14 +36,44 @@ EXPECTED_POOLS = 7
 # 없는 승식은 그냥 집계에서 빠진다(verify.race_level). 수치가 틀리지 않는
 # 결손으로 매일 빨간 불을 켜면 진짜 문제를 가린다 — 실제로 8/28 제주 8R
 # 하나가 그날 실행 두 번을 다 막았다. 보고는 계속 하되 막지는 않는다.
-BLOCKING = ("배당 결손", "착순 결손", "예측 누락", "복제 의심")
+BLOCKING = ("배당 결손", "착순 결손", "예측 누락", "복제 의심", "떠도는 자료")
 
 # 오래됐다고 봐주지 않는 결손.
 #
 # 나머지는 '마사회가 끝내 안 보낸 자료'라 며칠 기다린 뒤 포기하는 것이 맞다.
 # 복제는 다르다 — 가짜 자료가 DB 에 앉아 마필 전적과 집계를 오염시키고 있는
 # 것이라, 시간이 지난다고 나아지지 않는다. 지울 때까지 막는다.
-ALWAYS = ("복제 의심",)
+ALWAYS = ("복제 의심", "떠도는 자료")
+
+
+def check_orphan(conn) -> List[Dict]:
+    """경주가 없는 날짜에 매달린 자료가 있는가.
+
+    유령 경주를 지울 때 races·entries·results·dividends·predictions 는 지웠는데
+    **entry_weight 를 빠뜨렸다.** 8/31 마체중 100행이 그대로 남아 한 주가 넘도록
+    아무도 몰랐다 — 경주는 사라졌는데 그 경주 말들의 체중만 떠돌던 셈이다.
+
+    entries 계열은 race_key 로 묶여 있어 races 를 지우면 함께 정리되지만,
+    entry_weight 는 (경마장, 날짜, 마명)으로만 붙어 있어 홀로 남는다. 사람이
+    지울 때 목록을 빠뜨리는 것은 다시 일어나므로, 세는 쪽을 만들어 둔다.
+
+    조교(daily_training)는 조교일 기준이라 경주일과 무관하므로 보지 않는다.
+    """
+    rows = conn.execute(
+        "SELECT w.rc_date, COUNT(*) FROM entry_weight w "
+        "WHERE NOT EXISTS (SELECT 1 FROM races g WHERE g.rc_date = w.rc_date) "
+        "GROUP BY w.rc_date ORDER BY w.rc_date").fetchall()
+    if not rows:
+        return []
+    n = sum(r[1] for r in rows)
+    return [{
+        "kind": "떠도는 자료",
+        "n": n,
+        "note": "경주가 없는 날짜의 마체중이 남아 있다 — 유령을 지울 때 빠뜨린 것이다",
+        "unit": "행",
+        "newest": str(rows[-1][0])[:10],
+        "races": [f"마체중 {r[1]}행 ({str(r[0])[:10]})" for r in rows[:8]],
+    }]
 
 
 def check_replay(conn, days: int) -> List[Dict]:
@@ -186,7 +216,8 @@ def main(argv=None) -> int:
     args = ap.parse_args(argv)
 
     with session(args.db) as conn:
-        issues = check(conn, args.days) + check_replay(conn, args.days)
+        issues = (check(conn, args.days) + check_replay(conn, args.days)
+                  + check_orphan(conn))
 
     if not issues:
         print(f"자료 점검 최근 {args.days}일 — 결손 없음")
@@ -194,11 +225,11 @@ def main(argv=None) -> int:
 
     print(f"자료 점검 최근 {args.days}일 — 결손 {len(issues)}종")
     for it in issues:
-        print(f"\n  ▸ {it['kind']} {it['n']}경주 — {it['note']}")
+        print(f"\n  ▸ {it['kind']} {it['n']}{it.get('unit', '경주')} — {it['note']}")
         for r in it["races"]:
             print(f"      {r}")
-        if it["n"] > len(it["races"]):
-            print(f"      … 외 {it['n'] - len(it['races'])}경주")
+        if it.get("unit") != "행" and it["n"] > len(it["races"]):
+            print(f"      … 외 {it['n'] - len(it['races'])}{it.get('unit', '경주')}")
     # 오래된 결손으로 파이프라인을 막지 않는다.
     #
     # 마사회가 끝내 채우지 않는 자료가 있다(8/24 서울 1·3·8·9R 은 사흘이 지나도
