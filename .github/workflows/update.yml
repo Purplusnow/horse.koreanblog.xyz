@@ -276,10 +276,21 @@ jobs:
             echo "yes=true" >> "$GITHUB_OUTPUT"; echo "모델 없음 → 학습"
           elif [ "${{ inputs.retrain }}" = "true" ]; then
             echo "yes=true" >> "$GITHUB_OUTPUT"; echo "수동 요청 → 재학습"
-          elif [ "$(date -u +%u)" = "1" ] && [ "$(date -u +%H)" = "00" ]; then
-            echo "yes=true" >> "$GITHUB_OUTPUT"; echo "주간 일정 → 재학습"
           else
-            echo "yes=false" >> "$GITHUB_OUTPUT"; echo "재학습 생략"
+            # **정각을 조건으로 걸지 않는다.**
+            #
+            # 예전에는 'UTC 월요일 00시'였다. 그런데 GitHub 은 cron 을 몇 시간씩
+            # 밀어서 실행하므로 그 한 시간에 걸린 적이 백 번 중 **0번**이었다.
+            # 모델은 8월 8일 학습분 그대로 다섯 주를 버텼고, 그 사이 목요 경마가
+            # 신설되는 등 판이 바뀌었다.
+            #
+            # 그래서 시각이 아니라 **모델이 얼마나 낡았는지**로 판단한다.
+            AGE=$(python -c "import os,time;p='models/model.joblib';print(int((time.time()-os.path.getmtime(p))//86400) if os.path.exists(p) else 999)")
+            if [ "${AGE:-999}" -ge 7 ]; then
+              echo "yes=true" >> "$GITHUB_OUTPUT"; echo "모델이 ${AGE}일 지났다 → 재학습"
+            else
+              echo "yes=false" >> "$GITHUB_OUTPUT"; echo "모델이 ${AGE}일째 — 재학습 생략"
+            fi
           fi
 
       - name: 모델 학습 및 검증
