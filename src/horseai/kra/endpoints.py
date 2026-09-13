@@ -22,7 +22,10 @@ RESOLVED_PATH = Path(os.environ.get("HORSEAI_ENDPOINTS", "config/endpoints.resol
 # 경마장 코드. 영천은 2024년 이후 시행분부터 조회 가능.
 MEETS: Dict[int, str] = {1: "서울", 2: "제주", 3: "부산경남", 4: "영천"}
 # 사이트에서 실제로 다루는 경마장 (영천은 경주 수가 적어 기본 제외)
-ACTIVE_MEETS: List[int] = [1, 2, 3]
+# 영천은 2026-09-13 부터 시행됐다. 매핑에는 진작 있었는데 조회 대상에서
+# 빠져 있어 첫날 여섯 경주를 통째로 놓칠 뻔했다 — 경마장이 늘어날 수 있다는
+# 것을 코드가 알고 있으면서도 켜 두지 않았다.
+ACTIVE_MEETS: List[int] = [1, 2, 3, 4]
 
 
 @dataclass
