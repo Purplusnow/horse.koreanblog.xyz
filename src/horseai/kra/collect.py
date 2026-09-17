@@ -272,6 +272,21 @@ def fetch_day(
     path = resolve(ep_key)
     try:
         records = client.fetch(path, {"meet": meet, "rc_date": ymd}, rows=500)
+        # **응답이 경마장을 빼먹으면 우리가 채운다.**
+        #
+        # 영천 성적(API299)에는 meet 필드가 아예 없다 — 서울은 키가 90개인데
+        # 영천은 89개다. 정규화가 meet 을 필수로 보므로 54건이 통째로 버려졌고,
+        # 9/13 여섯 경주가 닷새 동안 '성적 없음'으로 남았다. 파이프라인은 내내
+        # 초록불이었다.
+        #
+        # 우리는 어느 경마장에 물었는지 알고 있다. 응답에 없을 때만 그 값을
+        # 넣는다 — 있으면 응답 쪽을 그대로 믿는다.
+        if records:
+            label = MEETS.get(meet)
+            if label:
+                for rec in records:
+                    if isinstance(rec, dict) and not rec.get("meet"):
+                        rec["meet"] = label
     except KraApiError as e:
         if e.fatal:
             raise
