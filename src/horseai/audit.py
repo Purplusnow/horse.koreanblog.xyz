@@ -181,9 +181,18 @@ def check(conn, days: int) -> List[Dict]:
 
     # 시행됐는데 배당이 없거나 일부 승식만 들어온 경주.
     # 이것이 이번에 놓쳤던 결손이고, 적중률·환수율을 직접 망가뜨린다.
-    add("배당 결손", done[done["n_pool"] == 0],
+    #
+    # **오늘 경주는 보지 않는다.** 마사회는 착순을 먼저 내고 배당을 나중에
+    # 올린다. 경주가 막 끝난 시점에는 '착순은 있는데 배당이 없는' 상태가
+    # 정상인데, 그것을 결손으로 세어 9/18 15:46 실행이 통째로 실패했다.
+    # 하루가 지나도 없으면 그때는 진짜 결손이다 — 착순 쪽에서 이미 같은
+    # 기준을 쓰고 있다.
+    settled_days = done[pd.to_datetime(done["rc_date"]).dt.date < today_kst()]
+    add("배당 결손", settled_days[settled_days["n_pool"] == 0],
         "시행된 경주에 배당이 하나도 없다 — 승식 판정이 전부 불발로 집계된다")
-    add("배당 일부", done[(done["n_pool"] > 0) & (done["n_pool"] < EXPECTED_POOLS)],
+    add("배당 일부",
+        settled_days[(settled_days["n_pool"] > 0)
+                     & (settled_days["n_pool"] < EXPECTED_POOLS)],
         f"승식 {EXPECTED_POOLS}종 중 일부만 들어왔다")
 
     # 시행됐는데 착순이 없는 경주. 마사회가 1~3착을 먼저 내므로 경주 직후에는

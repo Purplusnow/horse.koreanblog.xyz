@@ -630,18 +630,26 @@ def build(db: str, out_dir: Path, config: Dict, template_dir: Path,
 
         today = today_kst()
         now_hm = now_kst().strftime("%H:%M")
-        # 오늘 이후 경주는 이미 시행된 것도 그날 목록에 함께 싣는다.
-        # 끝난 경주를 아래로 빼면 그날 카드가 앞뒤로 갈려, 방문자가 시간표를
-        # 이어서 볼 수 없다. 시행된 경주는 승률 대신 착순이 찍힌다.
-        upcoming = [r for r in races if r["date_obj"] and r["date_obj"] >= today]
+        # **끝난 경주는 위에 두지 않는다.**
+        #
+        # 예전에는 오늘 것이면 이미 시행된 경주도 그날 목록에 함께 실었다 —
+        # 시간표를 이어서 보게 하려는 뜻이었다. 그런데 화면 맨 위는 '아직 살 수
+        # 있는 경주'를 보는 자리다. 착순이 찍힌 카드가 거기 섞여 있으면 무엇이
+        # 남았는지 한눈에 안 들어온다.
+        #
+        # 시행이 끝나는 대로 아래 결과로 내린다. 날짜가 아니라 결과 유무로
+        # 가른다 — 오늘 경주라도 끝났으면 지난 경주다.
+        upcoming = [r for r in races
+                    if r["date_obj"] and r["date_obj"] >= today and not r["has_result"]]
         upcoming.sort(key=_post_order)
         upcoming = upcoming[: config["build"]["upcoming_limit"]]
 
         # 지난 경주는 최근 것이 위로 — 같은 날 안에서도 늦게 뛴 경주가 먼저다
         past = sorted((r for r in races if r["has_result"]),
                       key=_post_order, reverse=True)[: config["build"]["past_races"]]
-        # 홈 하단에는 '어제 이전' 만 남긴다 (오늘 것은 위 목록에 이미 있다)
-        recent_past = [r for r in past if r["date_obj"] and r["date_obj"] < today]
+        # 홈 하단에는 끝난 경주를 모두 싣는다. 오늘 것도 시행이 끝났으면
+        # 여기로 내려온다 — 위 목록에서 빠졌으므로 여기 없으면 사라진다.
+        recent_past = past
 
         # 정적 파일 주소에 붙일 내용 해시.
         #
