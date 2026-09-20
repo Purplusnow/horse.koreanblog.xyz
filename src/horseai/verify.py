@@ -463,6 +463,38 @@ def highlights(rl: pd.DataFrame, limit: int = 6) -> Dict[str, List[Dict]]:
     return {"top": top, "recent": recent}
 
 
+# ── 신뢰도 등급별 페이지 (분리 가능) ─────────────────────────
+# 이 블록과 site.build_tier_pages, templates/tier.html, config 의
+# build.tier_pages 넷만 들어내면 나머지에 흔적이 남지 않는다.
+TIER_LABELS = ("강승부", "중승부", "약승부")
+TIER_SLUGS = {"강승부": "strong", "중승부": "mid", "약승부": "weak"}
+
+
+def tier_reports(rl: pd.DataFrame) -> Dict[str, Dict]:
+    """등급별로 '적중률 페이지 한 장'에 해당하는 집계를 따로 낸다.
+
+    by_conf 는 등급마다 한 줄 요약이라 표 한 칸에는 맞지만 페이지를 채우지는
+    못한다. 여기서는 승식별·경주일별까지 등급 안에서 다시 계산한다 — 강승부만
+    골라 샀을 때 어느 승식이 남는지는 전체 평균으로는 알 수 없다.
+    """
+    if rl.empty or "conf_label" not in rl:
+        return {}
+    out: Dict[str, Dict] = {}
+    for label in TIER_LABELS:
+        g = rl[rl["conf_label"] == label]
+        if g.empty:
+            continue
+        row = summarize(g)
+        row["label"] = label
+        out[TIER_SLUGS[label]] = {
+            "label": label,
+            "overall": row,
+            "by_bet": bet_summary(g),
+            "daily": daily_summary(g),
+        }
+    return out
+
+
 def build_report(conn: sqlite3.Connection) -> Dict:
     df = load_verified(conn)
     rl = race_level(df, load_dividends(conn))
@@ -573,6 +605,7 @@ def build_report(conn: sqlite3.Connection) -> Dict:
         "last_90d": summarize(last90),
         "monthly": monthly,
         "by_bet": bet_summary(rl),
+        "tiers": tier_reports(rl),
         "highlights": highlights(rl),
         "daily": daily_summary(rl),
         "by_meet": by_meet,

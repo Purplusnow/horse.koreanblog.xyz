@@ -603,6 +603,43 @@ def write(path: Path, content: str) -> None:
     path.write_text(content, encoding="utf-8")
 
 
+# ── 신뢰도 등급별 페이지 (분리 가능) ─────────────────────────
+# config build.tier_pages 로 끈다. 끄면 탭·페이지·사이트맵 어디에도 나오지
+# 않는다. 들어낼 때는 이 함수와 verify.tier_reports, templates/tier.html,
+# config 의 그 줄 넷만 지우면 된다 — 나머지 화면은 이 기능을 모른다.
+TIER_ORDER = ("strong", "mid", "weak")
+
+
+def tier_tabs(accuracy: Dict, enabled: bool) -> List[Dict]:
+    """메뉴와 페이지 안 전환줄에 쓸 탭 목록. 꺼져 있으면 빈 목록이다."""
+    if not enabled:
+        return []
+    tiers = (accuracy or {}).get("tiers") or {}
+    return [{"url": f"/tier/{slug}/", "label": tiers[slug]["label"],
+             "n_races": tiers[slug]["overall"]["n_races"]}
+            for slug in TIER_ORDER if slug in tiers]
+
+
+def build_tier_pages(env, out_dir: Path, ctx_base: Dict, accuracy: Dict,
+                     tabs: List[Dict]) -> List[str]:
+    """등급 페이지를 굽고 사이트맵에 넣을 주소를 돌려준다."""
+    if not tabs:
+        return []
+    tiers = accuracy["tiers"]
+    urls = []
+    for slug in TIER_ORDER:
+        if slug not in tiers:
+            continue
+        url = f"/tier/{slug}/"
+        write(out_dir / "tier" / slug / "index.html",
+              # tier_tabs 는 ctx_base 에 이미 들어 있다 — 메뉴가 모든 페이지에서
+              # 같아야 하기 때문이다. 여기서 또 넘기면 중복 인자로 죽는다.
+              env.get_template("tier.html").render(
+                  **ctx_base, tier=tiers[slug], page_url=url))
+        urls.append(url)
+    return urls
+
+
 def build(db: str, out_dir: Path, config: Dict, template_dir: Path,
           static_dir: Path) -> Dict[str, int]:
     set_min_sample(config.get("build", {}).get("min_sample"))
@@ -674,6 +711,9 @@ def build(db: str, out_dir: Path, config: Dict, template_dir: Path,
             "build_time_short": now_kst().strftime("%m월 %d일 %H:%M"),
             "build_iso": now_kst().strftime("%Y-%m-%dT%H:%M:00+09:00"),
             "today": today.isoformat(),
+            # 등급 탭. 꺼져 있으면 빈 목록이라 메뉴에 아무것도 안 나온다.
+            "tier_tabs": tier_tabs(accuracy,
+                                   config["build"].get("tier_pages", False)),
         }
 
         # 개별 경주 페이지
@@ -746,6 +786,8 @@ def build(db: str, out_dir: Path, config: Dict, template_dir: Path,
         ))
         write(out_dir / "accuracy" / "index.html",
               env.get_template("accuracy.html").render(**ctx_base, page_url="/accuracy/"))
+        tier_urls = build_tier_pages(env, out_dir, ctx_base, accuracy,
+                                     ctx_base["tier_tabs"])
         write(out_dir / "results" / "index.html",
               env.get_template("results.html").render(**ctx_base, past=past,
                                                       page_url="/results/"))
@@ -834,6 +876,7 @@ def build(db: str, out_dir: Path, config: Dict, template_dir: Path,
         # sitemap / robots
         base = config["site"]["url"].rstrip("/")
         urls = (["/", "/accuracy/", "/results/"]
+                + tier_urls                       # 등급 페이지 (꺼져 있으면 빈 목록)
                 + [d["url"] for d in day_pages]
                 + [r["url"] for r in detail_pages]
                 + [h["url"] for h in horse_pages])

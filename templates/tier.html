@@ -1,0 +1,139 @@
+{% extends "base.html" %}
+{% from "_macros.html" import ad %}
+{# 신뢰도 등급별 적중률 — **분리 가능한 곁가지**.
+
+   이 파일과 verify.tier_reports, site.build_tier_pages, config 의
+   build.tier_pages 넷만 들어내면 나머지 화면에 흔적이 남지 않는다.
+   기존 적중률 페이지와 같은 표를 쓰되, 대상이 그 등급 경주로 좁혀진 것뿐이다. #}
+{% set o = tier.overall %}
+
+{% block title %}{{ tier.label }} 적중률 · 추천 강도별 경마 통계 | {{ site.name }}{% endblock %}
+{% block description %}
+{{ tier.label }}로 게재한 {{ '{:,}'.format(o.n_races) }}경주 집계 결과, 1순위 마필이 1착 {{ '%.1f'|format(o.hit_win * 100) }}%, 3착 이내 {{ '%.1f'|format(o.hit_place * 100) }}%.
+{% endblock %}
+
+{% block content %}
+
+<header class="page-header">
+  <h1>{{ tier.label }} 적중률</h1>
+  <p class="page-lead">
+    경주마다 매기는 <strong>신뢰도 등급</strong> 가운데 <b>{{ tier.label }}</b>만 모아
+    따로 집계했습니다. 등급은 발주 전 예상과 함께 게재하며, 나중에 고치지 않습니다.
+  </p>
+</header>
+
+{# 등급 사이를 오갈 수 있어야 비교가 된다. 한 등급만 보면 높은지 낮은지 알 수 없다. #}
+<nav class="tier-switch">
+  {% for t in tier_tabs %}
+  <a href="{{ t.url }}"{% if t.url == page_url %} class="is-here" aria-current="page"{% endif %}>
+    {{ t.label }}<small>{{ t.n_races }}경주</small>
+  </a>
+  {% endfor %}
+  <a href="/accuracy/">전체<small>{{ '{:,}'.format(accuracy.overall.n_races) }}경주</small></a>
+</nav>
+
+{{ ad(adsense, 'slot_top') }}
+
+{% if o.n_races < (site.min_headline or 100) %}
+<section class="panel panel-caution">
+  <h2>표본이 아직 적습니다</h2>
+  <p>
+    {{ tier.label }}는 현재까지 {{ '{:,}'.format(o.n_races) }}경주가 집계됐습니다.
+    등급별로 나누면 표본이 그만큼 더 얇아져, 한 주 만에 수치가 크게 움직입니다.
+    <b>현재 수준을 나타내는 값으로 읽기에는 이릅니다.</b>
+  </p>
+</section>
+{% endif %}
+
+<section class="stat-grid">
+  <div class="stat">
+    <span class="stat-label">1순위 1착</span>
+    <span class="stat-value">{{ '%.1f'|format(o.hit_win * 100) }}<small>%</small></span>
+    <span class="stat-note">1순위 마필이 우승</span>
+  </div>
+  <div class="stat">
+    <span class="stat-label">1순위 3착 이내</span>
+    <span class="stat-value">{{ '%.1f'|format(o.hit_place * 100) }}<small>%</small></span>
+    <span class="stat-note">1순위 마필이 입상</span>
+  </div>
+  <div class="stat">
+    <span class="stat-label">상위 3두 중 우승마</span>
+    <span class="stat-value">{{ '%.1f'|format(o.hit_top3_has_winner * 100) }}<small>%</small></span>
+    <span class="stat-note">상위 3두 안에 우승마</span>
+  </div>
+  <div class="stat">
+    <span class="stat-label">검증 경주</span>
+    <span class="stat-value">{{ '{:,}'.format(o.n_races) }}</span>
+    <span class="stat-note">{{ o.first_date }} ~ {{ o.last_date }}</span>
+  </div>
+</section>
+
+{% if tier.daily %}
+<section class="table-section">
+  <h2>경주일별 성적</h2>
+  <p class="panel-lead">
+    {{ tier.label }} 경주만 날짜별로 끊은 것입니다. 하루에 한두 경주만 해당하는
+    날도 있어, 그런 날의 수치는 특히 크게 흔들립니다.
+  </p>
+  <div class="table-scroll">
+    <table class="stats-table">
+      <thead><tr>
+        <th>경주일</th><th class="c-num">경주</th><th class="c-num">매수</th>
+        <th class="c-num">적중</th><th class="c-num">적중률</th><th class="c-num">환수율</th>
+      </tr></thead>
+      <tbody>
+        {% for d in tier.daily %}
+        <tr>
+          <td>{{ d.date }}</td>
+          <td class="c-num">{{ d.n_races }}</td>
+          <td class="c-num">{{ '{:,}'.format(d.tickets) }}</td>
+          <td class="c-num">{{ d.hits }}</td>
+          <td class="c-num">{{ '%.1f'|format(d.hit_rate * 100) }}%</td>
+          <td class="c-num{% if d.roi >= 1 %} roi-plus{% endif %}">{{ '%.0f'|format(d.roi * 100) }}%</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+{% endif %}
+
+{% if tier.by_bet %}
+<section class="table-section">
+  <h2>승식별 적중률과 환수율</h2>
+  <p class="panel-lead">
+    {{ tier.label }} 경주만 골라 매 경주 균등하게 샀다고 가정한 결과입니다.
+    등급을 나누는 뜻이 여기에 있습니다 — 어느 등급에서 어느 승식이 남는지는
+    전체 평균으로는 보이지 않습니다.
+  </p>
+  <div class="table-scroll">
+    <table class="stats-table bet-table">
+      <thead><tr>
+        <th>승식</th><th class="c-num">매수</th><th class="c-num">경주</th>
+        <th class="c-num">적중률</th><th class="c-num">환수율</th>
+      </tr></thead>
+      <tbody>
+        {% for b in tier.by_bet %}
+        <tr{% if b.is_total %} class="bet-total"{% elif '박스' in b.name %} class="bet-box"{% endif %}>
+          <td>{{ b.name }}</td>
+          <td class="c-num">{{ b.tickets }}</td>
+          <td class="c-num">{{ '{:,}'.format(b.n_races) }}</td>
+          <td class="c-num">{{ '%.1f'|format(b.hit_rate * 100) }}%</td>
+          <td class="c-num{% if b.roi and b.roi >= 1 %} roi-plus{% endif %}">
+            {% if b.roi is not none %}{{ '%.0f'|format(b.roi * 100) }}%{% else %}-{% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  <p class="panel-more">
+    환수율은 100%가 본전 기준입니다. 등급별로 나누면 표본이 얇아지므로,
+    적중 한 건이 수치를 크게 움직입니다. 전체 집계와 함께 보시기를 권합니다.
+  </p>
+</section>
+{% endif %}
+
+{{ ad(adsense, 'slot_bottom') }}
+
+{% endblock %}
