@@ -33,6 +33,7 @@ from jinja2 import Environment, FileSystemLoader, select_autoescape
 from .clock import now_kst, today_kst
 from .kra.normalize import MAX_ORD, ORD_STATUS
 from .kra.store import session
+from .paper import build_paper_pages, pick_day
 from .style import STYLE_LABEL, STYLES, pace_map
 from .verify import (
     POOL_LABEL, _combos, build_report, load_dividends, set_min_sample,
@@ -647,7 +648,7 @@ def build(db: str, out_dir: Path, config: Dict, template_dir: Path,
     # 이전 빌드의 잔여 페이지를 지운다. 남겨 두면 삭제된 경주가 사이트에 계속
     # 살아 있고, sitemap 과 실제 페이지가 어긋난다.
     # about 은 페이지를 없앤 뒤에도 이전 빌드 산출물이 남아 있으면 계속 살아 있다
-    for stale in ("race", "horse", "about", "day"):
+    for stale in ("race", "horse", "about", "day", "paper"):
         if (out_dir / stale).exists():
             shutil.rmtree(out_dir / stale)
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -693,7 +694,7 @@ def build(db: str, out_dir: Path, config: Dict, template_dir: Path,
         # 없으면 브라우저가 예전 track.js·style.css 를 계속 쓴다. 실제로 레인
         # 간격을 고쳐 배포하고도 화면이 그대로여서 한참 딴 데를 짚었다.
         assets = {}
-        for f in ("track.js", "style.css", "clock.js"):
+        for f in ("track.js", "style.css", "clock.js", "paper.css"):
             src = static_dir / f
             if src.exists():
                 assets[f] = hashlib.md5(src.read_bytes()).hexdigest()[:8]
@@ -715,6 +716,39 @@ def build(db: str, out_dir: Path, config: Dict, template_dir: Path,
             "tier_tabs": tier_tabs(accuracy,
                                    config["build"].get("tier_pages", False)),
         }
+
+        # ── 지면(레거시 예상지) ─────────────────────────────────
+        # config build.paper 로 끈다. 꺼지면 페이지도 사이트맵 항목도 안 생긴다.
+        #
+        # 날짜별 주소로 쌓는다(/paper/<날짜>/). 한 장을 매일 덮어쓰면 색인되는
+        # 주소가 영원히 하나지만, 날짜를 박으면 경주일마다 고유 주소가 늘어난다.
+        #
+        # 다만 **어느 날짜까지 낼지는 config 가 정한다.** 지난 지면을 공개하는
+        # 것은 색인 자산이 되는 동시에 별개의 판단이라, 코드가 혼자 정하지 않는다.
+        paper_urls: List[str] = []
+        if config["build"].get("paper", False):
+            all_days = [r[0] for r in conn.execute(
+                """SELECT DISTINCT g.rc_date FROM predictions p
+                   JOIN races g ON g.race_key = p.race_key
+                   ORDER BY g.rc_date""").fetchall()]
+            if config["build"].get("paper_days") == "all":
+                paper_days = all_days
+            else:
+                # 하루만. 경마 없는 날에도 /paper/ 가 남도록 물러난다 —
+                # 왜 그래야 하는지는 paper.pick_day 에 적어 두었다.
+                paper_days = pick_day(all_days, today.isoformat())
+            paper_urls = build_paper_pages(env, out_dir, ctx_base, conn,
+                                           paper_days, today.isoformat())
+            log.info("지면 %d일분", len(paper_urls))
+
+        # 지면 링크. 홈·날짜 페이지가 이 주소를 쓰므로 먼저 확정한다.
+        # 없는 날이면 None 이라 링크 자체가 나가지 않는다 — 404 로 보내지 않는다.
+        # 실제로 구운 날짜를 가리킨다. 오늘이 경마 없는 날이면 /paper/ 는
+        # 가장 가까운 경주일을 보여 주므로, 링크의 day 도 그 날짜여야
+        # 날짜 페이지에서 '이 날 지면' 판정이 맞는다.
+        ctx_base["paper_link"] = (
+            {"url": "/paper/", "day": paper_urls[-1].strip("/").split("/")[-1]}
+            if paper_urls else None)
 
         # 개별 경주 페이지
         detail_pages = []
@@ -840,7 +874,7 @@ def build(db: str, out_dir: Path, config: Dict, template_dir: Path,
             write(out_dir / "day" / day / "index.html",
                   env.get_template("day.html").render(
                       **ctx_base, races=rows, label=label, meets=meets,
-                      meets_kw=meets_kw,
+                      meets_kw=meets_kw, day=day,
                       page_url=url))
             day_pages.append({"url": url, "date": day, "n": len(rows)})
 
@@ -877,6 +911,7 @@ def build(db: str, out_dir: Path, config: Dict, template_dir: Path,
         base = config["site"]["url"].rstrip("/")
         urls = (["/", "/accuracy/", "/results/"]
                 + tier_urls                       # 등급 페이지 (꺼져 있으면 빈 목록)
+                + paper_urls                      # 지면 (꺼져 있으면 빈 목록)
                 + [d["url"] for d in day_pages]
                 + [r["url"] for r in detail_pages]
                 + [h["url"] for h in horse_pages])

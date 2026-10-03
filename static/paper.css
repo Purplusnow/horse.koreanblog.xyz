@@ -1,0 +1,371 @@
+/* 지면(레거시 예상지) 전용 스타일.
+ *
+ * 사이트 본문(style.css)과 섞지 않는다. 이 지면은 1990년대 경마 전문지의
+ * 윤전 지면을 흉내 내는 것이 목적이라, 사이트의 헤더·네비·여백 규칙을
+ * 물려받으면 그 느낌이 바로 죽는다. 같은 도메인에 있으면서 방 하나만
+ * 다른 시대로 꾸미는 셈이다.
+ */
+/* ── 윤전 2색 지면. 종이 위의 물건이라 한 가지 모습으로 간다 ── */
+:root{
+  --paper:#efe9d9; --paper2:#e7e0cc; --tint:#ddd4ba; --tint2:#cfc4a5;
+  --ink:#16130d; --ink2:#423a2b; --ink3:#6b6049;
+  --rule:#1d1810; --hair:#9a8f73;
+  --red:#b3121f; --green:#15682f; --blue:#17386e;
+}
+*{box-sizing:border-box}
+body{
+  background:var(--paper2); color:var(--ink);
+  font-family:"Nanum Gothic","Apple SD Gothic Neo","Malgun Gothic",sans-serif;
+  font-size:14px; line-height:1.5; margin:0; -webkit-text-size-adjust:100%;
+}
+.sheet{
+  max-width:980px; margin:0 auto; background:var(--paper);
+  padding:0 16px 56px; position:relative;
+  border-left:1px solid var(--hair); border-right:1px solid var(--hair);
+  box-shadow:0 0 0 1px rgba(0,0,0,.04), 0 2px 18px rgba(30,24,10,.13);
+}
+.sheet::before{
+  content:""; position:absolute; inset:0; pointer-events:none; z-index:3; opacity:.5;
+  background-image:url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="160" height="160"><filter id="n"><feTurbulence type="fractalNoise" baseFrequency="0.86" numOctaves="3" stitchTiles="stitch"/><feColorMatrix type="saturate" values="0"/></filter><rect width="160" height="160" filter="url(%23n)" opacity="0.26"/></svg>');
+  mix-blend-mode:multiply;
+}
+.sheet>*{position:relative; z-index:4}
+
+/* ── 제호 ── */
+.masthead{
+  margin:0 -16px; padding:14px 16px 12px; background:var(--green);
+  border-bottom:4px solid var(--rule); color:#f6f0d8;
+  display:flex; align-items:flex-end; gap:14px; flex-wrap:wrap;
+}
+.mh-l{flex:1 1 320px; min-width:0}
+.mh-kicker{font-family:"Gothic A1",sans-serif; font-weight:700; font-size:11px;
+  letter-spacing:.26em; color:#cfe6c4; margin:0 0 4px}
+.mh-title{font-family:"Black Han Sans","Nanum Gothic",sans-serif; font-weight:400;
+  font-size:clamp(30px,8.4vw,54px); line-height:.95; letter-spacing:-.02em;
+  color:#ffe14d; margin:0; text-shadow:2px 2px 0 rgba(0,0,0,.34); text-wrap:balance}
+.mh-sub{font-family:"Gothic A1",sans-serif; font-weight:700; font-size:12.5px;
+  color:#e3f0dc; margin:6px 0 0}
+.mh-r{flex:0 0 auto; text-align:right}
+.mh-seal{display:inline-block; background:var(--red); color:#fff5e8;
+  font-family:"Gothic A1",sans-serif; font-weight:900; font-size:11.5px;
+  letter-spacing:.08em; padding:5px 11px; border:2px solid #fff5e8;
+  box-shadow:3px 3px 0 rgba(0,0,0,.3); transform:rotate(-2.5deg)}
+.mh-date{font-family:"Nanum Myeongjo",serif; font-weight:800; font-size:15px;
+  color:#fff; margin-top:10px; white-space:nowrap}
+
+.strap{margin:0 -16px; padding:7px 16px; background:var(--ink); color:var(--paper);
+  display:flex; gap:16px; flex-wrap:wrap; font-family:"Gothic A1",sans-serif;
+  font-size:11.5px; font-weight:700; letter-spacing:.04em}
+.strap b{color:#ffd84d}
+
+
+/* ── 표 공통 ── */
+.oval-wrap{text-align:center; margin:22px 0 8px}
+.oval{display:inline-block; font-family:"Gothic A1",sans-serif; font-weight:900;
+  font-size:12.5px; letter-spacing:.1em; color:var(--ink);
+  border:2px solid var(--rule); border-radius:999px; padding:5px 18px; background:var(--paper)}
+.scroll{overflow-x:auto; -webkit-overflow-scrolling:touch}
+.grid{width:100%; border-collapse:collapse; background:var(--paper);
+  border:2.5px solid var(--rule); font-variant-numeric:tabular-nums}
+.grid th,.grid td{border:1px solid var(--hair); padding:4px 5px; vertical-align:middle}
+.grid thead th{background:var(--tint); font-family:"Gothic A1",sans-serif;
+  font-weight:900; font-size:11.5px; letter-spacing:.06em;
+  border-bottom:2px solid var(--rule); white-space:nowrap}
+.thn{display:block; font-weight:400; font-size:9.5px; color:var(--ink3); letter-spacing:0}
+.grid tbody tr:nth-child(even){background:rgba(190,176,138,.17)}
+.dim{color:var(--ink3); font-size:10.5px}
+.none{color:var(--ink3); font-size:11.5px}
+
+/* 경마장 표식 */
+.mt{display:inline-block; font-family:"Gothic A1",sans-serif; font-weight:900;
+  font-size:9.5px; letter-spacing:.06em; padding:1px 5px; margin-bottom:2px;
+  color:#fff; line-height:1.5}
+.mt-서울{background:var(--blue)} .mt-제주{background:var(--green)}
+.mt-부산경남{background:#6b4a12} .mt-영천{background:#5a2a6b}
+
+/* 편성 일람 */
+.summary{min-width:740px; font-size:12.5px}
+.w-time{width:52px} .w-rc{width:56px} .w-cond{width:92px} .w-star{width:78px}
+.c-time{text-align:center; font-family:"Gothic A1",sans-serif; font-weight:700;
+  font-size:13px; color:var(--red); background:rgba(190,176,138,.22)}
+.c-rc{text-align:center; background:var(--tint2); border-right:2px solid var(--rule)}
+.c-rc b{display:block; font-family:"Black Han Sans",sans-serif; font-size:20px;
+  line-height:1; color:var(--ink)}
+.c-rc i{display:block; font-style:normal; font-size:10px; color:var(--ink3)}
+.c-cond{text-align:center; font-size:11px; line-height:1.4; color:var(--ink2)}
+.c-h{padding:3px 5px}
+.hs{display:flex; align-items:center; gap:5px; padding:1.5px 0}
+.hs .no{flex:0 0 auto; min-width:19px; text-align:center; background:var(--ink);
+  color:var(--paper); font-size:11px; font-weight:800; padding:1px 3px; line-height:1.4}
+.hs .nm{font-weight:700; font-size:12.5px; overflow-wrap:anywhere}
+.c-star{text-align:center; white-space:nowrap}
+.stars{color:var(--red); font-size:13px; letter-spacing:-.5px}
+.stars u{color:var(--tint2); text-decoration:none}
+
+/* ── 경주 블록 ── */
+.races{display:flex; flex-direction:column; gap:18px; margin-top:14px}
+.race{border:2.5px solid var(--rule); background:var(--paper)}
+.rh{display:flex; align-items:stretch; border-bottom:2px solid var(--rule)}
+.rh-no{flex:0 0 66px; background:var(--ink); color:var(--paper);
+  display:flex; flex-direction:column; align-items:center; justify-content:center; padding:7px 4px}
+.rh-no b{font-family:"Black Han Sans",sans-serif; font-size:33px; line-height:.9; color:#ffe14d}
+.rh-no i{font-style:normal; font-size:10.5px; letter-spacing:.2em; margin-top:3px}
+.rh-mid{flex:1 1 auto; padding:7px 11px; min-width:0}
+.rh-top{display:flex; align-items:center; gap:9px; flex-wrap:wrap}
+.rh-meet{font-family:"Gothic A1",sans-serif; font-weight:900; font-size:11.5px;
+  letter-spacing:.1em; color:#fff; padding:2px 8px}
+.rh-time{font-family:"Gothic A1",sans-serif; font-weight:700; font-size:12.5px; color:var(--red)}
+.rh-dist{font-family:"Black Han Sans",sans-serif; font-size:25px; line-height:1.08; margin-top:1px}
+.rh-dist u{font-size:14px; text-decoration:none; color:var(--ink3); margin-left:1px}
+.rh-cond{font-size:11.5px; color:var(--ink2); margin-top:1px; overflow-wrap:anywhere}
+.rh-star{flex:0 0 auto; border-left:1px solid var(--hair); padding:7px 10px;
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  gap:3px; background:rgba(190,176,138,.2); text-align:center}
+.rh-star-l{font-family:"Gothic A1",sans-serif; font-size:10px; font-weight:700;
+  letter-spacing:.12em; color:var(--ink3)}
+.rh-conf{font-family:"Gothic A1",sans-serif; font-size:10.5px; font-weight:900;
+  letter-spacing:.06em; padding:1.5px 7px; border:1.5px solid var(--rule)}
+.tier-강승부{background:var(--red); color:#fff3e8; border-color:var(--red)}
+.tier-중승부{background:var(--tint2); color:var(--ink)}
+.tier-약승부{background:transparent; color:var(--ink3); border-color:var(--hair)}
+
+.rlead{padding:9px 12px; border-bottom:1px solid var(--hair); background:rgba(190,176,138,.12)}
+.rlead h3{font-family:"Nanum Myeongjo",serif; font-weight:800; font-size:17px;
+  margin:0; letter-spacing:-.01em; text-wrap:balance}
+.rlead h3::before{content:"「"; color:var(--red)}
+.rlead h3::after{content:"」"; color:var(--red)}
+.rlead p{margin:3px 0 0; font-size:12px; color:var(--ink2); line-height:1.55}
+.rlead b{color:var(--ink)}
+.pace{margin-top:6px; display:flex; gap:12px; flex-wrap:wrap;
+  border-top:1px dotted var(--hair); padding-top:6px}
+.pc{font-size:12px; color:var(--ink2); font-variant-numeric:tabular-nums}
+.pc b{font-family:"Gothic A1",sans-serif; font-size:10.5px; font-weight:900;
+  letter-spacing:.08em; color:var(--paper); background:var(--ink2);
+  padding:1px 5px; margin-right:5px}
+
+/* 예상표 */
+.picks{border:0; min-width:860px; font-size:13px}
+.picks thead th{border-top:0}
+.w-mk{width:40px} .w-no{width:34px} .w-nm{width:124px} .w-jk{width:82px}
+.w-st{width:44px} .w-rd{width:104px} .w-lad{width:148px} .w-p{width:112px} .w-p2{width:56px}
+.c-mk{text-align:center; padding:2px}
+.mk{display:inline-flex; align-items:center; justify-content:center;
+  width:25px; height:25px; font-size:15px; font-weight:800; line-height:1}
+.mk-star{background:var(--red); color:#fff3e8; border-radius:50%}
+.mk-axis{background:var(--ink); color:var(--paper); border-radius:50%}
+.mk-ls{background:var(--blue); color:#eef3fb; font-family:"Gothic A1",sans-serif;
+  font-size:9.5px; font-weight:900; line-height:1.05}
+.c-no{text-align:center}
+.c-no b{display:inline-block; min-width:21px; background:var(--ink); color:var(--paper);
+  font-size:12.5px; font-weight:800; padding:1px 4px}
+.c-nm .hn{display:block; font-weight:800; font-size:14px; letter-spacing:-.01em;
+  overflow-wrap:anywhere; line-height:1.25}
+.sub{display:block; font-style:normal; font-size:10.5px; color:var(--ink3); margin-top:1px}
+.c-jk{font-size:12px; color:var(--ink2); text-align:center}
+.c-st{text-align:center; font-size:11.5px; color:var(--ink2)}
+.c-rd{font-size:11.5px; line-height:1.4; text-align:center}
+.c-rd b{font-size:12.5px}
+.rec{font-variant-numeric:tabular-nums; color:var(--ink2)}
+.dim2{display:block; font-style:normal; font-size:10px; color:var(--ink3)}
+.c-lad{padding:3px 4px}
+.lad{display:flex; gap:3px}
+.fin{flex:0 0 auto; width:25px; border:1px solid var(--hair); background:var(--paper);
+  text-align:center; line-height:1.1; padding:2px 0}
+.fin b{display:block; font-size:13px; font-weight:800}
+.fin i{display:block; font-style:normal; font-size:8.5px; color:var(--ink3)}
+.fin.f1{background:var(--red); border-color:var(--red)}
+.fin.f1 b,.fin.f1 i{color:#fff3e8}
+.fin.f2{background:var(--ink2); border-color:var(--ink2)}
+.fin.f2 b,.fin.f2 i{color:var(--paper)}
+.fin.f3{border-color:var(--rule); border-width:2px}
+.rookie{display:inline-block; font-family:"Gothic A1",sans-serif; font-weight:900;
+  font-size:10.5px; letter-spacing:.1em; border:1.5px dashed var(--hair);
+  color:var(--ink3); padding:2px 8px}
+.c-p{padding:3px 6px}
+.pb{display:block; height:9px; background:var(--tint2); border:1px solid var(--hair); margin-bottom:2px}
+.pb i{display:block; height:100%; background:var(--ink)}
+.c-p .pv{font-size:12.5px; font-weight:800}
+.c-p2{text-align:right; font-size:12.5px; color:var(--ink2); padding-right:8px}
+tr.ls{background:rgba(23,56,110,.09) !important}
+tr.ls .c-nm .hn{color:var(--blue)}
+.ls-note{font-size:11.5px; color:var(--blue); font-weight:700; text-align:left}
+
+/* ── 범례 ── */
+.legend{margin-top:26px; border:2.5px solid var(--rule); background:var(--paper)}
+.legend h2{margin:0; background:var(--ink); color:#ffe14d; padding:7px 13px;
+  font-family:"Gothic A1",sans-serif; font-size:13px; font-weight:900; letter-spacing:.14em}
+.lg-body{padding:12px 13px; display:grid; gap:9px;
+  grid-template-columns:repeat(auto-fit,minmax(238px,1fr))}
+.lg-item{display:flex; gap:9px; align-items:flex-start}
+.lg-k{flex:0 0 auto; min-width:32px; text-align:center; font-weight:800;
+  font-size:15px; color:var(--red)}
+.lg-t{font-size:12.5px; line-height:1.55}
+.lg-t b{display:block; font-family:"Gothic A1",sans-serif; font-size:12px;
+  font-weight:900; letter-spacing:.04em}
+.lg-t span{color:var(--ink2)}
+.lg-foot{border-top:1px solid var(--hair); padding:10px 13px; font-size:11.5px;
+  color:var(--ink3); line-height:1.65}
+.colophon{margin-top:20px; border-top:3px double var(--rule); padding-top:11px;
+  font-size:11.5px; color:var(--ink3); line-height:1.7}
+.colophon b{font-family:"Gothic A1",sans-serif; font-weight:900; color:var(--ink2)}
+
+/* ── 소제목 (전개·기록·해설 공통) ── */
+.sub-h{
+  margin:0; padding:5px 11px; background:var(--ink2); color:var(--paper);
+  font-family:"Gothic A1",sans-serif; font-size:11px; font-weight:900;
+  letter-spacing:.14em; display:flex; align-items:center; gap:9px; flex-wrap:wrap;
+}
+.thn2{font-weight:400; font-size:9.5px; letter-spacing:0; color:#c3b795}
+
+/* ── 전개 예상 ── */
+.pace-box{border-bottom:1px solid var(--hair)}
+.pace-kind{
+  font-size:10.5px; font-weight:900; letter-spacing:.08em;
+  padding:1px 7px; border:1px solid currentColor;
+}
+.pk-fast{color:#ff9a9a} .pk-slow{color:#9ec8ff} .pk-mid{color:#d8ceae}
+.pace{display:flex; gap:10px; flex-wrap:wrap; padding:8px 11px 2px}
+.pc{font-size:12px; color:var(--ink2); display:flex; align-items:center; gap:4px}
+.pc b{
+  font-family:"Gothic A1",sans-serif; font-size:10.5px; font-weight:900;
+  letter-spacing:.08em; color:var(--paper); background:var(--ink2);
+  padding:2px 6px; margin-right:2px;
+}
+.pace em{
+  font-style:normal; display:inline-block; min-width:19px; text-align:center;
+  border:1px solid var(--hair); background:var(--paper); font-size:11.5px;
+  font-weight:700; padding:1px 3px; margin-right:3px; line-height:1.4;
+}
+.pace em.p{background:var(--ink); color:var(--paper); border-color:var(--ink)}
+.pace-txt{
+  margin:0; padding:4px 11px 9px; font-size:12.5px; line-height:1.72; color:var(--ink2);
+}
+
+/* ── 기록·시속 ── */
+.tempo-wrap{border-top:2px solid var(--rule)}
+.tempo{border:0; min-width:600px; font-size:12.5px}
+.tempo thead th{border-top:0; line-height:1.25}
+.w-tnm{width:108px} .w-trec{width:104px}
+.t-nm{font-weight:800; font-size:13px; overflow-wrap:anywhere}
+.t-v{text-align:center; font-variant-numeric:tabular-nums; font-size:13px}
+.t-rec{font-size:12px}
+.rk{font-size:9.5px; margin-left:1px; vertical-align:super}
+.rk.r1{color:var(--red)} .rk.r2{color:var(--ink2)} .rk.r3{color:var(--ink3)}
+
+/* ── 경주 해설 ── */
+.note{border-top:2px solid var(--rule); background:rgba(190,176,138,.1)}
+.note ul{margin:0; padding:9px 13px 11px 28px}
+.note li{
+  font-family:"Nanum Myeongjo",serif; font-size:13.5px; line-height:1.78;
+  color:var(--ink); margin-bottom:3px;
+}
+.note li::marker{color:var(--red)}
+.note li b{font-weight:800; background:#f4e39a; padding:0 2px}
+
+.src{
+  font-size:11.5px; line-height:1.68; color:var(--ink2);
+  border-left:3px solid var(--rule); padding-left:9px; margin:7px 0 0;
+}
+.colophon .src{border-left-color:var(--ink3); margin-top:8px; font-size:11px}
+.src b{
+  font-family:"Gothic A1",sans-serif; font-size:10px; font-weight:900;
+  letter-spacing:.1em; color:var(--paper); background:var(--ink2); padding:2px 6px;
+}
+.src em{font-style:normal; font-weight:800; color:var(--ink)}
+
+@media (max-width:620px){
+  .rh-no{flex-basis:52px} .rh-no b{font-size:26px} .rh-dist{font-size:21px}
+  .summary{min-width:660px}
+  .note li{font-size:12.5px}
+  .sub-h{font-size:10.5px}
+}
+@media print{
+  body{background:#fff} .sheet{box-shadow:none; border:0} .sheet::before{display:none}
+  .race{break-inside:avoid} .scroll{overflow:visible}
+}
+
+/* ── 광고 자리 ──────────────────────────────────────────────
+ *
+ * 실제 경마 전문지는 지면 사이사이에 광고가 가득했다. 광고 자리는 이 포맷의
+ * 침범이 아니라 구성 요소다. 그래서 숨기지 않고 **지면 문법으로** 짠다 —
+ * 위아래 괘선, 왼쪽에 .sub-h 와 같은 Gothic A1 「광 고」 라벨.
+ *
+ * 다만 선은 넘지 않는다. 라벨은 '광고'만 쓴다. '관련 경주'나 '추천'으로 달아
+ * 경주 블록처럼 보이게 하면 기만적 배치로 정책 위반이고, 승인된 계정이 걸리면
+ * 복구가 오래 걸린다.
+ */
+.ad-slot{
+  margin:18px 0; padding:0; border-top:2px solid var(--rule);
+  border-bottom:1px solid var(--hair); background:var(--paper);
+  /* 본문 중간에 늦게 로드되는 iframe 이 레이아웃을 밀면 CLS 가 깨진다.
+     긴 지면에 유닛이 여럿이라 체감이 크므로 높이를 미리 잡아 둔다. */
+  min-height:148px;
+}
+.ad-label{
+  display:block; padding:3px 11px; background:var(--ink2); color:var(--paper);
+  font-family:"Gothic A1",sans-serif; font-size:9.5px; font-weight:900;
+  letter-spacing:.3em;
+}
+.ad-slot ins{margin:0 auto}
+
+/* 지면 맨 아래 — 사이트 본문으로 돌아가는 길 */
+.paper-nav{
+  display:flex; gap:14px; flex-wrap:wrap; margin-top:11px;
+  padding-top:9px; border-top:1px solid var(--hair);
+}
+.paper-nav a{
+  font-family:"Gothic A1",sans-serif; font-size:11px; font-weight:700;
+  letter-spacing:.06em; color:var(--ink2); text-decoration:none;
+  border-bottom:1px solid var(--hair); padding-bottom:1px;
+}
+.paper-nav a:hover{color:var(--red); border-color:var(--red)}
+
+/* 경주번호는 상세 예상으로 가는 링크다. 눌리는 것으로 보이게만 한다. */
+a.rh-no{text-decoration:none; color:inherit; cursor:pointer}
+a.rh-no:hover b{color:var(--red)}
+
+/* 인쇄 — 레거시 책자 포맷이라 출력해 들고 가는 쓰임이 실제로 있다.
+   PDF 파일로는 내려주지 않는다(광고 수익이 0이다). 인쇄에서는 광고와
+   돌아가는 길을 뺀다 — 종이에서는 누를 수 없는 것들이다. */
+@media print{
+  .ad-slot, .paper-nav{display:none !important}
+  body{background:#fff}
+  .sheet{box-shadow:none; margin:0; max-width:none}
+  .race{break-inside:avoid}
+}
+
+/* ── 출주마 일람 (출마표) ──────────────────────────────────────
+ *
+ * 종이 예상지의 본체. 추천 다섯 두만 실으면 '왜 저 말은 안 뽑았나' 를 확인할
+ * 길이 없고, 마권을 짜는 사람은 1번부터 차례로 훑는다. 추천표보다 글자를
+ * 한 급 작게 잡아 '참고 자료' 로 읽히게 한다 — 지면의 주장은 위쪽 추천표다.
+ */
+.entry-wrap{border-top:2px solid var(--rule)}
+.entry{border:0; min-width:720px; font-size:12px}
+.entry thead th{border-top:0; line-height:1.25}
+.w-enm{width:104px} .w-ebd{width:42px} .w-ey1{width:58px}
+.w-lad3{width:96px} .w-epw{width:50px} .w-emk{width:44px}
+.entry .e-nm .hn{font-size:12.5px; font-weight:800}
+.entry .e-nm .sub{font-size:10px}
+.entry .e-bd{text-align:center; font-variant-numeric:tabular-nums}
+.entry .e-y1{text-align:center; font-size:11px; color:var(--ink2);
+             font-variant-numeric:tabular-nums}
+.entry .e-pw{text-align:right; font-variant-numeric:tabular-nums;
+             font-weight:800; font-size:12.5px}
+.entry .e-mk{text-align:center}
+.entry .e-mk .mk{font-size:14px}
+.entry .e-mk .mk-ls{font-size:9.5px; letter-spacing:0}
+.entry .c-rd{font-size:11px}
+.entry .c-rd .dim2{font-size:9.5px}
+
+/* 추천에 든 말은 같은 표 안에서 바로 찾을 수 있어야 한다 */
+.entry tr.is-pick{background:rgba(190,176,138,.26)}
+.entry tr.is-pick .e-nm .hn{color:var(--ink)}
+.entry tr.ls{background:rgba(23,56,110,.07)}
+
+@media (max-width:620px){
+  .entry{font-size:11.5px}
+}
+
+/* 범례 키가 두 줄이 되는 항목(출주마 일람) */
+.lg-k br{line-height:1.1}

@@ -27,6 +27,22 @@
   </p>
 </header>
 
+{% if paper_link and paper_link.day == day %}
+{# 지면 진입점.
+   같은 예상을 전문지 지면 한 장으로 싣는다. 경주 목록은 17개로 쪼개져 있어
+   공유가 안 되는데, 지면은 한 주소로 그날 전체가 넘어간다 — 커뮤니티에
+   던지기 좋은 모양이다. 지면이 상세 페이지를 대체하지 않도록, 지면 쪽
+   경주 번호는 다시 /race/ 로 들어오게 해 뒀다. #}
+<a class="paper-cta" href="{{ paper_link.url }}">
+  <span class="pc-tag">지면</span>
+  <span class="pc-body">
+    <b>오늘 예상을 전문지 지면 한 장으로</b>
+    <small>전 경주 추천 5두 · 복병 · 전개 예상 · 구간기록까지 세로로 이어 봅니다</small>
+  </span>
+  <span class="pc-go">›</span>
+</a>
+{% endif %}
+
 {{ ad(adsense, 'slot_top') }}
 
 <section class="day-section">

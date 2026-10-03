@@ -38,6 +38,17 @@ build:
   # 탭도, 페이지도, 사이트맵 항목도 생기지 않는다. 아예 들어낼 때는 이 줄과
   # verify.tier_reports, site.build_tier_pages, templates/tier.html 넷을 지운다.
   tier_pages: true
+  # 지면(레거시 예상지) — 하루치 예상을 전문지 지면 한 장으로 싣는다.
+  #
+  # **곁가지로 붙인 기능이라 끄면 흔적 없이 사라진다.** false 로 두면 /paper/
+  # 도, 날짜별 지면도, 사이트맵 항목도 생기지 않는다. 아예 들어낼 때는 이 줄과
+  # horseai/paper.py, templates/paper.html, static/paper.css 넷을 지운다.
+  paper: true
+  # 지면을 어느 날짜까지 낼 것인가.
+  #   today — 오늘 하루만 (기본)
+  #   all   — 예상이 남아 있는 모든 경주일. 과거 지면이 색인 자산으로 쌓이고
+  #           경주일마다 고유 주소가 늘어나지만, 지난 지면을 낼지는 별개 판단이다.
+  paper_days: today
   # 상세 페이지를 만들 과거 경주 수 (지난 결과 아카이브)
   past_races: 300
   # 목록에 노출할 다가올 경주 최대 수

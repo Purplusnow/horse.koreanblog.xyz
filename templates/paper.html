@@ -1,0 +1,120 @@
+{# 지면(레거시 예상지) 한 장.
+   base.html 을 물려받지 않는다 — 사이트 헤더·네비·여백 규칙을 입히면 윤전
+   지면 느낌이 바로 죽는다. 같은 도메인·같은 빌드에 있으면서 껍데기만 독립이다.
+   그래서 head 의 공통 항목(canonical·OG·GA4·애드센스 로더)은 여기서 다시 쓴다. #}
+{% from "_macros.html" import ad with context %}<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{ paper.date_short }} 경마 예상지 — {{ paper.meet_txt }} 전 경주 | {{ site.name }}</title>
+<meta name="description" content="{{ paper.date_sentence }} {{ paper.meet_txt }} 총 {{ paper.total }}경주의 예상을 전문지 지면 한 장으로 싣습니다. 경주별 추천 5두와 복병, 전개 예상, 구간기록·시속, 경주 해설을 발주 시각 순으로 수록했습니다.">
+{# canonical 은 늘 날짜 주소로 보낸다. /paper/ 와 /paper/<날짜>/ 가 같은 내용을
+   담으므로, 그대로 두면 색인이 두 주소로 갈려 둘 다 약해진다. #}
+<link rel="canonical" href="{{ site.url }}{{ canonical_url }}">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="{{ site.name }}">
+<meta property="og:locale" content="{{ site.locale }}">
+<meta property="og:title" content="{{ paper.date_short }} 경마 예상지 — {{ paper.meet_txt }}">
+<meta property="og:description" content="{{ paper.date_sentence }} 총 {{ paper.total }}경주. 추천 5두·복병·전개 예상·구간기록을 한 장에 담았습니다.">
+<meta property="og:url" content="{{ site.url }}{{ canonical_url }}">
+<meta name="twitter:card" content="summary">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Gothic+A1:wght@400;700;900&family=Nanum+Gothic:wght@400;700;800&family=Nanum+Myeongjo:wght@400;700;800&display=swap">
+<link rel="stylesheet" href="/static/paper.css?v={{ assets['paper.css'] }}">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🐎</text></svg>">
+{% include "_ga4.html" %}
+{% if adsense.client %}
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client={{ adsense.client }}" crossorigin="anonymous"></script>
+{% endif %}
+</head>
+<body class="paper-body">
+
+<div class="sheet">
+ <header class="masthead">
+  <div class="mh-l">
+   <p class="mh-kicker">자체 예측 엔진 · 전 경주 수록</p>
+   <h1 class="mh-title">{{ site.name }}</h1>
+   <p class="mh-sub">발주 전 게재 · 게재 후 수정하지 않습니다</p>
+  </div>
+  <div class="mh-r">
+   <span class="mh-seal">배당 미반영</span>
+   <div class="mh-date">{{ paper.date_long }}</div>
+  </div>
+ </header>
+
+ <div class="strap">
+  <span><b>오늘의 편성</b> {{ paper.meet_txt }} = 총 {{ paper.total }}경주</span>
+  <span><b>강승부</b> {{ paper.n_strong }}경주</span>
+  <span><b>복병</b> {{ paper.n_longshot }}두</span>
+  <span><b>발주</b> {{ paper.first_post }} ~ {{ paper.last_post }}</span>
+ </div>
+
+ {{ summary|safe }}
+
+ {# 지면의 1순위 광고 자리. 요약표를 보고 사람이 반드시 한 번 멈추는 지점이다.
+    제호 바로 아래(본문 앞)에는 두지 않는다 — 지면을 연 이유가 그 요약표인데
+    그 앞을 막으면 이탈이 뛰고, 이탈한 세션은 어느 유닛에서도 벌지 못한다. #}
+ {{ ad(adsense, 'slot_in_article', '광 고') }}
+
+ <div class="oval-wrap" style="margin-top:26px"><span class="oval">경주별 예상 · 출전마 분석</span></div>
+ <div class="races">
+ {% for b in blocks %}
+ {{ b.html|safe }}
+ {# 광고는 경주와 경주 **사이**에만. 경주 블록 안(전개예상↔예상표, 표↔해설)은
+    하나의 추론 단위라 거기서 끊으면 문장 중간에 끼어든 것으로 읽힌다.
+    자리 간격은 paper.AD_EVERY 가 정한다. #}
+ {% if b.ad %}{{ ad(adsense, 'slot_in_article', '광 고') }}{% endif %}
+ {% endfor %}
+ </div>
+
+ <section class="legend">
+  <h2>이 지면 보는 법</h2>
+  <div class="lg-body">
+   <div class="lg-item"><span class="lg-k">★</span><span class="lg-t"><b>우세가 뚜렷한 축</b><span>1순위가 2착 안에 들 확률이 특히 높을 때만 붙습니다. 흔하지 않습니다.</span></span></div>
+   <div class="lg-item"><span class="lg-k">◎</span><span class="lg-t"><b>축</b><span>그 경주의 중심에 두는 말. ★이 없는 경주에는 둘이 붙습니다.</span></span></div>
+   <div class="lg-item"><span class="lg-k">○</span><span class="lg-t"><b>상위 후보</b><span>축을 바로 뒤쫓는 자리입니다.</span></span></div>
+   <div class="lg-item"><span class="lg-k">△</span><span class="lg-t"><b>복병</b><span>다섯 두 안에서 뒤집을 만한 말.</span></span></div>
+   <div class="lg-item"><span class="lg-k">※</span><span class="lg-t"><b>참고</b><span>다섯째 자리. 넓게 볼 때 넣습니다.</span></span></div>
+   <div class="lg-item"><span class="lg-k" style="color:var(--blue);font-size:12px">복병</span><span class="lg-t"><b>다섯 두 밖의 한 마리</b><span>따로 세운 셈으로 고릅니다. 자신 없으면 내지 않아 모든 경주에 있지는 않습니다.</span></span></div>
+   <div class="lg-item"><span class="lg-k" style="font-size:12px">출주마<br>일람</span><span class="lg-t"><b>그 경주에 나온 전 두수</b><span>마번 순으로 늘어놓은 출마표입니다. 추천 다섯 두는 바탕이 짙고, 맨 오른쪽 칸에 기호가 함께 섭니다. 추천은 저희 의견이고 이 표가 그 판의 전부입니다.</span></span></div>
+   <div class="lg-item"><span class="lg-k" style="font-size:12px">금년</span><span class="lg-t"><b>올해 출전·우승</b><span>통산과 따로 셉니다. 전적은 많아도 올해 안 뛴 말과, 올해만 뛴 신예가 갈립니다.</span></span></div>
+   <div class="lg-item"><span class="lg-k" style="font-size:12px">부중</span><span class="lg-t"><b>부담중량</b><span>그 말이 지고 뛰는 무게(kg)입니다. 능력이 좋은 말에 더 얹어 판을 고르게 만듭니다.</span></span></div>
+   <div class="lg-item"><span class="lg-k" style="font-size:12px">전적</span><span class="lg-t"><b>통산 출전·1·2·3착</b><span>복승률은 1·2착으로 들어온 비율입니다.</span></span></div>
+   <div class="lg-item"><span class="lg-k" style="font-size:12px">최근 5회</span><span class="lg-t"><b>왼쪽이 가장 최근</b><span>큰 숫자가 착순, 작은 숫자가 그 경주의 출전 두수입니다. 1착은 붉은 칸, 2착은 검은 칸, 3착은 두꺼운 테두리입니다.</span></span></div>
+   <div class="lg-item"><span class="lg-k" style="font-size:12px">각질</span><span class="lg-t"><b>선행 · 선입 · 추입</b><span>경주를 끌고 가는 자리입니다. 선행마가 몰리면 페이스가 빨라져 추입마가 유리해집니다.</span></span></div>
+   <div class="lg-item"><span class="lg-k" style="font-size:12px">초반 1F</span><span class="lg-t"><b>출발 200m 기록</b><span>작을수록 초반이 빠릅니다. 선행마를 가르는 수치입니다.</span></span></div>
+   <div class="lg-item"><span class="lg-k" style="font-size:12px">후반 3F</span><span class="lg-t"><b>마지막 600m 기록</b><span>막판에 남은 힘입니다. 작을수록 직선에서 뻗습니다 — 추입마의 무기입니다.</span></span></div>
+   <div class="lg-item"><span class="lg-k" style="font-size:12px">①②③</span><span class="lg-t"><b>그 칸의 순위</b><span>같은 경주에 나온 추천마들 사이에서 몇 번째인지 표시합니다.</span></span></div>
+   <div class="lg-item"><span class="lg-k">★★★★★</span><span class="lg-t"><b>혼전도</b><span>별이 많을수록 가려지지 않은 경주입니다. 둘이면 축이 뚜렷합니다.</span></span></div>
+  </div>
+  <p class="lg-foot">한 경주의 다섯 두 확률을 더해도 100%가 되지 않습니다. 나머지는 지면에 싣지 않은 말들의 몫입니다.
+     표가 화면보다 넓으면 좌우로 밀어 보시면 됩니다. 경주 번호를 누르면 그 경주의 상세 예상으로 갑니다.</p>
+ </section>
+
+ {{ ad(adsense, 'slot_bottom', '광 고') }}
+
+ <footer class="colophon">
+  <p><b>{{ site.name }}</b> · {{ paper.date_sentence }} 지면 · {{ paper.meet_txt }} 수록.
+     모든 예상은 발주 전에 확정되었으며, 경주가 끝난 뒤에도 고치지 않습니다.</p>
+  <p>이 지면은 과거 경주 기록으로 학습한 자체 예측 엔진의 계산 결과입니다. 배당과 인기 순위는
+     한 번도 보지 않고 경주마의 능력만 셈했습니다. 적중을 약속하지 않으며, 마권 구매의 참고 자료로만
+     쓰시기 바랍니다. 출주 취소는 발주 직전에 결정되므로 예상에 반영되지 않습니다.</p>
+  <p class="src"><em>통산 전적</em>은 마사회 공식 성적이고, <em>최근 5회 · 구간기록 · 이 거리
+     최고기록</em>은 저희가 보관한 경주(2021년 8월 이후)에서 뽑은 값이라 옛 말은 두 숫자가 맞지
+     않습니다. 맞지 않을 때는 공식 전적을 그대로 두고 해설의 말투를 &ldquo;우리 보유 기록 안에서&rdquo;로
+     바꿉니다. <em>각질</em>은 과거 구간 통과순위로 저희가 판정한 값이며 마사회가 공표하는 분류가
+     아닙니다. <em>출주마 일람</em>의 마번·마명·성·연령·부중·기수·조교사는 마사회 출마표
+     그대로입니다. 조교 상태나 마방 분위기 같은 취재 정보는 싣지 않습니다 — 이 지면의 모든 문장은
+     같은 쪽 표와 숫자를 읽어 옮긴 것입니다.</p>
+  <nav class="paper-nav">
+   <a href="/">사이트 홈</a>
+   <a href="/day/{{ paper.day }}/">{{ paper.date_short }} 경주 목록</a>
+   <a href="/accuracy/">적중률</a>
+  </nav>
+ </footer>
+</div>
+
+</body>
+</html>

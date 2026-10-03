@@ -1363,3 +1363,38 @@ tbody tr:hover { background: var(--bg-soft); }
 .tier-switch a:hover { color: var(--text); text-decoration: none; }
 .tier-switch a.is-here { background: var(--accent-soft); color: var(--accent); }
 .tier-switch a.is-here small { color: var(--accent); }
+
+/* ── 지면 진입점 ────────────────────────────────────────────
+ *
+ * 경주 목록은 17개로 쪼개져 있어 공유가 안 되는데, 지면은 한 주소로 그날
+ * 전체가 넘어간다. 처음 온 사람이 가장 먼저 보는 자리에 둔다.
+ *
+ * 지면이 상세 페이지를 대체하면 세션당 pageview 가 준다. 그래서 지면 쪽
+ * 경주 번호를 다시 /race/ 로 들어오게 해 뒀다 — 지면이 유입·체류를,
+ * 상세가 추가 pageview 를 맡아 둘이 더해지게 한다.
+ */
+.paper-cta{
+  display:flex; align-items:center; gap:12px;
+  margin:18px 0 0; padding:13px 15px;
+  background:#efe9d9; color:#16130d;
+  border:1px solid #9a8f73; border-left:5px solid #b3121f;
+  border-radius:3px; text-decoration:none;
+  transition:background .12s, transform .12s;
+}
+.paper-cta:hover{background:#e7e0cc; transform:translateX(2px)}
+.pc-tag{
+  flex:none; align-self:stretch; display:flex; align-items:center;
+  padding:0 9px; background:#1d1810; color:#efe9d9;
+  font-size:11px; font-weight:800; letter-spacing:.22em;
+  writing-mode:vertical-rl; text-orientation:upright;
+}
+.pc-body{display:flex; flex-direction:column; gap:3px; min-width:0}
+.pc-body b{font-size:15px; font-weight:800; letter-spacing:-.01em}
+.pc-body small{font-size:12px; color:#6b6049; line-height:1.5}
+.pc-go{flex:none; margin-left:auto; font-size:22px; color:#b3121f; font-weight:700}
+
+@media (max-width:520px){
+  .paper-cta{padding:11px 12px; gap:10px}
+  .pc-body b{font-size:14px}
+  .pc-body small{font-size:11.5px}
+}
