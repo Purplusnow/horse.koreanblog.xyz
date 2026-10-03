@@ -837,14 +837,39 @@ def archived_days(archive: Path) -> List[str]:
 
 
 def days_to_build(conn, archive: Path, today: str, mode: str) -> List[str]:
-    """이번 빌드에서 낼 날짜. mode 는 config build.paper_days."""
+    """이번 빌드에서 낼 날짜. mode 는 config build.paper_days.
+
+    규칙은 한 줄이다 — **지면을 내기 시작한 날부터, 예상이 다 들어온 경주일은
+    전부 낸다.**
+
+    왜 '봉인된 날 + 오늘 + 다가올 날' 로 셋을 합치지 않는가. 그러면 어떤 날의
+    봉인이 걸러졌을 때(그날 빌드가 한 번도 안 돌았다든지) 그 날짜가 목록에서
+    빠지고, **이미 공개했던 주소가 404 가 된다.** 봉인 여부는 지면이 떠 있을
+    이유가 아니다.
+
+    다가올 날까지 내는 이유도 같은 자리에 있다. 그날이 와야 지면을 내면 경주일
+    아침 빌드 전까지 링크 자체가 없다. 첫 발주가 10:35 인데 실행이 11:30 에
+    붙으면 경주가 시작된 뒤에야 예상지가 생긴다. 사이트는 이미 다가올 경주의
+    예상을 공개하고 있으므로 지면만 늦을 이유가 없다 — 실제 종이 전문지도 전날
+    밤에 찍는다.
+
+    시작점은 보관소의 가장 이른 날이다. 그래서 지면을 시작하기 **전** 의 과거는
+    저절로 빠진다(과거 지면을 낼지는 config paper_days: all 로 따로 정한다).
+    예상이 전 경주 들어온 날만 낸다 — 반쪽 지면을 띄우지 않는다.
+    """
     all_days = [r[0] for r in conn.execute(
         """SELECT DISTINCT g.rc_date FROM predictions p
            JOIN races g ON g.race_key = p.race_key ORDER BY g.rc_date""").fetchall()]
     if mode == "all":
         return all_days
-    # 오늘(또는 가장 가까운 경주일) + 이미 낸 지면 전부
-    return sorted(set(pick_day(all_days, today)) | set(archived_days(archive)))
+    kept = archived_days(archive)
+    base = pick_day(all_days, today)
+    floor = min(kept + base) if (kept or base) else None
+    if floor is None:
+        return []
+    out = {d for d in all_days if d >= floor and seal_ready(conn, d)}
+    # 보관본이 있는 날은 조건을 묻지 않는다. 이미 낸 지면이라 계속 떠 있어야 한다.
+    return sorted(out | set(kept) | set(base))
 
 
 def paper_state(conn, archive: Path, today: str) -> Dict:
@@ -936,6 +961,13 @@ def build_paper_pages(env, out_dir: Path, ctx_base: Dict, conn,
                 paper=day_meta(races, day), summary=summary_table(races),
                 blocks=[{"html": race_block(r), "ad": ad_after(i, len(races))}
                         for i, r in enumerate(races)])
+            # **다가올 날도 그 자리에서 봉인한다.** 종이 예상지도 인쇄한 뒤에는
+            # 그날의 변화를 반영하지 못하고, 그 수준이면 우리도 충분하다는 판단이다.
+            #
+            # 대가는 알고 받는다. 이틀 전에 굳힌 지면은 경주 당일 들어오는
+            # 자료(마체중 등)를 못 받으므로, 같은 경주를 두고 /race/ 쪽 숫자와
+            # 갈릴 수 있다. 지면은 '발주 전에 게재하고 고치지 않는 인쇄물',
+            # /race/ 는 '발주 직전까지 갱신하는 화면' 이라 게재 시점이 다른 것이다.
             if seal and seal_ready(conn, day):
                 archive.mkdir(parents=True, exist_ok=True)
                 # mtime 을 0 으로 고정한다. 안 그러면 내용이 같아도 gzip 머리의
