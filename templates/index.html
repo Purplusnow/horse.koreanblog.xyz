@@ -49,7 +49,8 @@
   {% endif %}
 </section>
 
-{{ paper_cta(paper_link) }}
+{{ paper_cta(paper_link.url if paper_link else None,
+             "오늘 예상을 전문지 지면 한 장으로") }}
 
 {{ ad(adsense, 'slot_top') }}
 

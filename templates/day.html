@@ -27,7 +27,9 @@
   </p>
 </header>
 
-{{ paper_cta(paper_link) }}
+{# 그날 지면으로 보낸다. /paper/ 로 보내면 지난 날짜 페이지에서
+   엉뚱하게 오늘 지면이 열린다. #}
+{{ paper_cta(day_paper_url, label ~ " 예상을 전문지 지면 한 장으로") }}
 
 {{ ad(adsense, 'slot_top') }}
 

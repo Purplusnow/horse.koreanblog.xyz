@@ -5,14 +5,14 @@
    **새 탭으로 연다.** 지면은 세로로 길게 읽는 물건이라, 다 읽고 나서 원래
    보던 목록으로 돌아올 자리가 남아 있어야 한다. 뒤로가기로 긴 페이지를
    오가게 하면 읽던 위치를 잃는다. #}
-{% macro paper_cta(paper_link) %}
-{% if paper_link %}
-<a class="paper-cta" href="{{ paper_link.url }}" target="_blank" rel="noopener">
+{% macro paper_cta(url, title) %}
+{% if url %}
+<a class="paper-cta" href="{{ url }}" target="_blank" rel="noopener">
   <span class="pc-flag">지면</span>
   <span class="pc-body">
-    <b class="pc-title">오늘 예상을 전문지 지면 한 장으로</b>
-    <span class="pc-desc">추천 5두 · 복병 · 전개 예상 · 구간기록 · 출주마 일람을
-      전 경주 세로로 이어 봅니다</span>
+    <b class="pc-title">{{ title }}</b>
+    <span class="pc-desc">추천 5두 · 복병 · 전개 예상 · 체크 포인트 · 구간기록 ·
+      출주마 일람을 전 경주 세로로 이어 봅니다</span>
   </span>
   <span class="pc-go">열기<i aria-hidden="true">↗</i><em>새 탭</em></span>
 </a>

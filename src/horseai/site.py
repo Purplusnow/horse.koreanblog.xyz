@@ -33,7 +33,7 @@ from jinja2 import Environment, FileSystemLoader, select_autoescape
 from .clock import now_kst, today_kst
 from .kra.normalize import MAX_ORD, ORD_STATUS
 from .kra.store import session
-from .paper import build_paper_pages, paper_state, pick_day
+from .paper import build_paper_pages, days_to_build, paper_state
 from .style import STYLE_LABEL, STYLES, pace_map
 from .verify import (
     POOL_LABEL, _combos, build_report, load_dividends, set_min_sample,
@@ -727,33 +727,29 @@ def build(db: str, out_dir: Path, config: Dict, template_dir: Path,
         # 다만 **어느 날짜까지 낼지는 config 가 정한다.** 지난 지면을 공개하는
         # 것은 색인 자산이 되는 동시에 별개의 판단이라, 코드가 혼자 정하지 않는다.
         paper_urls: List[str] = []
+        paper_front = None
         if config["build"].get("paper", False):
-            all_days = [r[0] for r in conn.execute(
-                """SELECT DISTINCT g.rc_date FROM predictions p
-                   JOIN races g ON g.race_key = p.race_key
-                   ORDER BY g.rc_date""").fetchall()]
-            if config["build"].get("paper_days") == "all":
-                paper_days = all_days
-            else:
-                # 하루만. 경마 없는 날에도 /paper/ 가 남도록 물러난다 —
-                # 왜 그래야 하는지는 paper.pick_day 에 적어 두었다.
-                paper_days = pick_day(all_days, today.isoformat())
+            # 오늘 치 + **이미 낸 지면 전부**. 그날 날짜만 구우면 매 빌드마다
+            # dist/paper 를 지우는 탓에 어제 지면이 조용히 404 가 된다.
+            paper_days = days_to_build(
+                conn, Path(db).resolve().parent / "paper", today.isoformat(),
+                config["build"].get("paper_days"))
             # 봉인 보관소는 DB 와 같은 자리에 둔다. 빌드 산출물이 아니라
             # 게재 기록이므로 리포에 남아야 한다(update.yml 이 커밋한다).
-            paper_urls = build_paper_pages(
+            built = build_paper_pages(
                 env, out_dir, ctx_base, conn, paper_days, today.isoformat(),
                 archive=Path(db).resolve().parent / "paper",
                 static_dir=static_dir, repaper=repaper, seal=seal_paper)
-            log.info("지면 %d일분", len(paper_urls))
+            paper_urls, paper_front = built["urls"], built["front"]
+            log.info("지면 %d일분 · /paper/ → %s", len(paper_urls), paper_front)
 
         # 지면 링크. 홈·날짜 페이지가 이 주소를 쓰므로 먼저 확정한다.
         # 없는 날이면 None 이라 링크 자체가 나가지 않는다 — 404 로 보내지 않는다.
-        # 실제로 구운 날짜를 가리킨다. 오늘이 경마 없는 날이면 /paper/ 는
-        # 가장 가까운 경주일을 보여 주므로, 링크의 day 도 그 날짜여야
-        # 날짜 페이지에서 '이 날 지면' 판정이 맞는다.
+        # /paper/ 가 실제로 가리키는 날을 그대로 쓴다. 가장 최신 봉인일에서
+        # 따로 뽑으면 경마 없는 날이나 지난 지면이 쌓인 뒤에 둘이 어긋난다 —
+        # 날짜 페이지의 '이 날 지면' 판정이 거기에 걸린다.
         ctx_base["paper_link"] = (
-            {"url": "/paper/", "day": paper_urls[-1].strip("/").split("/")[-1]}
-            if paper_urls else None)
+            {"url": "/paper/", "day": paper_front} if paper_front else None)
 
         # 개별 경주 페이지
         detail_pages = []
@@ -880,6 +876,9 @@ def build(db: str, out_dir: Path, config: Dict, template_dir: Path,
                   env.get_template("day.html").render(
                       **ctx_base, races=rows, label=label, meets=meets,
                       meets_kw=meets_kw, day=day,
+                      # 그날 지면이 올라가 있을 때만 띠가 나간다.
+                      day_paper_url=("/paper/%s/" % day
+                                     if ("/paper/%s/" % day) in paper_urls else None),
                       page_url=url))
             day_pages.append({"url": url, "date": day, "n": len(rows)})
 

@@ -817,6 +817,36 @@ def pick_day(all_days: List[str], today: str) -> List[str]:
     return [next((d for d in all_days if d > today), all_days[-1])]
 
 
+def archived_days(archive: Path) -> List[str]:
+    """이미 봉인해 둔 날짜 전부.
+
+    **한 번 낸 지면은 계속 떠 있어야 한다.** /paper/<날짜>/ 는 사이트맵에
+    올라가고 canonical 이 가리키는 영구 주소다. 그런데 site.build 는 매 빌드마다
+    dist/paper 를 지우고 다시 만들므로, 그날 날짜만 구우면 어제 지면이 조용히
+    404 가 된다 — 보관본은 리포에 멀쩡히 있는데 올라가지 않는 것이다.
+    봉인된 날은 DB 를 읽지도 렌더하지도 않고 그대로 꺼내 싣기만 하므로 거의 공짜다.
+    """
+    if not archive.is_dir():
+        return []
+    out = []
+    for f in archive.glob("*.html.gz"):
+        day = f.name[:-len(".html.gz")]
+        if len(day) == 10 and day[4] == "-" and day[7] == "-":
+            out.append(day)
+    return sorted(out)
+
+
+def days_to_build(conn, archive: Path, today: str, mode: str) -> List[str]:
+    """이번 빌드에서 낼 날짜. mode 는 config build.paper_days."""
+    all_days = [r[0] for r in conn.execute(
+        """SELECT DISTINCT g.rc_date FROM predictions p
+           JOIN races g ON g.race_key = p.race_key ORDER BY g.rc_date""").fetchall()]
+    if mode == "all":
+        return all_days
+    # 오늘(또는 가장 가까운 경주일) + 이미 낸 지면 전부
+    return sorted(set(pick_day(all_days, today)) | set(archived_days(archive)))
+
+
 def paper_state(conn, archive: Path, today: str) -> Dict:
     """지면이 제대로 나와 있는가 — 감사·보고·settle.json 이 함께 쓰는 한 가지 판정.
 
@@ -858,11 +888,15 @@ def check_paper(conn, archive: Path, today: str) -> List[Dict]:
 def build_paper_pages(env, out_dir: Path, ctx_base: Dict, conn,
                       days: List[str], today: str, archive: Path,
                       static_dir: Path, repaper: bool = False,
-                      seal: bool = True) -> List[str]:
+                      seal: bool = True) -> Dict:
     """지면을 굽고 사이트맵에 넣을 주소를 돌려준다.
 
     /paper/            가장 볼 만한 경주일 — 공유용 고정 주소
     /paper/<날짜>/     영구 보존
+
+    {"urls": [...], "front": "<날짜>"} 를 돌려준다. front 는 /paper/ 가 실제로
+    가리키는 날이다 — 홈의 진입점이 그 값을 그대로 써야, 가장 최신 봉인일에서
+    따로 뽑다가 둘이 어긋나는 일이 없다.
 
     **봉인된 날은 다시 굽지 않는다.** archive 에 보관해 둔 것을 그대로 꺼내
     쓴다 — DB 를 읽지도, 렌더하지도 않는다. 봉인 조건은 seal_ready 에 있다.
@@ -918,7 +952,7 @@ def build_paper_pages(env, out_dir: Path, ctx_base: Dict, conn,
         pages[day] = html_out
 
     if not pages:
-        return urls
+        return {"urls": urls, "front": None}
 
     # /paper/ 가 가리킬 날. 오늘 경주가 있으면 오늘, 없으면 가장 가까운 경주일.
     # 봉인된 지면을 **글자 하나 바꾸지 않고** 같은 바이트로 싣는다. 그 안의
@@ -926,4 +960,4 @@ def build_paper_pages(env, out_dir: Path, ctx_base: Dict, conn,
     ds = sorted(pages)
     front = today if today in pages else next((d for d in ds if d > today), ds[-1])
     write(out_dir / "paper" / "index.html", pages[front])
-    return urls
+    return {"urls": urls, "front": front}
