@@ -1366,35 +1366,65 @@ tbody tr:hover { background: var(--bg-soft); }
 
 /* ── 지면 진입점 ────────────────────────────────────────────
  *
- * 경주 목록은 17개로 쪼개져 있어 공유가 안 되는데, 지면은 한 주소로 그날
+ * 경주 목록은 열일곱으로 쪼개져 있어 공유가 안 되는데, 지면은 한 주소로 그날
  * 전체가 넘어간다. 처음 온 사람이 가장 먼저 보는 자리에 둔다.
  *
- * 지면이 상세 페이지를 대체하면 세션당 pageview 가 준다. 그래서 지면 쪽
- * 경주 번호를 다시 /race/ 로 들어오게 해 뒀다 — 지면이 유입·체류를,
- * 상세가 추가 pageview 를 맡아 둘이 더해지게 한다.
+ * 바탕을 지면과 같은 종이색으로 깔아, 누르면 무엇이 나오는지 띠 자체가 미리
+ * 보여 주게 한다. 다만 사이트 안에 있는 물건이므로 지면의 괘선·명조는 쓰지
+ * 않는다 — 여기서까지 1990년대를 흉내 내면 사이트가 둘로 갈라져 보인다.
  */
 .paper-cta{
-  display:flex; align-items:center; gap:12px;
-  margin:18px 0 0; padding:13px 15px;
+  display:grid; align-items:center;
+  grid-template-columns:auto minmax(0,1fr) auto;
+  column-gap:14px;
+  margin:18px 0 0; padding:14px 16px;
   background:#efe9d9; color:#16130d;
-  border:1px solid #9a8f73; border-left:5px solid #b3121f;
-  border-radius:3px; text-decoration:none;
-  transition:background .12s, transform .12s;
+  border:1px solid #c7bb9c; border-left:4px solid #b3121f;
+  border-radius:4px; text-decoration:none;
+  transition:background .12s, box-shadow .12s;
 }
-.paper-cta:hover{background:#e7e0cc; transform:translateX(2px)}
-.pc-tag{
-  flex:none; align-self:stretch; display:flex; align-items:center;
-  padding:0 9px; background:#1d1810; color:#efe9d9;
-  font-size:11px; font-weight:800; letter-spacing:.22em;
-  writing-mode:vertical-rl; text-orientation:upright;
+.paper-cta:hover{background:#e8e1cc; box-shadow:0 1px 0 rgba(0,0,0,.12)}
+.paper-cta:focus-visible{outline:2px solid #b3121f; outline-offset:2px}
+
+/* 「지면」 — 두 글자를 세로로 쌓으면 답답하다. 가로 한 줄로 놓고 자간을 준다 */
+.pc-flag{
+  flex:none; padding:5px 10px; background:#1d1810; color:#efe9d9;
+  font-size:12px; font-weight:800; letter-spacing:.18em; line-height:1.2;
+  border-radius:2px; white-space:nowrap;
 }
 .pc-body{display:flex; flex-direction:column; gap:3px; min-width:0}
-.pc-body b{font-size:15px; font-weight:800; letter-spacing:-.01em}
-.pc-body small{font-size:12px; color:#6b6049; line-height:1.5}
-.pc-go{flex:none; margin-left:auto; font-size:22px; color:#b3121f; font-weight:700}
+.pc-title{
+  font-size:15.5px; font-weight:800; letter-spacing:-.01em; line-height:1.35;
+  text-wrap:balance;
+}
+.pc-desc{font-size:12.5px; color:#5e5440; line-height:1.5}
 
-@media (max-width:520px){
-  .paper-cta{padding:11px 12px; gap:10px}
-  .pc-body b{font-size:14px}
-  .pc-body small{font-size:11.5px}
+/* 오른쪽 끝은 '열기 ↗ / 새 탭' 두 줄. 화살표만 두면 새 탭으로 열리는 것을
+   알 수 없어, 누르기 전에 밝혀 둔다. */
+.pc-go{
+  flex:none; display:flex; flex-direction:column; align-items:center; gap:1px;
+  padding-left:12px; border-left:1px solid #c7bb9c;
+  font-size:13px; font-weight:800; color:#b3121f; white-space:nowrap;
+}
+.pc-go i{font-style:normal; font-size:15px; line-height:1}
+.pc-go em{font-style:normal; font-size:10px; font-weight:600; color:#8a7f66;
+          letter-spacing:.04em}
+
+/* 좁은 화면 — 세 칸이 한 줄에 안 들어간다. 깃발과 '열기' 를 한 줄에 두고
+   본문을 아래로 내린다. 설명을 지우지는 않는다. 무엇이 나오는지가 누를
+   이유 자체이기 때문이다. */
+@media (max-width:560px){
+  .paper-cta{
+    grid-template-columns:auto 1fr; grid-template-areas:"flag go" "body body";
+    row-gap:9px; padding:12px 13px;
+  }
+  .pc-flag{grid-area:flag; font-size:11.5px; padding:4px 9px}
+  .pc-go{
+    grid-area:go; justify-self:end; flex-direction:row; align-items:baseline;
+    gap:5px; padding-left:0; border-left:0;
+  }
+  .pc-go em{font-size:10.5px}
+  .pc-body{grid-area:body}
+  .pc-title{font-size:14.5px}
+  .pc-desc{font-size:12px}
 }

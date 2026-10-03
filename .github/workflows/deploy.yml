@@ -64,9 +64,13 @@ jobs:
       - name: 적중률 검증
         run: PYTHONPATH=src python -m horseai.verify --db "$DB" --out data/accuracy.json
 
+      # --no-seal-paper: 이 워크플로는 DB 도 리포도 저장하지 않으므로 여기서
+      # 지면을 봉인하면 파일이 남지 않아 사라진다. 그러면 다음 update.yml 이
+      # 다른 DB 로 다시 구워 지면이 한 번 바뀐다. 봉인은 커밋할 수 있는
+      # update.yml 에서만 한다. 이미 봉인된 날은 여기서도 그것을 그대로 싣는다.
       - name: 사이트 빌드
         timeout-minutes: 15
-        run: PYTHONPATH=src python -m horseai.site --db "$DB" --out dist
+        run: PYTHONPATH=src python -m horseai.site --db "$DB" --out dist --no-seal-paper
 
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3

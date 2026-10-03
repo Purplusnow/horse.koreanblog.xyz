@@ -363,6 +363,33 @@ jobs:
         timeout-minutes: 15
         run: PYTHONPATH=src python -m horseai.site --db "$DB" --out dist
 
+      # ── 봉인된 지면을 리포에 남긴다 ──────────────────────────
+      #
+      # **지면은 한 번 구우면 다시 굽지 않는다.** 종이 예상지가 인쇄 뒤에
+      # 그날의 변화를 반영하지 못하는 것과 같은 수준이고, 게재한 예상을 고치지
+      # 않는다는 약속이 파일로 증명되는 쪽이 낫다.
+      #
+      # 그런데 CI 는 매 실행마다 빈 곳에서 시작하고 Pages 는 산출물을 통째로
+      # 갈아치운다. 리포에 남기지 않으면 '다시 굽지 않는다' 가 보존이 아니라
+      # **삭제** 가 된다. 빌드 산출물이 아니라 게재 기록이므로 커밋한다.
+      #
+      # 사이트 빌드가 이 파일을 만들므로 **빌드 뒤** 여야 한다. 위쪽 '집계 결과
+      # 기록' 에 끼우면 빌드 전이라 봉인 파일이 아직 없고, 영원히 커밋되지 않는다.
+      - name: 봉인된 지면 기록
+        continue-on-error: true
+        run: |
+          [ -d data/paper ] || { echo "봉인된 지면 없음"; exit 0; }
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -f data/paper
+          if git diff --cached --quiet; then
+            echo "새로 봉인된 지면 없음"
+          else
+            git commit -q -m "지면 봉인 $(TZ=Asia/Seoul date '+%Y-%m-%d') KST"
+            git pull --rebase --autostash -q origin main
+            git push -q origin HEAD:main && echo "기록 완료"
+          fi
+
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:

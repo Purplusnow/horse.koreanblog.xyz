@@ -18,13 +18,17 @@
 from __future__ import annotations
 
 import datetime as dt
+import gzip
 import html
+import logging
 from collections import defaultdict
 from pathlib import Path
 from typing import Dict, List
 
 from .marks import assign_marks
 from .style import STYLES
+
+log = logging.getLogger(__name__)
 
 STYLE_LABEL = {s["code"]: s["label"] for s in STYLES}
 WEEKDAY_KO = ["월", "화", "수", "목", "금", "토", "일"]
@@ -179,6 +183,15 @@ def load_day(c, day: str) -> List[Dict]:
             d["tempo"]["full"] = (d["career_starts"] or 0) <= len(d["past"])
             runners.append(d)
         picks = [r for r in runners if (r["pred_rank"] or 99) <= 5]
+        # **예상이 없는 경주는 싣지 않는다.**
+        #
+        # races 는 예상과 무관하게 뽑히므로, 출전표만 들어오고 예측이 아직
+        # 안 만들어진 경주가 섞인다. 그 경주를 그대로 넘기면 race_note 가
+        # 2·3순위를 꺼내다 터지고, 지면이 아니라 사이트 전체 빌드가 죽는다.
+        # 빈 지면 칸을 내는 것보다 빼는 쪽이 낫다 — seal_ready 가 전 경주에
+        # 예상이 들어올 때까지 봉인을 미루므로, 다음 실행에 온전히 다시 굽는다.
+        if len(picks) < 3:
+            continue
         assign_marks(picks)
         rec = dict(g)
         rec["all"] = runners
@@ -239,6 +252,8 @@ def summary_table(races):
     body = []
     for r in races:
         p = r["picks"]
+        if not p:
+            continue
         axis = p[0] if r["conf_label"] == "강승부" else None
         win = [x for x in p[:2] if x is not axis]
         n = stars(r["conf_score"])
@@ -640,6 +655,10 @@ def dist_phrase(h, dist):
 def race_note(r, pace_kind):
     """경주해설 — 우리 수치를 문장으로 옮긴 것뿐, 없는 말은 보태지 않는다."""
     p = r["picks"]
+    # load_day 가 3두 미만 경주를 걸러내지만, 여기서도 버틴다. 한 군데서만
+    # 막으면 호출 경로가 하나 늘 때 같은 자리에서 다시 터진다.
+    if len(p) < 2:
+        return []
     top, sec = p[0], p[1]
     gap = ((top["p_win"] or 0) - (sec["p_win"] or 0)) * 100
     L = []
@@ -657,9 +676,11 @@ def race_note(r, pace_kind):
 
     L.append("%s%s %s. %s." % (esc(tn), un(tn), form_phrase(top),
                                dist_phrase(top, r["distance"])))
-    t3 = p[2]
-    n3 = t3["hr_name"] or ""
-    L.append("뒤를 쫓는 %s %s%s %s." % (esc(t3["chul_no"]), esc(n3), un(n3), form_phrase(t3)))
+    if len(p) >= 3:
+        t3 = p[2]
+        n3 = t3["hr_name"] or ""
+        L.append("뒤를 쫓는 %s %s%s %s."
+                 % (esc(t3["chul_no"]), esc(n3), un(n3), form_phrase(t3)))
 
     ls = r["longshot"]
     if ls:
@@ -713,6 +734,37 @@ def ad_after(i: int, total: int) -> bool:
     return (i + 1) % AD_EVERY == 0
 
 
+# ── 봉인 ──────────────────────────────────────────────────────
+#
+# **지면은 한 번 구우면 다시 굽지 않는다.** 종이로 팔리는 예상지도 인쇄한
+# 뒤에는 그날의 변화를 반영하지 못하고, 그 수준이면 우리도 충분하다는 판단이다.
+# 더 중요한 이유는 이쪽이다 — 게재한 예상을 고치지 않는다는 것이 이 사이트의
+# 유일한 자산인데, 구운 지면을 그대로 남겨 두면 그 약속이 파일로 증명된다.
+#
+# 그런데 CI 는 매 실행마다 빈 곳에서 시작하고 Pages 는 산출물을 통째로
+# 갈아치운다. 그러니 '다시 굽지 않는다' 를 '빌드에서 건너뛴다' 로 구현하면
+# 페이지가 보존되는 것이 아니라 **사라진다**. 구운 결과를 리포에 남겨야 한다.
+#
+# data/accuracy.json 을 커밋해 온 것과 같은 자리다. 이건 빌드 산출물이 아니라
+# **게재 기록**이다.
+def sealed_file(archive: Path, day: str) -> Path:
+    return archive / ("%s.html.gz" % day)
+
+
+def seal_ready(conn, day: str) -> bool:
+    """봉인해도 되는가 — 그날 **모든** 경주에 예상이 있는가.
+
+    첫 실행에 그냥 봉인하면 출전표가 덜 들어온 아침에 반쪽 지면이 굳는다.
+    예상이 빠진 경주가 하나라도 있으면 봉인하지 않고 다음 실행에 다시 시도한다.
+    """
+    n_race, n_pred = conn.execute(
+        """SELECT (SELECT COUNT(*) FROM races WHERE rc_date = ?),
+                  (SELECT COUNT(DISTINCT p.race_key) FROM predictions p
+                    JOIN races g ON g.race_key = p.race_key WHERE g.rc_date = ?)""",
+        (day, day)).fetchone()
+    return bool(n_race) and n_race == n_pred
+
+
 def pick_day(all_days: List[str], today: str) -> List[str]:
     """하루만 내는 모드에서 어느 날짜를 낼지 고른다.
 
@@ -731,53 +783,74 @@ def pick_day(all_days: List[str], today: str) -> List[str]:
 
 
 def build_paper_pages(env, out_dir: Path, ctx_base: Dict, conn,
-                      days: List[str], today: str) -> List[str]:
+                      days: List[str], today: str, archive: Path,
+                      static_dir: Path, repaper: bool = False,
+                      seal: bool = True) -> List[str]:
     """지면을 굽고 사이트맵에 넣을 주소를 돌려준다.
 
     /paper/            가장 볼 만한 경주일 — 공유용 고정 주소
     /paper/<날짜>/     영구 보존
 
-    예상이 남아 있는 날이면 **전부** 굽는다. 지난 지면도 그날 낸 그대로다
-    (게재한 예상은 고치지 않는다). 날짜별로 쌓아야 경주일마다 고유 주소가
-    늘어난다 — 한 장을 매일 덮어쓰면 색인되는 주소가 영원히 하나다.
+    **봉인된 날은 다시 굽지 않는다.** archive 에 보관해 둔 것을 그대로 꺼내
+    쓴다 — DB 를 읽지도, 렌더하지도 않는다. 봉인 조건은 seal_ready 에 있다.
+    아직 봉인되지 않은 날은 매번 다시 구우며 봉인될 때까지 시도한다.
+
+    repaper=True 면 봉인을 무시하고 다시 구워 덮어쓴다. 지면 생성에 버그를
+    발견했을 때 쓰는 비상구다 — 평소에는 쓰지 않는다.
+
+    seal=False 면 구워서 싣기만 하고 봉인 파일을 만들지 않는다. **봉인한 것을
+    커밋할 수 없는 워크플로(deploy.yml)** 가 쓴다. 거기서 봉인하면 파일이
+    리포에 남지 않아 사라지고, 다음 실행이 다른 DB 로 다시 구워 지면이 한 번
+    바뀐다 — '한 번 구우면 그대로' 가 깨지는 자리다.
     """
     # site 가 paper 를 불러오므로 모듈 수준에서 거꾸로 불러오면 순환이 된다.
     # 호출 시점에는 site 가 이미 올라와 있다.
     from .site import race_slug, write
 
     tpl = env.get_template("paper.html")
+    css = (static_dir / "paper.css").read_text(encoding="utf-8")
     urls: List[str] = []
-    built: Dict[str, Dict] = {}
-    for day in days:
-        races = load_day(conn, day)
-        if not races:
-            continue
-        for r in races:
-            r["url"] = "/race/%s/" % race_slug(r["race_key"])
-        meta = day_meta(races, day)
-        page = {"paper": meta, "summary": summary_table(races),
-                "blocks": [{"html": race_block(r), "ad": ad_after(i, len(races))}
-                           for i, r in enumerate(races)]}
-        url = "/paper/%s/" % day
-        write(out_dir / "paper" / day / "index.html",
-              tpl.render(**ctx_base, page_url=url, canonical_url=url, **page))
-        urls.append(url)
-        built[day] = page
+    pages: Dict[str, str] = {}
 
-    if not built:
+    for day in days:
+        keep = sealed_file(archive, day)
+        if keep.exists() and not repaper:
+            html_out = gzip.decompress(keep.read_bytes()).decode("utf-8")
+            log.info("지면 %s — 봉인된 것을 그대로 싣는다", day)
+        else:
+            races = load_day(conn, day)
+            if not races:
+                continue
+            for r in races:
+                r["url"] = "/race/%s/" % race_slug(r["race_key"])
+            url = "/paper/%s/" % day
+            html_out = tpl.render(
+                **ctx_base, page_url=url, canonical_url=url, paper_css=css,
+                paper=day_meta(races, day), summary=summary_table(races),
+                blocks=[{"html": race_block(r), "ad": ad_after(i, len(races))}
+                        for i, r in enumerate(races)])
+            if seal and seal_ready(conn, day):
+                archive.mkdir(parents=True, exist_ok=True)
+                # mtime 을 0 으로 고정한다. 안 그러면 내용이 같아도 gzip 머리의
+                # 시각이 달라져 매 실행마다 git 에 변경으로 잡힌다.
+                keep.write_bytes(gzip.compress(html_out.encode("utf-8"), 9, mtime=0))
+                log.info("지면 %s — 구워서 봉인했다", day)
+            elif not seal:
+                log.info("지면 %s — 구웠지만 봉인하지 않는다 (커밋할 수 없는 실행)", day)
+            else:
+                log.info("지면 %s — 예상이 덜 들어와 봉인하지 않는다 (다음에 다시)", day)
+
+        write(out_dir / "paper" / day / "index.html", html_out)
+        urls.append("/paper/%s/" % day)
+        pages[day] = html_out
+
+    if not pages:
         return urls
 
-    # /paper/ 가 가리킬 날.
-    #
-    # 오늘 경주가 있으면 오늘, 없으면 **다가올** 가장 가까운 경주일, 그것도
-    # 없으면 가장 최근 경주일. 공유된 링크가 지난 지면을 가리키고 있으면
-    # 안 되므로 매 빌드마다 다시 찍는다.
-    ds = sorted(built)
-    front = (today if today in built
-             else next((d for d in ds if d > today), ds[-1]))
-    # canonical 은 날짜 주소로 보낸다 — 같은 내용이 두 주소에 있으면 색인이
-    # 갈려 둘 다 약해진다. /paper/ 는 사람이 공유하는 입구로만 쓴다.
-    write(out_dir / "paper" / "index.html",
-          tpl.render(**ctx_base, page_url="/paper/",
-                     canonical_url="/paper/%s/" % front, **built[front]))
+    # /paper/ 가 가리킬 날. 오늘 경주가 있으면 오늘, 없으면 가장 가까운 경주일.
+    # 봉인된 지면을 **글자 하나 바꾸지 않고** 같은 바이트로 싣는다. 그 안의
+    # canonical 이 이미 날짜 주소를 가리키므로 색인이 갈리지 않는다.
+    ds = sorted(pages)
+    front = today if today in pages else next((d for d in ds if d > today), ds[-1])
+    write(out_dir / "paper" / "index.html", pages[front])
     return urls

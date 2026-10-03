@@ -642,7 +642,8 @@ def build_tier_pages(env, out_dir: Path, ctx_base: Dict, accuracy: Dict,
 
 
 def build(db: str, out_dir: Path, config: Dict, template_dir: Path,
-          static_dir: Path) -> Dict[str, int]:
+          static_dir: Path, repaper: bool = False,
+          seal_paper: bool = True) -> Dict[str, int]:
     set_min_sample(config.get("build", {}).get("min_sample"))
     env = make_env(template_dir)
     # 이전 빌드의 잔여 페이지를 지운다. 남겨 두면 삭제된 경주가 사이트에 계속
@@ -737,8 +738,12 @@ def build(db: str, out_dir: Path, config: Dict, template_dir: Path,
                 # 하루만. 경마 없는 날에도 /paper/ 가 남도록 물러난다 —
                 # 왜 그래야 하는지는 paper.pick_day 에 적어 두었다.
                 paper_days = pick_day(all_days, today.isoformat())
-            paper_urls = build_paper_pages(env, out_dir, ctx_base, conn,
-                                           paper_days, today.isoformat())
+            # 봉인 보관소는 DB 와 같은 자리에 둔다. 빌드 산출물이 아니라
+            # 게재 기록이므로 리포에 남아야 한다(update.yml 이 커밋한다).
+            paper_urls = build_paper_pages(
+                env, out_dir, ctx_base, conn, paper_days, today.isoformat(),
+                archive=Path(db).resolve().parent / "paper",
+                static_dir=static_dir, repaper=repaper, seal=seal_paper)
             log.info("지면 %d일분", len(paper_urls))
 
         # 지면 링크. 홈·날짜 페이지가 이 주소를 쓰므로 먼저 확정한다.
@@ -964,11 +969,20 @@ def main(argv: Optional[List[str]] = None) -> int:
     ap.add_argument("--config", default=str(root / "config.yaml"))
     ap.add_argument("--templates", default=str(root / "templates"))
     ap.add_argument("--static", default=str(root / "static"))
+    # 봉인된 지면을 무시하고 다시 구워 덮어쓴다. 지면 생성에 버그를 발견했을
+    # 때 쓰는 비상구다 — 게재한 예상을 바꾸는 일이므로 평소에는 쓰지 않는다.
+    ap.add_argument("--repaper", action="store_true",
+                    help="봉인된 지면을 다시 굽는다 (비상구)")
+    # 봉인한 것을 커밋할 수 없는 실행(deploy.yml)은 봉인하지 않는다.
+    ap.add_argument("--no-seal-paper", action="store_true",
+                    help="지면을 굽되 봉인하지 않는다")
     args = ap.parse_args(argv)
 
     logging.basicConfig(level=logging.INFO, format="%(message)s")
     cfg = load_config(Path(args.config))
-    stats = build(args.db, Path(args.out), cfg, Path(args.templates), Path(args.static))
+    stats = build(args.db, Path(args.out), cfg, Path(args.templates),
+                  Path(args.static), repaper=args.repaper,
+                  seal_paper=not args.no_seal_paper)
     print(f"빌드 완료 → {args.out}")
     print(f"  경주 상세 {stats['races']}p (다가올 {stats['upcoming']} / 지난 {stats['past']})")
     print(f"  마필 페이지 {stats['horses']}p")
