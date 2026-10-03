@@ -369,3 +369,41 @@ a.rh-no:hover b{color:var(--red)}
 
 /* 범례 키가 두 줄이 되는 항목(출주마 일람) */
 .lg-k br{line-height:1.1}
+
+/* ── 체크 포인트 ────────────────────────────────────────────
+ *
+ * 같은 자료를 말 중심이 아니라 포인트 중심으로 한 번 더 놓는 칸. 「레이팅
+ * 1위가 몇 번인가」를 표에서 찾지 않고 바로 본다.
+ *
+ * 줄 수가 경주마다 둘에서 아홉까지 들쭉날쭉하다. 한 줄씩 세로로 쌓으면 아홉
+ * 줄짜리 경주에서 지면이 쓸데없이 길어지므로, 폭이 허락하는 만큼 칸을 채운다.
+ * 마번 칸은 전개도와 같은 모양을 쓴다 — 같은 것을 가리키는 표시는 지면 안에서
+ * 한 가지여야 한다.
+ */
+.check-box{border-bottom:1px solid var(--hair)}
+.ck-grid{
+  display:grid; grid-template-columns:repeat(auto-fill, minmax(248px, 1fr));
+  gap:1px; background:var(--hair); padding:1px;
+}
+.ck{
+  display:flex; align-items:baseline; gap:8px;
+  padding:6px 11px; background:var(--paper); min-width:0;
+}
+.ck-l{
+  flex:none; width:74px; font-size:11.5px; font-weight:700; color:var(--ink2);
+  letter-spacing:-.02em; line-height:1.45;
+}
+.ck-g{display:flex; flex-wrap:wrap; gap:3px; min-width:0}
+.ck-g em{
+  font-style:normal; display:inline-block; min-width:19px; text-align:center;
+  border:1px solid var(--hair); background:var(--paper); font-size:11.5px;
+  font-weight:700; padding:1px 3px; line-height:1.4;
+}
+/* 추천 다섯 두에 든 말은 짙게 — 체크 포인트와 우리 의견이 겹치는 자리가
+   한눈에 보여야 한다 */
+.ck-g em.p{background:var(--ink); color:var(--paper); border-color:var(--ink)}
+
+@media (max-width:620px){
+  .ck-grid{grid-template-columns:1fr}
+  .ck-l{width:68px; font-size:11px}
+}

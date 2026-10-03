@@ -20,6 +20,7 @@ from __future__ import annotations
 import datetime as dt
 import gzip
 import html
+import json
 import logging
 from collections import defaultdict
 from pathlib import Path
@@ -164,7 +165,7 @@ def load_day(c, day: str) -> List[Dict]:
         ).fetchone()
         rows = c.execute(
             """SELECT p.hr_no, p.pred_rank, p.chul_no, p.p_win, p.p_place, p.p_top2,
-                      p.style_code, COALESCE(p.longshot,0) longshot,
+                      p.style_code, p.tags, COALESCE(p.longshot,0) longshot,
                       e.hr_name, e.jk_name, e.tr_name, e.burden, e.sex, e.age,
                       e.career_starts, e.career_1st, e.career_2nd, e.career_3rd,
                       e.y1_starts, e.y1_1st
@@ -176,6 +177,10 @@ def load_day(c, day: str) -> List[Dict]:
         runners = []
         for r in rows:
             d = dict(r)
+            try:
+                d["tag_list"] = json.loads(d.get("tags") or "[]")
+            except ValueError:
+                d["tag_list"] = []
             d["past"] = past.get(d["hr_no"], [])
             d["tempo"] = tempo(d["past"], g["distance"])
             # 우리 자료는 2021-08 이후뿐이다. 마사회 공식 전적이 그보다 많으면
@@ -460,6 +465,35 @@ def pace_line(r):
     return '<div class="pace">%s</div>' % "".join(parts) if parts else ""
 
 
+def check_box(r):
+    """체크 포인트 — 말에 붙은 특징을 **포인트별 마번**으로 뒤집어 묶는다.
+
+    같은 자료를 말 중심이 아니라 포인트 중심으로 한 번 더 놓으면 훑기가 빠르다.
+    '레이팅 1위가 몇 번인가' 를 표에서 찾지 않고 바로 본다.
+
+    분류는 site.focus_points 를 그대로 쓴다. 지면이 따로 묶으면 같은 경주를
+    두 화면이 다르게 말하는 날이 온다 — 그게 이 지면에서 제일 비싼 고장이다.
+    """
+    from .site import focus_points
+
+    pts = focus_points(r["all"])
+    if not pts:
+        return ""
+    picked = {h["chul_no"] for h in r["picks"]}
+    items = []
+    for f in pts:
+        gates = "".join(
+            '<em class="%s">%s</em>' % ("p" if g in picked else "", esc(g))
+            for g in f["gates"])
+        items.append('<div class="ck"><span class="ck-l">%s</span>'
+                     '<span class="ck-g">%s</span></div>'
+                     % (esc(f["label"]), gates))
+    return ('<div class="check-box">\n'
+            ' <h4 class="sub-h">체크 포인트'
+            '<span class="thn2">포인트에 해당하는 마번 · 짙은 칸은 추천 다섯 두</span></h4>\n'
+            ' <div class="ck-grid">%s</div>\n</div>') % "".join(items)
+
+
 def race_block(r):
     p = r["picks"]
     n = stars(r["conf_score"])
@@ -493,6 +527,7 @@ def race_block(r):
   %s
   <p class="pace-txt">%s</p>
  </div>
+ %s
  <div class="scroll">
  <table class="grid picks">
   <colgroup><col class="w-mk"><col class="w-no"><col class="w-nm"><col class="w-jk"><col class="w-st"><col class="w-rd"><col class="w-lad"><col class="w-p"><col class="w-p2"></colgroup>
@@ -520,7 +555,7 @@ def race_block(r):
         esc(headline(r["conf_label"], p[0])), esc(p[0]["hr_name"]),
         pct(p[0]["p_win"]), top3, esc(r["conf_desc"]),
         {"빠른 페이스": "fast", "느린 페이스": "slow"}.get(kind, "mid"), esc(kind),
-        pace_line(r), esc(ptxt),
+        pace_line(r), esc(ptxt), check_box(r),
         pick_rows(r), tempo_table(r), entry_table(r), notes,
     )
 
