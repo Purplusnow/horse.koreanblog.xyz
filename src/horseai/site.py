@@ -33,7 +33,7 @@ from jinja2 import Environment, FileSystemLoader, select_autoescape
 from .clock import now_kst, today_kst
 from .kra.normalize import MAX_ORD, ORD_STATUS
 from .kra.store import session
-from .paper import build_paper_pages, pick_day
+from .paper import build_paper_pages, paper_state, pick_day
 from .style import STYLE_LABEL, STYLES, pace_map
 from .verify import (
     POOL_LABEL, _combos, build_report, load_dividends, set_min_sample,
@@ -910,6 +910,11 @@ def build(db: str, out_dir: Path, config: Dict, template_dir: Path,
             "pending": len(pending),
             "pending_days": sorted({r["rc_date"] for r in pending}),
             "built_at": now_kst().isoformat(timespec="seconds"),
+            # 지면 상태를 밖에서도 볼 수 있게 남긴다. 봉인이 끊기면 겉으로는
+            # 멀쩡해 보이는 채로 지면이 하루 중에 바뀌므로, 사이트가 스스로
+            # 말하게 해 둬야 한다 — gate 가 settle.json 을 읽는 것과 같은 뜻이다.
+            "paper": paper_state(conn, Path(db).resolve().parent / "paper",
+                                 today.isoformat()),
         }, ensure_ascii=False))
 
         # sitemap / robots

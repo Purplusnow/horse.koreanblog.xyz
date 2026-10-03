@@ -10,8 +10,11 @@ from __future__ import annotations
 import argparse
 import datetime as dt
 
+from pathlib import Path
+
 from .clock import now_kst, today_kst
 from .kra.store import session
+from .paper import paper_state
 
 
 def build(db: str) -> str:
@@ -53,6 +56,18 @@ def build(db: str) -> str:
                "WHERE p.longshot=1 AND g.rc_date >= ?", today.isoformat())
         if ls and ls["n"]:
             lines.append(f"  복병 {ls['n']}경주 게재")
+
+        # 지면 — 봉인이 끊긴 날만 알린다.
+        #
+        # 잘 되고 있을 때까지 매번 한 줄을 보태면 보고문이 길어지고, 길어지면
+        # 안 읽게 되고, 안 읽으면 정작 끊긴 날도 지나친다. 문제일 때만 말한다.
+        st = paper_state(c, Path(db).resolve().parent / "paper",
+                         today.isoformat())
+        if st["day"] and st["ready"] and not st["sealed"]:
+            lines += ["", "■ 지면",
+                      f"  {st['day']} 지면이 봉인되지 않았습니다.",
+                      "  빌드나 봉인 커밋이 끊긴 것으로, 그대로 두면",
+                      "  지면이 하루 중에 조금씩 바뀝니다."]
 
     # 누적 성적은 집계 결과에서 읽는다
     try:

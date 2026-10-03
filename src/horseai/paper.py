@@ -817,6 +817,44 @@ def pick_day(all_days: List[str], today: str) -> List[str]:
     return [next((d for d in all_days if d > today), all_days[-1])]
 
 
+def paper_state(conn, archive: Path, today: str) -> Dict:
+    """지면이 제대로 나와 있는가 — 감사·보고·settle.json 이 함께 쓰는 한 가지 판정.
+
+    세 곳이 각자 판정하면 같은 날을 두고 셋이 다른 말을 하게 된다.
+
+    'ready' 는 그날 모든 경주에 예상이 있다는 뜻이고(= 봉인했어야 한다),
+    'sealed' 는 실제로 봉인 파일이 있다는 뜻이다. ready 인데 sealed 가 아니면
+    **봉인이 어딘가에서 끊긴 것**이다 — 빌드가 안 돌았거나, 봉인은 했는데
+    커밋이 리포에 닿지 못했거나. 그대로 두면 매 실행마다 그날 DB 로 다시 구워
+    지면이 하루 종일 조금씩 바뀐다. 겉으로는 멀쩡해 보여서 아무도 모른다.
+    """
+    days = [r[0] for r in conn.execute(
+        """SELECT DISTINCT g.rc_date FROM predictions p
+           JOIN races g ON g.race_key = p.race_key ORDER BY g.rc_date""").fetchall()]
+    pick = pick_day(days, today)
+    if not pick:
+        return {"day": None, "ready": False, "sealed": False}
+    day = pick[0]
+    return {"day": day,
+            "ready": seal_ready(conn, day),
+            "sealed": sealed_file(archive, day).exists()}
+
+
+def check_paper(conn, archive: Path, today: str) -> List[Dict]:
+    """감사용 — audit.check 와 같은 모양으로 돌려준다."""
+    st = paper_state(conn, archive, today)
+    if not st["day"] or not st["ready"] or st["sealed"]:
+        return []
+    return [{
+        "kind": "지면 미봉인",
+        "n": 1, "unit": "일", "newest": st["day"],
+        "note": ("%s 지면은 전 경주 예상이 들어와 봉인됐어야 하는데 보관본이 없다. "
+                 "빌드가 돌지 않았거나 봉인 커밋이 리포에 닿지 못한 것이다 — "
+                 "그대로 두면 매 실행마다 다시 구워 지면이 하루 중에 바뀐다." % st["day"]),
+        "races": ["data/paper/%s.html.gz 없음" % st["day"]],
+    }]
+
+
 def build_paper_pages(env, out_dir: Path, ctx_base: Dict, conn,
                       days: List[str], today: str, archive: Path,
                       static_dir: Path, repaper: bool = False,

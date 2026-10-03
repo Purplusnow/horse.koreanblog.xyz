@@ -17,6 +17,7 @@ from __future__ import annotations
 import argparse
 import datetime as dt
 import sys
+from pathlib import Path
 from typing import Dict, List
 
 import pandas as pd
@@ -25,6 +26,7 @@ from .clock import today_kst
 from .kra.collect import (REPLAY_DAY_RATIO, REPLAY_MIN_HORSES,
                           REPLAY_MIN_RACES, REPLAY_MIN_RATIO)
 from .kra.store import session
+from .paper import check_paper
 
 # 승식 일곱 종이 모두 발매되므로, 시행된 경주에는 배당이 이만큼 있어야 한다.
 EXPECTED_POOLS = 7
@@ -226,7 +228,12 @@ def main(argv=None) -> int:
 
     with session(args.db) as conn:
         issues = (check(conn, args.days) + check_replay(conn, args.days)
-                  + check_orphan(conn))
+                  + check_orphan(conn)
+                  # 지면은 자료가 아니라 산출물이라 파이프라인을 막지 않는다
+                  # (BLOCKING 에 없다). 다만 조용히 넘어가지도 않는다 — 봉인이
+                  # 끊기면 겉으로는 멀쩡해 보이는 채로 지면이 하루 중에 바뀐다.
+                  + check_paper(conn, Path(args.db).resolve().parent / "paper",
+                                today_kst().isoformat()))
 
     if not issues:
         print(f"자료 점검 최근 {args.days}일 — 결손 없음")
@@ -257,7 +264,8 @@ def main(argv=None) -> int:
            if it["newest"] <= cutoff and it["kind"] not in ALWAYS]
     if len(issues) > len(blocking):
         print(f"  ({len(issues) - len(blocking)}종은 집계를 틀리게 하지 않아 "
-              f"통과시킨다 — 없는 승식은 판정에서 빠진다)")
+              f"통과시킨다 — 없는 승식은 판정에서 빠지고, "
+              f"지면은 자료가 아니라 산출물이다)")
     if old:
         print(f"  ({len(old)}종은 {args.fresh_days}일보다 오래돼 통과시킨다 — "
               f"자료가 끝내 안 올 수 있다)")
