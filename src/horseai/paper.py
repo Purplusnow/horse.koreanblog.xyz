@@ -913,9 +913,19 @@ def days_to_build(conn, archive: Path, today: str, mode: str) -> List[str]:
         return []
     # 실을 날과 봉인할 날은 다르다. 미래 경주일도 **싣기는** 한다(링크가 일찍
     # 생겨야 경주 시작 전에 볼 수 있다). 봉인만 그날이 와야 한다.
+    #
+    # **편성이 덜 찬 날은 오늘이라도 내지 않는다.** 예전에는 오늘을 무조건
+    # 끼워 넣었는데(set(base)), 그러면 서울 출전표가 아직 안 들어온 아침에
+    # 제주만 실린 지면이 나가고 편성띠가 '제주 7경주 = 총 7경주' 라고 그날
+    # 편성을 **단정한다.** 숫자가 옛것인 것과 사실이 틀린 것은 다르다.
+    #
+    # 안 내면 /paper/ 는 가장 최근에 온전히 낸 날을 보여 준다. 제호에 그 날짜가
+    # 찍혀 있으므로 읽는 사람이 오늘 것이 아님을 안다 — 반쪽짜리를 오늘 것이라고
+    # 내미는 것보다 낫다. 빌드가 자주 돌지 않는 환경이라 이 구간이 몇 시간씩
+    # 갈 수 있어서 더 그렇다.
     out = {d for d in all_days if d >= floor and full_card(conn, d)}
     # 보관본이 있는 날은 조건을 묻지 않는다. 이미 낸 지면이라 계속 떠 있어야 한다.
-    return sorted(out | set(kept) | set(base))
+    return sorted(out | set(kept))
 
 
 def paper_state(conn, archive: Path, today: str) -> Dict:
@@ -957,7 +967,26 @@ def check_paper(conn, archive: Path, today: str) -> List[Dict]:
                 "races": ["data/paper/%s.html.gz" % day],
             })
 
-    # (2) 봉인됐어야 하는데 안 된 날
+    # (2) 오늘이 경주일인데 편성이 덜 차 지면을 못 낸 경우.
+    #     자료가 더 들어오면 저절로 풀리지만, 빌드가 하루 서너 번만 도는
+    #     환경이라 몇 시간씩 갈 수 있다. 조용히 지나가면 안 된다.
+    n_race, n_pred = conn.execute(
+        """SELECT (SELECT COUNT(*) FROM races WHERE rc_date = ?),
+                  (SELECT COUNT(DISTINCT p.race_key) FROM predictions p
+                    JOIN races g ON g.race_key = p.race_key WHERE g.rc_date = ?)""",
+        (today, today)).fetchone()
+    if n_race and n_pred and n_pred < n_race:
+        out.append({
+            "kind": "지면 미게재", "n": n_race - n_pred, "unit": "경주",
+            "newest": today,
+            "note": ("오늘 %d경주 중 %d경주에만 예상이 있어 지면을 내지 않았다. "
+                     "편성이 덜 찬 지면은 '총 N경주' 를 틀리게 말하므로 내지 않는다. "
+                     "/paper/ 는 가장 최근에 온전히 낸 날을 보여 준다."
+                     % (n_race, n_pred)),
+            "races": ["%s 예상 %d/%d" % (today, n_pred, n_race)],
+        })
+
+    # (3) 봉인됐어야 하는데 안 된 날
     st = paper_state(conn, archive, today)
     if not st["day"] or not st["ready"] or st["sealed"]:
         return out
