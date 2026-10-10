@@ -786,11 +786,11 @@ def sealed_file(archive: Path, day: str) -> Path:
     return archive / ("%s.html.gz" % day)
 
 
-def seal_ready(conn, day: str) -> bool:
-    """봉인해도 되는가 — 그날 **모든** 경주에 예상이 있는가.
+def full_card(conn, day: str) -> bool:
+    """그날 races 에 올라온 경주 **전부**에 예상이 있는가.
 
-    첫 실행에 그냥 봉인하면 출전표가 덜 들어온 아침에 반쪽 지면이 굳는다.
-    예상이 빠진 경주가 하나라도 있으면 봉인하지 않고 다음 실행에 다시 시도한다.
+    반쪽 지면을 띄우지 않기 위한 조건이다. 다만 이것만으로 봉인을 판단하면 안
+    된다 — 미래 날짜는 races 목록 자체가 미완성이라 '전부' 가 전부가 아니다.
     """
     n_race, n_pred = conn.execute(
         """SELECT (SELECT COUNT(*) FROM races WHERE rc_date = ?),
@@ -798,6 +798,27 @@ def seal_ready(conn, day: str) -> bool:
                     JOIN races g ON g.race_key = p.race_key WHERE g.rc_date = ?)""",
         (day, day)).fetchone()
     return bool(n_race) and n_race == n_pred
+
+
+def seal_ready(conn, day: str, today: str = "9999-12-31") -> bool:
+    """봉인해도 되는가.
+
+    둘을 다 만족해야 한다.
+
+    **(1) 그날이 지났거나 오늘이어야 한다.**
+    미래 날짜를 봉인하면 출전표가 아직 다 안 들어온 채로 굳는다. 2026-10-10 과
+    10-11 지면이 그렇게 깨졌다 — 10/07 14:50 에 사흘 치를 한꺼번에 봉인했는데,
+    그때 제주·영천 출전표만 나와 있어서 **서울 열 경주가 통째로 빠진 지면**이
+    굳어 버렸다. 아래 (2) 는 'races 에 있는 경주' 를 세므로 이걸 못 잡는다 —
+    미래 날짜는 경주 목록 자체가 미완성이기 때문이다.
+
+    종이 예상지도 전날 밤에 찍지만 편성은 전부 실린다. 숫자가 조금 옛것이 되는
+    것과 경마장 하나가 빠지는 것은 다른 이야기다.
+
+    **(2) 그날 모든 경주에 예상이 있어야 한다.**
+    출전표가 덜 들어온 아침에 반쪽 지면이 굳지 않게 한다.
+    """
+    return day <= today and full_card(conn, day)
 
 
 def pick_day(all_days: List[str], today: str) -> List[str]:
@@ -815,6 +836,29 @@ def pick_day(all_days: List[str], today: str) -> List[str]:
     if today in all_days:
         return [today]
     return [next((d for d in all_days if d > today), all_days[-1])]
+
+
+def seal_stale(conn, archive: Path, day: str) -> int:
+    """봉인본이 그날 편성을 다 담고 있는가. 모자란 경주 수를 돌려준다(0이면 정상).
+
+    봉인은 '게재한 것을 고치지 않는다' 는 약속이지, **빠뜨린 것을 그대로 둔다**
+    는 약속이 아니다. 출전표가 나뉘어 들어오면(제주가 먼저, 서울이 나중) 먼저
+    굳은 지면에 경마장 하나가 통째로 없을 수 있다. 그건 옛 숫자가 아니라 틀린
+    지면이므로 다시 찍는다 — 종이 신문도 그럴 때는 정정판을 낸다.
+
+    봉인본을 직접 세는 이유는 그것이 **실제로 게재된 내용** 이기 때문이다.
+    옆에 따로 적어 둔 숫자를 믿으면 둘이 어긋나는 날이 온다.
+    """
+    f = sealed_file(archive, day)
+    if not f.exists():
+        return 0
+    html_in = gzip.decompress(f.read_bytes()).decode("utf-8")
+    n_sheet = html_in.count('class="race" id=')
+    n_db = conn.execute(
+        """SELECT COUNT(*) FROM races g WHERE g.rc_date = ?
+             AND EXISTS(SELECT 1 FROM predictions p WHERE p.race_key = g.race_key)""",
+        (day,)).fetchone()[0]
+    return max(0, n_db - n_sheet)
 
 
 def archived_days(archive: Path) -> List[str]:
@@ -867,7 +911,9 @@ def days_to_build(conn, archive: Path, today: str, mode: str) -> List[str]:
     floor = min(kept + base) if (kept or base) else None
     if floor is None:
         return []
-    out = {d for d in all_days if d >= floor and seal_ready(conn, d)}
+    # 실을 날과 봉인할 날은 다르다. 미래 경주일도 **싣기는** 한다(링크가 일찍
+    # 생겨야 경주 시작 전에 볼 수 있다). 봉인만 그날이 와야 한다.
+    out = {d for d in all_days if d >= floor and full_card(conn, d)}
     # 보관본이 있는 날은 조건을 묻지 않는다. 이미 낸 지면이라 계속 떠 있어야 한다.
     return sorted(out | set(kept) | set(base))
 
@@ -891,16 +937,31 @@ def paper_state(conn, archive: Path, today: str) -> Dict:
         return {"day": None, "ready": False, "sealed": False}
     day = pick[0]
     return {"day": day,
-            "ready": seal_ready(conn, day),
+            "ready": seal_ready(conn, day, today),
             "sealed": sealed_file(archive, day).exists()}
 
 
 def check_paper(conn, archive: Path, today: str) -> List[Dict]:
     """감사용 — audit.check 와 같은 모양으로 돌려준다."""
+    out: List[Dict] = []
+
+    # (1) 봉인본에 경주가 빠졌는가 — 옛 숫자가 아니라 틀린 지면이다.
+    #     빌드가 알아서 다시 찍지만, 왜 다시 찍혔는지 기록은 남아야 한다.
+    for day in archived_days(archive):
+        n = seal_stale(conn, archive, day)
+        if n:
+            out.append({
+                "kind": "지면 결손", "n": n, "unit": "경주", "newest": day,
+                "note": ("%s 지면에 %d경주가 빠져 있다. 출전표가 경마장별로 나뉘어 "
+                         "들어오는데 그 사이에 봉인되면 한쪽이 통째로 누락된다." % (day, n)),
+                "races": ["data/paper/%s.html.gz" % day],
+            })
+
+    # (2) 봉인됐어야 하는데 안 된 날
     st = paper_state(conn, archive, today)
     if not st["day"] or not st["ready"] or st["sealed"]:
-        return []
-    return [{
+        return out
+    return out + [{
         "kind": "지면 미봉인",
         "n": 1, "unit": "일", "newest": st["day"],
         "note": ("%s 지면은 전 경주 예상이 들어와 봉인됐어야 하는데 보관본이 없다. "
@@ -946,7 +1007,13 @@ def build_paper_pages(env, out_dir: Path, ctx_base: Dict, conn,
 
     for day in days:
         keep = sealed_file(archive, day)
-        if keep.exists() and not repaper:
+        # 봉인본에 빠진 경주가 있으면 그건 옛 숫자가 아니라 **틀린 지면**이다.
+        # 그대로 두지 않고 다시 찍는다 — 종이 신문도 그럴 때는 정정판을 낸다.
+        missing = seal_stale(conn, archive, day)
+        if missing:
+            log.warning("지면 %s — 봉인본에 %d경주가 빠져 있다, 다시 찍는다",
+                        day, missing)
+        if keep.exists() and not repaper and not missing:
             html_out = gzip.decompress(keep.read_bytes()).decode("utf-8")
             log.info("지면 %s — 봉인된 것을 그대로 싣는다", day)
         else:
@@ -968,7 +1035,11 @@ def build_paper_pages(env, out_dir: Path, ctx_base: Dict, conn,
             # 자료(마체중 등)를 못 받으므로, 같은 경주를 두고 /race/ 쪽 숫자와
             # 갈릴 수 있다. 지면은 '발주 전에 게재하고 고치지 않는 인쇄물',
             # /race/ 는 '발주 직전까지 갱신하는 화면' 이라 게재 시점이 다른 것이다.
-            if seal and seal_ready(conn, day):
+            if missing and not seal_ready(conn, day, today):
+                # 깨진 봉인본인데 아직 봉인할 때가 아니면(미래 경주일) 치운다.
+                # 두면 다음 빌드가 그 깨진 것을 다시 집어 든다.
+                keep.unlink(missing_ok=True)
+            if seal and seal_ready(conn, day, today):
                 archive.mkdir(parents=True, exist_ok=True)
                 # mtime 을 0 으로 고정한다. 안 그러면 내용이 같아도 gzip 머리의
                 # 시각이 달라져 매 실행마다 git 에 변경으로 잡힌다.
@@ -976,6 +1047,9 @@ def build_paper_pages(env, out_dir: Path, ctx_base: Dict, conn,
                 log.info("지면 %s — 구워서 봉인했다", day)
             elif not seal:
                 log.info("지면 %s — 구웠지만 봉인하지 않는다 (커밋할 수 없는 실행)", day)
+            elif day > today:
+                log.info("지면 %s — 다가올 경주일이라 봉인하지 않는다 "
+                         "(출전표가 경마장별로 나뉘어 들어온다)", day)
             else:
                 log.info("지면 %s — 예상이 덜 들어와 봉인하지 않는다 (다음에 다시)", day)
 
