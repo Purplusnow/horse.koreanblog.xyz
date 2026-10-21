@@ -45,6 +45,11 @@ MEET_SLUG = {"서울": "seoul", "부산경남": "busan", "제주": "jeju", "영�
 WEEKDAY_KO = ["월", "화", "수", "목", "금", "토", "일"]
 
 
+# 주소창·런처 배경에 쓰이는 색. **static/style.css 의 --accent 와 같은 값이어야
+# 한다** — 다르면 홈 화면에서 열 때 윗줄만 다른 초록으로 떠서 티가 난다.
+THEME_COLOR = "#1a6b4a"
+
+
 def race_slug(race_key: str) -> str:
     """'서울-20260807-01' → 'seoul-20260807-1'"""
     parts = race_key.split("-")
@@ -695,13 +700,22 @@ def build(db: str, out_dir: Path, config: Dict, template_dir: Path,
         # 없으면 브라우저가 예전 track.js·style.css 를 계속 쓴다. 실제로 레인
         # 간격을 고쳐 배포하고도 화면이 그대로여서 한참 딴 데를 짚었다.
         assets = {}
-        for f in ("track.js", "style.css", "clock.js", "paper.css"):
+        for f in ("track.js", "style.css", "clock.js", "paper.css", "pwa.js",
+                  "icon-192.png", "icon-512.png", "icon-maskable-512.png"):
             src = static_dir / f
             if src.exists():
                 assets[f] = hashlib.md5(src.read_bytes()).hexdigest()[:8]
 
+        # 매니페스트는 페이지보다 **먼저** 만든다. base.html 이 주소에 이 파일의
+        # 해시를 붙이므로, 나중에 만들면 참조할 값이 없다. 내용이 바뀌면 주소가
+        # 바뀌어야 런처가 아이콘·이름을 새로 읽는다 — 안 그러면 옛 이름이 남는다.
+        manifest = env.get_template("manifest.webmanifest").render(
+            site=config["site"], assets=assets, theme_color=THEME_COLOR)
+        assets["manifest"] = hashlib.md5(manifest.encode("utf-8")).hexdigest()[:8]
+
         ctx_base = {
             "assets": assets,
+            "theme_color": THEME_COLOR,
             "site": config["site"],
             "adsense": config["adsense"],
             "analytics": config["analytics"],
@@ -938,6 +952,22 @@ def build(db: str, out_dir: Path, config: Dict, template_dir: Path,
 
         write(out_dir / "robots.txt",
               f"User-agent: *\nAllow: /\n\nSitemap: {base}/sitemap.xml\n")
+
+        # ── 홈 화면 설치(PWA) ────────────────────────────────────────
+        # 둘 다 **뿌리**에 둔다. 서비스 워커는 자기가 놓인 폴더만 담당하므로
+        # /static/sw.js 로 내보내면 /static/ 아래만 맡고 정작 예상 화면은
+        # 담당하지 않는다. 매니페스트도 scope 를 "/" 로 선언한 것과 맞춘다.
+        write(out_dir / "manifest.webmanifest", manifest)
+        write(out_dir / "sw.js", env.get_template("sw.js").render(
+            # 판 번호에 빌드 시각을 넣는다. 자산 해시만 쓰면 CSS 가 안 바뀐 날
+            # 설치 때 받아 둔 홈 화면이 그대로 남아, 연결이 끊겼을 때 어제
+            # 출전표가 뜬다. 배포마다 갈아엎는 쪽이 맞다.
+            sw_version=now_kst().strftime("%Y%m%d%H%M"),
+            sw_shell=["/",
+                      f"/static/style.css?v={assets['style.css']}",
+                      f"/static/clock.js?v={assets['clock.js']}",
+                      f"/static/pwa.js?v={assets['pwa.js']}",
+                      f"/static/icon-192.png?v={assets['icon-192.png']}"]))
 
         # ads.txt — 이 도메인의 광고를 누가 팔 수 있는지 밝히는 파일.
         # 없으면 구글이 '승인되지 않은 판매자' 로 보고 광고 게재를 제한한다.

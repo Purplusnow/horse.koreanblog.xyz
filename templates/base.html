@@ -15,6 +15,11 @@
 <meta name="twitter:card" content="summary">
 <link rel="stylesheet" href="/static/style.css?v={{ assets['style.css'] }}">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🐎</text></svg>">
+{# 홈 화면 설치(PWA). 매니페스트는 뿌리에서 렌더되고, 서비스 워커 등록은
+   pwa.js 한 곳에서만 한다 — 페이지마다 흩어 두면 어디서 등록됐는지 못 찾는다. #}
+<link rel="manifest" href="/manifest.webmanifest?v={{ assets['manifest'] }}">
+<meta name="theme-color" content="{{ theme_color }}">
+<link rel="apple-touch-icon" href="/static/icon-192.png?v={{ assets['icon-192.png'] }}">
 {% if verification.google %}<meta name="google-site-verification" content="{{ verification.google }}">{% endif %}
 {% if verification.naver %}<meta name="naver-site-verification" content="{{ verification.naver }}">{% endif %}
 {% block head_extra %}{% endblock %}
@@ -76,5 +81,6 @@
 </footer>
 
 <script src="/static/clock.js?v={{ assets['clock.js'] }}" defer></script>
+<script src="/static/pwa.js?v={{ assets['pwa.js'] }}" defer></script>
 </body>
 </html>
