@@ -16,4 +16,4 @@ compatibility_date = "2026-10-01"
 # id 는 위 2) 에서 받은 값으로 바꾼다 — 비워 두면 배포가 거부된다.
 [[kv_namespaces]]
 binding = "SUBS"
-id = "PUT_KV_NAMESPACE_ID_HERE"
+id = "a2946e52f111498f9331ec450fdbeecd"

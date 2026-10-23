@@ -33,7 +33,7 @@ verification:
 #   vapid_public 공개키. 짝인 개인키는 저장소 시크릿 VAPID_PRIVATE_KEY 에 있다.
 #                **개인키는 여기에 적지 않는다.**
 push:
-  worker_url: ""
+  worker_url: "https://horseai-push.purplusnow.workers.dev"
   vapid_public: "BM4GC7ZAREV0gLR7WldLob9hyjo5W_GvuAXc6DuCMONE97vcY_60iNi183j4wzGjb6SVwlqoFfNJ6VgrxbM1cZQ"
 
 analytics:
