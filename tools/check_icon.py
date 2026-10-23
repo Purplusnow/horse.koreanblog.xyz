@@ -37,20 +37,43 @@ def analyse(path):
     px = im.load()
     W = H = 256
 
-    # 바탕색 = 모서리 네 곳의 평균. 아이콘은 가장자리가 바탕이다.
-    corners = [px[2, 2], px[W - 3, 2], px[2, H - 3], px[W - 3, H - 3]]
-    bg = tuple(sum(c[i] for c in corners) // 4 for i in range(3))
+    # **바탕이 단색이라고 가정하면 안 된다.** 게임 아이콘은 가운데가 밝고
+    # 모서리가 어두운 방사형 그라데이션을 쓰는 일이 많은데, 모서리 색 하나로
+    # 바탕을 정하면 바탕 전체가 '그림'으로 잡힌다(실제로 잉크 87퍼센트가
+    # 나왔다). 방사형 바탕은 **같은 반지름 위에서는 색이 같다**는 성질이 있으니,
+    # 고리별 중앙값을 그 고리의 바탕으로 삼는다. 단색 바탕도 이 방법으로
+    # 똑같이 맞는다.
+    cx, cy = (W - 1) / 2, (H - 1) / 2
+    rings = {}
+    for y in range(H):
+        for x in range(W):
+            r = int(((x - cx) ** 2 + (y - cy) ** 2) ** 0.5)
+            rings.setdefault(r, []).append(px[x, y])
+    ring_bg = {}
+    for r, cols in rings.items():
+        ring_bg[r] = tuple(sorted(c[i] for c in cols)[len(cols) // 2] for i in range(3))
 
-    # 바탕과 충분히 다른 화소 = 그림
-    def is_ink(c):
-        return abs(c[0] - bg[0]) + abs(c[1] - bg[1]) + abs(c[2] - bg[2]) > 60
+    def is_ink(x, y):
+        r = int(((x - cx) ** 2 + (y - cy) ** 2) ** 0.5)
+        b, c = ring_bg[r], px[x, y]
+        return abs(c[0] - b[0]) + abs(c[1] - b[1]) + abs(c[2] - b[2]) > 60
 
-    ink = [(x, y) for y in range(H) for x in range(W) if is_ink(px[x, y])]
+    ink = [(x, y) for y in range(H) for x in range(W) if is_ink(x, y)]
     ratio = len(ink) / (W * H)
+    # 대표 바탕색은 바깥 고리에서 — 테두리는 어떤 아이콘이든 바탕이다.
+    bg = ring_bg[max(ring_bg)]
 
-    # 주제색 = 그림 화소의 평균
+    # 주제색은 **평균이 아니라 '속살'의 중앙값**으로 잡는다. 평균을 쓰면
+    # 경계의 반투명 화소(바탕과 섞인 색)가 값을 바탕 쪽으로 끌어내려,
+    # 흰 그림이 흰색이 아닌 것으로 잡힌다 — 명암비가 3.1 대신 2.7 로 나왔다.
+    # 바탕에서 가장 멀리 떨어진 절반만 모아 중앙값을 취하면 경계가 빠진다.
     if ink:
-        fg = tuple(sum(px[x, y][i] for x, y in ink) // len(ink) for i in range(3))
+        def dist(x, y):
+            r = int(((x - cx) ** 2 + (y - cy) ** 2) ** 0.5)
+            b, c = ring_bg[r], px[x, y]
+            return abs(c[0] - b[0]) + abs(c[1] - b[1]) + abs(c[2] - b[2])
+        core = sorted(ink, key=lambda p: -dist(*p))[: max(1, len(ink) // 2)]
+        fg = tuple(sorted(px[x, y][i] for x, y in core)[len(core) // 2] for i in range(3))
     else:
         fg = bg
 
