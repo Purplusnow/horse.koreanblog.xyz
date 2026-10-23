@@ -1467,8 +1467,15 @@ tbody tr:hover { background: var(--bg-soft); }
 /* ── 알림 신청 바 · 토스트 ─────────────────────────────────────────────
    설치 바(.pwa-bar)와 같은 틀을 쓰되 색만 다르게 둔다. 둘이 동시에 뜨지는
    않지만(notify.js 가 막는다), 다른 일을 권하는 줄이라는 건 보여야 한다. */
-.nt-bar{background:#1f2937}
-.nt-bar .pwa-go{color:#1f2937}
+/* 배경을 바꾸면 글자색도 같이 바꿔야 한다. .pwa-bar 는 글자색을
+   --accent-on 에서 받는데, 그 값은 **밝은 초록 배경 위에 얹을 색**이라
+   어두운 테마에서는 거의 검정(#0d1a14)이다. 배경만 남색으로 갈아 두면
+   검정 글자가 남색 위에 올라가 거의 안 읽힌다 — 실제로 그렇게 나갔고,
+   밝은 테마에서만 보면 멀쩡해 보인다. 그래서 여기서는 토큰에 기대지 않고
+   짝이 되는 두 색을 함께 못박는다. */
+.nt-bar{background:#1f2937; color:#f3f6fa}
+.nt-bar .pwa-close{color:#f3f6fa}
+.nt-bar .pwa-go{background:#f3f6fa; color:#1f2937}
 
 .nt-link{
   background:none; border:0; padding:0; font:inherit; cursor:pointer;

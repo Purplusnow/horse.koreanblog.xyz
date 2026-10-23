@@ -78,7 +78,47 @@ try {
         return b.width > 0 && b.right <= innerWidth + 1 && b.left >= -1;
       })()`));
     }
+    console.log('\n글자 대비 (밝은 테마 · 어두운 테마)');
+    // **배경만 바꾸고 글자색을 안 바꾸는 사고가 실제로 났다.** 밝은 테마에서만
+    // 보면 멀쩡하고, 어두운 테마에서 검정 글자가 남색 위에 올라갔다.
+    // 그래서 두 테마를 다 돌려 명암비를 숫자로 잰다(WCAG AA 본문 4.5:1).
+    const lum = (c) => {
+      const [r, g, b] = c.map((v) => {
+        v /= 255; return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4);
+      });
+      return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+    };
+    const ratio = (a, b) => {
+      const [x, y] = [lum(a), lum(b)].sort((p, q) => q - p);
+      return (x + 0.05) / (y + 0.05);
+    };
+    const parse = (s) => (s.match(/\d+/g) || []).slice(0, 3).map(Number);
+
+    for (const scheme of ['light', 'dark']) {
+      await send('Emulation.setEmulatedMedia',
+        { features: [{ name: 'prefers-color-scheme', value: scheme }] });
+      await sleep(400);
+      const got = JSON.parse(await js(`(() => {
+        const bar = document.getElementById('nt-bar');
+        const t = bar.querySelector('.pwa-text b');
+        const d = bar.querySelector('.pwa-text small');
+        const g = bar.querySelector('.nt-go');
+        const cs = getComputedStyle;
+        return JSON.stringify({
+          bg: cs(bar).backgroundColor, title: cs(t).color, desc: cs(d).color,
+          goBg: cs(g).backgroundColor, goFg: cs(g).color,
+        });
+      })()`));
+      const bg = parse(got.bg);
+      const rTitle = ratio(parse(got.title), bg);
+      const rDesc = ratio(parse(got.desc), bg);
+      const rGo = ratio(parse(got.goFg), parse(got.goBg));
+      ok(`${scheme} · 제목 대비`, rTitle >= 4.5, rTitle.toFixed(1) + ':1');
+      ok(`${scheme} · 설명 대비`, rDesc >= 4.5, rDesc.toFixed(1) + ':1');
+      ok(`${scheme} · 버튼 대비`, rGo >= 4.5, rGo.toFixed(1) + ':1');
+    }
   }
+
   ws.close();
 } finally {
   chrome.kill();
