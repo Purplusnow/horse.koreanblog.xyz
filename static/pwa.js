@@ -15,9 +15,13 @@
   var DISMISS_KEY = 'horseai.pwa.dismissed';
   var DISMISS_DAYS = 14;          // 거절한 사람에게 매번 들이밀지 않는다
 
-  function track(name, params) {
+  // **구분은 매개변수가 아니라 이름으로 한다.** GA4 는 이벤트 이름은 그냥
+  // 보여 주지만 매개변수는 '맞춤 측정기준'으로 등록해야 조회된다. 등록을
+  // 잊으면 이벤트는 멀쩡히 쌓이는데 아무도 못 보고, 그 사실조차 안 보인다.
+  // 가짓수가 적은 구분이라 이름에 녹이는 편이 싸다.
+  function track(name) {
     // ?noga=1 로 집계를 끈 기기에서는 gtag 자체가 없다 — 조용히 넘어간다.
-    if (typeof window.gtag === 'function') window.gtag('event', name, params || {});
+    if (typeof window.gtag === 'function') window.gtag('event', name);
   }
 
   function store(fn, dflt) {
@@ -38,7 +42,7 @@
     return window.matchMedia('(display-mode: standalone)').matches ||
            window.navigator.standalone === true;
   }, false);
-  track('app_open', { display_mode: standalone ? 'standalone' : 'browser' });
+  track(standalone ? 'app_open_standalone' : 'app_open_browser');
 
   // 홈 화면에서 열었으면 설치를 권할 이유가 없다.
   if (standalone) return;
@@ -76,7 +80,8 @@
       hide(bar);
       deferred.prompt();
       deferred.userChoice.then(function (choice) {
-        track('pwa_prompt_result', { outcome: choice && choice.outcome });
+        track(choice && choice.outcome === 'accepted'
+          ? 'pwa_prompt_accepted' : 'pwa_prompt_declined');
         deferred = null;
       });
     });

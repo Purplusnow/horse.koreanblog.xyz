@@ -23,8 +23,10 @@
   var DISMISS_KEY = 'horseai.notify.dismissed';
   var DISMISS_DAYS = 30;
 
-  function track(name, params) {
-    if (typeof window.gtag === 'function') window.gtag('event', name, params || {});
+  // 구분은 이름으로 한다 — 매개변수는 GA4 에 맞춤 측정기준으로 등록해야만
+  // 조회되고, 등록을 잊으면 쌓이기만 하고 아무도 못 본다(pwa.js 와 같은 규칙).
+  function track(name) {
+    if (typeof window.gtag === 'function') window.gtag('event', name);
   }
   function store(fn, dflt) {
     try { return fn(); } catch (e) { return dflt; }
@@ -132,7 +134,7 @@
     bar.querySelector('.nt-go').addEventListener('click', async function () {
       bar.remove();
       var perm = await Notification.requestPermission();
-      track('push_permission', { outcome: perm });
+      track('push_permission_' + perm);   // granted · denied · default
       if (perm !== 'granted') {
         if (perm === 'denied') toast('브라우저 설정에서 알림을 허용해야 받을 수 있습니다.');
         return;
