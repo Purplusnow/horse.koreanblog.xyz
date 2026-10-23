@@ -14,7 +14,10 @@
 <meta property="og:url" content="{{ site.url }}{{ page_url }}">
 <meta name="twitter:card" content="summary">
 <link rel="stylesheet" href="/static/style.css?v={{ assets['style.css'] }}">
-<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🐎</text></svg>">
+{# 탭 아이콘도 홈 화면 아이콘과 같은 그림을 쓴다. 예전에는 🐎 이모지를
+   인라인 SVG 로 넣었는데, 기기마다 이모지 모양이 달라 같은 사이트가 다른
+   얼굴로 보였다. #}
+<link rel="icon" type="image/png" sizes="192x192" href="/static/icon-192.png?v={{ assets['icon-192.png'] }}">
 {# 홈 화면 설치(PWA). 매니페스트는 뿌리에서 렌더되고, 서비스 워커 등록은
    pwa.js 한 곳에서만 한다 — 페이지마다 흩어 두면 어디서 등록됐는지 못 찾는다. #}
 <link rel="manifest" href="/manifest.webmanifest?v={{ assets['manifest'] }}">
