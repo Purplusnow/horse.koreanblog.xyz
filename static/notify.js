@@ -156,19 +156,33 @@
   }
 
   // ── 시작 ────────────────────────────────────────────────
-  window.addEventListener('load', function () {
-    setTimeout(async function () {
-      if (Notification.permission === 'granted') {
-        // 이미 허락한 사람. 창구에 명단이 남아 있는지는 알 수 없으므로 조용히
-        // 다시 등록한다 — 워커가 같은 키로 덮어쓰므로 중복이 쌓이지 않는다.
-        try { await subscribe(); showFooterToggle(); } catch (e) { /* 다음 방문에 */ }
-        return;
-      }
-      if (Notification.permission === 'denied') return;   // 다시 물을 수 없다
-      if (dismissedRecently()) return;
-      // 설치 바가 먼저다. 그쪽이 떠 있으면 이번 방문은 건너뛴다.
-      if (document.getElementById('pwa-bar')) return;
-      showBar();
-    }, 1500);   // 화면이 자리를 잡은 뒤에 올라오게 한다
-  });
+  //
+  // **설치 바에 양보하되, 비켜날 때까지 기다린다.** 예전에는 설치 바가 떠
+  // 있으면 그 방문은 그냥 포기했는데, 설치 바는 설치하거나 닫기 전까지 계속
+  // 떠 있으므로 앱을 안 깐 사람에게는 알림 신청이 영영 안 나왔다. 양보는
+  // 자리를 비키라는 뜻이지 사라지라는 뜻이 아니다.
+  var WAIT_MS = 3000;
+  var MAX_WAIT = 40;          // 3초 × 40 = 2분이면 설치 바는 결판이 나 있다
+
+  function tryShow(tries) {
+    if (document.getElementById('pwa-bar')) {
+      if (tries < MAX_WAIT) setTimeout(function () { tryShow(tries + 1); }, WAIT_MS);
+      return;
+    }
+    showBar();
+  }
+
+  // load 를 기다리지 않는다 — 이 파일은 body 끝에서 실행되므로 DOM 은 이미
+  // 서 있고, 광고 iframe 이 늦으면 load 는 한참 뒤에 뜬다.
+  setTimeout(async function () {
+    if (Notification.permission === 'granted') {
+      // 이미 허락한 사람. 창구에 명단이 남아 있는지는 알 수 없으므로 조용히
+      // 다시 등록한다 — 워커가 같은 키로 덮어쓰므로 중복이 쌓이지 않는다.
+      try { await subscribe(); showFooterToggle(); } catch (e) { /* 다음 방문에 */ }
+      return;
+    }
+    if (Notification.permission === 'denied') return;   // 다시 물을 수 없다
+    if (dismissedRecently()) return;
+    tryShow(0);
+  }, 1500);   // 화면이 자리를 잡은 뒤에 올라오게 한다
 })();
