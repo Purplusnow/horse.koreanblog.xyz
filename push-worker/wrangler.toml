@@ -1,0 +1,19 @@
+# Cloudflare Worker — 웹푸시 구독 창구
+#
+# 배포 (처음 한 번)
+#   1) npx wrangler login
+#   2) npx wrangler kv namespace create SUBS      → 나온 id 를 아래 id 에 적는다
+#   3) npx wrangler secret put ADMIN_TOKEN        → 발송기와 나눠 가질 임의의 긴 문자열
+#   4) npx wrangler deploy
+#
+# 그 다음은 코드만 고치고 `npx wrangler deploy` 로 끝난다.
+
+name = "horseai-push"
+main = "src/index.js"
+compatibility_date = "2026-10-01"
+
+# KV 네임스페이스. 구독 명단과 '마지막으로 알림 보낸 날짜'가 여기 들어간다.
+# id 는 위 2) 에서 받은 값으로 바꾼다 — 비워 두면 배포가 거부된다.
+[[kv_namespaces]]
+binding = "SUBS"
+id = "PUT_KV_NAMESPACE_ID_HERE"

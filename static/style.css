@@ -1463,3 +1463,22 @@ tbody tr:hover { background: var(--bg-soft); }
   .pwa-text small{font-size:11px}
   .pwa-go{padding:7px 13px; font-size:13px}
 }
+
+/* ── 알림 신청 바 · 토스트 ─────────────────────────────────────────────
+   설치 바(.pwa-bar)와 같은 틀을 쓰되 색만 다르게 둔다. 둘이 동시에 뜨지는
+   않지만(notify.js 가 막는다), 다른 일을 권하는 줄이라는 건 보여야 한다. */
+.nt-bar{background:#1f2937}
+.nt-bar .pwa-go{color:#1f2937}
+
+.nt-link{
+  background:none; border:0; padding:0; font:inherit; cursor:pointer;
+  color:var(--accent-text); text-decoration:underline;
+}
+
+.nt-toast{
+  position:fixed; left:50%; transform:translateX(-50%);
+  bottom:calc(22px + env(safe-area-inset-bottom)); z-index:70;
+  max-width:min(92vw,420px); padding:11px 16px; border-radius:999px;
+  background:rgba(20,24,31,.94); color:#fff; font-size:13.5px; font-weight:600;
+  line-height:1.4; text-align:center; box-shadow:0 6px 24px rgba(0,0,0,.26);
+}

@@ -26,6 +26,16 @@ verification:
   google: ""    # 구글 서치콘솔 → HTML 태그 방식
   naver: "24fca955c9a60861e3eca05729750de66e490d58"
 
+# 경주일 알림(웹푸시). 둘 다 채워져야 알림 신청이 화면에 나온다 —
+# 하나라도 비면 notify.js 를 아예 싣지 않는다.
+#
+#   worker_url   Cloudflare Worker 주소 (push-worker/ 를 배포하면 나온다)
+#   vapid_public 공개키. 짝인 개인키는 저장소 시크릿 VAPID_PRIVATE_KEY 에 있다.
+#                **개인키는 여기에 적지 않는다.**
+push:
+  worker_url: ""
+  vapid_public: "BM4GC7ZAREV0gLR7WldLob9hyjo5W_GvuAXc6DuCMONE97vcY_60iNi183j4wzGjb6SVwlqoFfNJ6VgrxbM1cZQ"
+
 analytics:
   ga4_id: "G-2D35J53WMX"
 

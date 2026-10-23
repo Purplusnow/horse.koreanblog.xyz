@@ -15,3 +15,9 @@ dist/
 models/
 config/endpoints.resolved.json
 config/api_fields.json
+
+# 발송기 의존성 — CI 가 npm ci 로 설치한다.
+tools/push/node_modules/
+
+# 비밀값은 저장소에 두지 않는다. ~/dev/keystore/ 로 옮겼다.
+.push-admin-token.txt

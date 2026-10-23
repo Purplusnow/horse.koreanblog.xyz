@@ -82,5 +82,12 @@
 
 <script src="/static/clock.js?v={{ assets['clock.js'] }}" defer></script>
 <script src="/static/pwa.js?v={{ assets['pwa.js'] }}" defer></script>
+{# 알림. 창구 주소와 공개키가 설정돼 있을 때만 싣는다 — 둘 중 하나라도
+   비어 있으면 신청 자체를 권하지 않는 것이 맞다(애드센스와 같은 규칙). #}
+{% if push.worker_url and push.vapid_public %}
+<script src="/static/notify.js?v={{ assets['notify.js'] }}"
+        data-endpoint="{{ push.worker_url }}"
+        data-key="{{ push.vapid_public }}"></script>
+{% endif %}
 </body>
 </html>

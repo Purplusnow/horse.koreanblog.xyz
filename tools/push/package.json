@@ -1,0 +1,10 @@
+{
+  "name": "horseai-push",
+  "version": "1.0.0",
+  "private": true,
+  "description": "경주일 아침 알림 발송기. GitHub Actions 가 빌드 직후에 돌린다.",
+  "type": "commonjs",
+  "dependencies": {
+    "web-push": "^3.6.7"
+  }
+}

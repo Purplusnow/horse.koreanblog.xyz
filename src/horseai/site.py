@@ -701,7 +701,8 @@ def build(db: str, out_dir: Path, config: Dict, template_dir: Path,
         # 간격을 고쳐 배포하고도 화면이 그대로여서 한참 딴 데를 짚었다.
         assets = {}
         for f in ("track.js", "style.css", "clock.js", "paper.css", "pwa.js",
-                  "icon-192.png", "icon-512.png", "icon-maskable-512.png"):
+                  "icon-192.png", "icon-512.png", "icon-maskable-512.png",
+                  "notify.js"):
             src = static_dir / f
             if src.exists():
                 assets[f] = hashlib.md5(src.read_bytes()).hexdigest()[:8]
@@ -719,6 +720,7 @@ def build(db: str, out_dir: Path, config: Dict, template_dir: Path,
             "site": config["site"],
             "adsense": config["adsense"],
             "analytics": config["analytics"],
+            "push": config["push"],
             "verification": config.get("verification") or {},
             "accuracy": accuracy,
             "metrics": metrics,
@@ -988,6 +990,9 @@ def load_config(path: Path) -> Dict:
     cfg = yaml.safe_load(path.read_text(encoding="utf-8"))
     cfg.setdefault("adsense", {})
     cfg.setdefault("analytics", {})
+    cfg.setdefault("push", {})
+    cfg["push"].setdefault("worker_url", "")
+    cfg["push"].setdefault("vapid_public", "")
     cfg.setdefault("build", {})
     cfg.setdefault("verification", {})
     cfg["build"].setdefault("past_races", 300)

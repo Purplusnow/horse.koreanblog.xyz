@@ -45,6 +45,44 @@ const OFFLINE_HTML =
   '<p>인터넷에 연결되면 오늘의 예상을 다시 불러옵니다.<br>' +
   '한 번 열어 본 화면은 연결 없이도 볼 수 있습니다.</p></div>';
 
+// ── 알림 ──────────────────────────────────────────────────
+// 경주일 아침에 한 번 온다. 발송은 GitHub Actions 가 하고, 여기는 받아서
+// 띄우기만 한다.
+//
+// **본문이 없거나 깨져도 알림은 띄운다.** 푸시를 받고 아무것도 안 띄우면
+// 브라우저가 '조용한 푸시'로 보고 구독 권한을 거둬 간다. 한 번 거둬지면
+// 그 사람에게는 다시 안 간다 — 그래서 최악의 경우에도 기본 문구로 띄운다.
+self.addEventListener('push', (e) => {
+  let d = {};
+  try { d = e.data ? e.data.json() : {}; } catch (err) { d = {}; }
+  const title = d.title || '오늘의 예상이 올라왔습니다';
+  e.waitUntil(self.registration.showNotification(title, {
+    body: d.body || '',
+    icon: d.icon || '/static/icon-192.png',
+    badge: '/static/icon-192.png',
+    tag: d.tag || 'raceday',          // 같은 날 두 번 와도 한 줄로 합쳐진다
+    renotify: false,
+    data: { url: d.url || '/?src=push' },
+  }));
+});
+
+self.addEventListener('notificationclick', (e) => {
+  e.notification.close();
+  const target = (e.notification.data && e.notification.data.url) || '/?src=push';
+  e.waitUntil((async () => {
+    // 이미 열려 있는 창이 있으면 새로 띄우지 않고 그 창을 쓴다 — 홈 화면에서
+    // 실행 중인데 탭이 또 열리면 같은 앱이 둘로 보인다.
+    const wins = await clients.matchAll({ type: 'window', includeUncontrolled: true });
+    for (const w of wins) {
+      if (new URL(w.url).origin === self.location.origin && 'focus' in w) {
+        await w.navigate(target).catch(() => {});
+        return w.focus();
+      }
+    }
+    return clients.openWindow(target);
+  })());
+});
+
 self.addEventListener('fetch', (e) => {
   const req = e.request;
   if (req.method !== 'GET') return;

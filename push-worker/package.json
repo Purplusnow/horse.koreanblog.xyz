@@ -1,0 +1,11 @@
+{
+  "name": "horseai-push-worker",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "웹푸시 구독 창구 (Cloudflare Worker)",
+  "scripts": {
+    "test": "node test.mjs",
+    "deploy": "wrangler deploy"
+  }
+}
