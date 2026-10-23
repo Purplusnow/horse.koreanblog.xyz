@@ -21,3 +21,4 @@ tools/push/node_modules/
 
 # 비밀값은 저장소에 두지 않는다. ~/dev/keystore/ 로 옮겼다.
 .push-admin-token.txt
+push-worker/node_modules/
